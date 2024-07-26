@@ -1,0 +1,285 @@
+import os
+import time
+import logging
+import random
+import numpy as np
+import torch
+import wandb
+from pathlib import Path
+from torch.utils.data import DataLoader, random_split
+from tqdm import tqdm
+from omegaconf import OmegaConf
+from monai import transforms
+from monai.metrics import compute_generalized_dice, compute_iou
+
+from horao_dataset import HORAO
+from utils.weighted_bce import WeightedDiceBCE
+from utils.transforms_segment import *
+from utils.draw_segment_img import draw_segmentation_imgs
+from utils.batch_segment_shuffle import BatchSegmentShuffler
+from mm.models import init_mm_model
+
+def batch_preprocess(batch, cfg):
+    
+    # device
+    frames, truth = batch[:2]
+    frames = frames.to(device=cfg.device, dtype=torch.float32, memory_format=torch.channels_last)
+    truth = truth.to(device=cfg.device, dtype=frames.dtype)
+
+    if random.random() < cfg.shuffle_crop and frames.shape[0] > 1:
+        frames, truth = BatchSegmentShuffler('mask')(frames, truth)
+
+    return frames, truth
+
+def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0, th=.5):
+    
+    imgs = None
+    wnum = len(cfg.wlens)
+    if 'intensity' in cfg.feature_keys:
+        # split intensity images from frames
+        s = frames.shape[1] // cfg.levels
+        p_indices = torch.cat([(s-1)*i + torch.arange(wnum) for i in range(cfg.levels)])
+        n_indices = torch.arange(frames.shape[1])[~torch.isin(torch.arange(frames.shape[1]), p_indices)]
+        imgs = frames[:, p_indices]
+        frames = frames[:, n_indices]
+
+    if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
+        # remove the feasibility mask from the features
+        mask = frames[:, -wnum:].unsqueeze(1)
+        frames = frames[:, :-wnum]
+
+    with torch.autocast(cfg.device if cfg.device != 'mps' else 'cpu', enabled=cfg.amp):
+        t_s = time.perf_counter()
+        preds = model(frames)
+        t_s = time.perf_counter() - t_s
+        if cfg.labeled_only:
+            # skip unlabeled pixels
+            m = torch.any(truth, dim=1, keepdim=True).repeat(1, preds.shape[1], 1, 1).bool()
+            preds, truth = preds[m], truth[m]
+        loss = criterion(preds, truth)
+
+    if train_opt:
+        if True:
+            optimizer.zero_grad(set_to_none=True)
+            scale = grad_scaler.get_scale()
+            grad_scaler.update()
+            skip_lr_schedule = scale > grad_scaler.get_scale()
+
+            if not skip_lr_schedule:
+                grad_scaler.scale(loss).backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), gradient_clipping)
+                grad_scaler.step(optimizer)
+        else:
+            loss.backward()
+
+    # metrics
+    dice = compute_generalized_dice(preds>th, truth, include_background=truth.shape[1]==3)
+    iou = compute_iou(preds>th, truth, include_background=truth.shape[1]==3, ignore_empty=False)
+    metrics = {'dice': dice, 'iou': iou, 't_s': torch.tensor([t_s])}
+
+    return loss, preds, metrics, imgs
+
+def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=0.5, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
+
+    criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
+    train_opt = 0 if optimizer is None else 1
+    model.train() if train_opt else model.eval()
+    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, th=th, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
+    desc = f'Steps {len(dataloader.dataset)}' if epoch is None else f'Epoch {epoch}/{cfg.epochs}'
+
+    step = 0 if step is None else step
+    metrics_dict = {'dice': [], 'iou': [], 't_mm': [], 't_s': []}
+    best_score, best_frame_pred, best_frame_mask = 0, None, None
+    poor_score, poor_frame_pred, poor_frame_mask = 1, None, None
+    with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
+        for batch in dataloader:
+            frames, truth = batch_preprocess(batch, cfg)
+            t = time.perf_counter()
+            if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
+            t_mm = time.perf_counter() - t
+            loss, preds, metrics, imgs = batch_it(frames, truth)
+            metrics['t_mm'] = torch.tensor([t_mm])
+            step += 1
+            pbar.set_postfix(**{'loss (batch)': loss.item()})
+            pbar.update(batch[0].shape[0])
+            if cfg.logging:
+                wandb.log({
+                    branch_type+'_loss': loss.item(),
+                    branch_type+'_dice': metrics['dice'].mean().item(),
+                    branch_type+'_iou ': metrics['iou'].mean().item(),
+                    branch_type+'_step': step,
+                })
+
+            score = metrics['dice']
+            if torch.any(score > best_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
+                bidx = score.argmax()
+                best_score = score[bidx]
+                best_frame_pred, best_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
+            if torch.any(score < poor_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
+                bidx = score.argmin()
+                poor_score = score[bidx]
+                poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
+
+            # metrics extension
+            for k in metrics_dict.keys():
+                metrics_dict[k].extend(metrics[k].cpu().numpy())
+
+    if cfg.logging and log_img:
+        if best_frame_pred is not None: wandb.log({'best_img_pred': wandb.Image(best_frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), 'epoch': epoch})
+        if best_frame_mask is not None: wandb.log({'best_img_mask': wandb.Image(best_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 'epoch': epoch})
+        if poor_frame_pred is not None: wandb.log({'poor_img_pred': wandb.Image(poor_frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), 'epoch': epoch})
+        if poor_frame_mask is not None: wandb.log({'poor_img_mask': wandb.Image(poor_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 'epoch': epoch})
+
+    # consolidate metrics to one scalar value per key
+    for k in metrics_dict.keys():
+        metrics_dict[k] = float(np.array(metrics_dict[k]).mean())
+
+    if branch_type == 'test':
+        return preds, truth, metrics_dict
+    else:
+        return model, mm_model, step
+
+
+if __name__ == '__main__':
+
+    # load configuration
+    cfg = OmegaConf.load('./configs/train_local.yml')
+
+    # override loaded configuration with CLI arguments
+    cfg = OmegaConf.merge(cfg, OmegaConf.from_cli())
+
+    # for reproducibility
+    random.seed(cfg.seed)
+    np.random.seed(cfg.seed)
+    torch.manual_seed(cfg.seed)
+    torch.cuda.manual_seed(cfg.seed)
+    torch.cuda.manual_seed_all(cfg.seed)
+
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.info(f'Using device {cfg.device}')
+
+    # augmentation transforms
+    transforms = [
+            ToTensor(), 
+            #RandomElastic(alpha=1, sigma=cfg.elastic) if cfg.elastic > 0 else EmptyTransform(), 
+            RandomPerspective(cfg.perspective) if cfg.perspective > 0 else EmptyTransform(), 
+            RandomCrop(size=int(cfg.crop)) if cfg.crop > 0 else EmptyTransform(), 
+            RandomVerticalFlip() if cfg.flips else EmptyTransform(), 
+            RandomHorizontalFlip() if cfg.flips else EmptyTransform(), 
+            #transforms.RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
+            #Normalize(mean=0, std=1), 
+        ]
+
+    # mueller matrix model
+    mm_model = init_mm_model(cfg) if cfg.data_subfolder.__contains__('raw') else None
+
+    # create dataset
+    dataset = HORAO(cfg.data_dir, 'train1.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    if (Path(cfg.data_dir) / 'cases' / 'val1.txt').exists():
+        val_set = HORAO(cfg.data_dir, 'val1.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    else:
+        # split into train and validation partitions (if needed)
+        n_val = int(len(dataset) * cfg.val_fraction)
+        n_train = len(dataset) - n_val
+        dataset, val_set = random_split(dataset, [n_train, n_val], generator=torch.Generator().manual_seed(cfg.seed))
+
+    # create data loaders
+    num_workers = min(4, os.cpu_count())
+    loader_args = dict(batch_size=cfg.batch_size, num_workers=num_workers, pin_memory=True)
+    train_loader = DataLoader(dataset, shuffle=True, drop_last=False, **loader_args)
+    valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, **loader_args)
+
+    # model selection
+    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len([k for k in dataset.keys if k != 'intensity'])
+    if cfg.model == 'mlp':
+        from segment_models.mlp import MLP
+        model = MLP(n_channels=n_channels, n_classes=2+dataset.bg_opt)
+    elif cfg.model == 'unet':
+        from segment_models.unet import UNet
+        model = UNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, shallow=cfg.shallow)
+    elif cfg.model == 'unetpp':
+        from segment_models.unet_pp import get_pretrained_unet_pp
+        model = get_pretrained_unet_pp(n_channels, out_channels=2+dataset.bg_opt)
+    elif cfg.model == 'uctransnet':
+        from segment_models.uctransnet.UCTransNet import UCTransNet
+        from segment_models.uctransnet.Config import get_CTranS_config
+        model = UCTransNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
+    else:
+        raise Exception('Model name not recognized')
+
+    model = model.to(memory_format=torch.channels_last)
+    model.to(device=cfg.device)
+
+    if cfg.model_file is not None:
+        ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.model_file.split('_')[0])]
+        state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)
+        if cfg.model == 'uctransnet':
+            state_dict = state_dict['state_dict']
+            state_dict['inc.conv.weight'] = state_dict['inc.conv.weight'][:, :2, :, :].repeat(1, n_channels//2, 1, 1)
+            state_dict['outc.weight'] = state_dict['outc.weight'].expand(2+dataset.bg_opt, -1, -1, -1).clone()
+            state_dict['outc.bias'] = state_dict['outc.bias'].expand(2+dataset.bg_opt).clone()
+        model.load_state_dict(state_dict)
+        logging.info(f'Model loaded from {cfg.model_file}')
+
+    # instantiate logging
+    if cfg.logging:
+        wb = wandb.init(project='polar_segment', resume='allow', anonymous='must', config=dict(cfg), group='train')
+        wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, val_fraction=cfg.val_fraction, amp=cfg.amp))
+
+        logging.info(f'''Starting training:
+            cfg.epochs:      {cfg.epochs}
+            Batch size:      {cfg.batch_size}
+            Learning rate:   {cfg.lr}
+            Training size:   {len(dataset)}
+            Validation size: {len(val_set)}
+            Device:          {cfg.device}
+            Mixed Precision: {cfg.amp}
+        ''')
+
+    # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
+    th=0.5 
+    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
+    criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
+    grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
+
+    train_step, valid_step = 0, 0
+    for epoch in range(1, cfg.epochs+1):
+        # training
+        with torch.enable_grad():
+            model, mm_model, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, th=th, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
+        # validation
+        with torch.no_grad():
+            model, mm_model, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, th=th, log_img=1, epoch=epoch)
+
+        if cfg.logging:
+            histograms = {}
+            for tag, value in model.named_parameters():
+                tag = tag.replace('/', '.')
+                if not torch.isinf(value).any() and not torch.isnan(value).any():
+                    histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
+                if value.grad is not None:
+                    if not torch.isinf(value.grad).any() and not torch.isnan(value.grad).any():
+                        histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
+        if cfg.logging:
+            wb.log({
+                **histograms,
+                'lr': optimizer.param_groups[0]['lr'],
+                'th': th,
+                'epoch': epoch,
+            })
+
+        scheduler.step(epoch)
+
+    # save weights
+    if cfg.logging:
+        dir_checkpoint = Path('./ckpts/')
+        dir_checkpoint.mkdir(parents=True, exist_ok=True)
+        state_dict = model.state_dict()
+        torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pth'.format(epoch)))))
+        logging.info(f'Checkpoint {epoch} saved!')
+
+    # perform test
+    dataset = HORAO(cfg.data_dir, 'test.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    from test import test_main
+    test_main(cfg, dataset, model, mm_model, th=th)

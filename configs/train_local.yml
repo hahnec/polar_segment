@@ -1,0 +1,49 @@
+# general
+device: cuda
+logging: 0
+seed: 3008
+
+# model
+model: unet
+model_file: Null
+mm_model_file: Null
+crop: 224 #256
+shallow: 0
+
+# training
+batch_size: 8
+lr: 1e-4
+epochs: 100 #00
+weight_decay: 1e-8
+val_fraction: 0.1
+amp: False
+bg_opt: False
+labeled_only: 0
+
+# dataset paths
+data_path: TumorMeasurementsCalib/
+ubx_dir: /storage/homefs/ch21z139/01_datasets/${data_path}
+loc_dir: /home/chris/Datasets/data/${data_path}
+map_dir: Null
+data_dir: ${loc_dir}
+data_subfolder: raw_data
+
+# mueller matrix parameters
+levels: 1
+kernel_size: 0
+activation: Null
+method: window
+feature_keys:
+  - intensity
+  - azimuth
+  - std
+wlens:
+  - 550
+  - 650
+
+# augmentation settings
+flips: False
+perspective: 0
+elastic: 0
+rotation: 0
+shuffle_crop: 0
