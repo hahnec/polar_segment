@@ -190,7 +190,7 @@ if __name__ == '__main__':
     valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, **loader_args)
 
     # model selection
-    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len([k for k in dataset.keys if k != 'intensity'])
+    n_channels = mm_model.ochs - cfg.levels*len(cfg.wlens) if cfg.data_subfolder.__contains__('raw') else len([k for k in dataset.keys if k != 'intensity'])
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=2+dataset.bg_opt)
