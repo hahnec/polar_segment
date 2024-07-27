@@ -38,7 +38,7 @@ def test_main(cfg, dataset, model, mm_model, th):
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
         # upload other metrics to wandb
-        wandb.log(**metrics)
+        wandb.log(metrics)
         table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
         wandb.log({'metrics': table_metrics})
     else: 
@@ -107,6 +107,9 @@ if __name__ == '__main__':
     elif cfg.model == 'unet':
         from segment_models.unet import UNet
         model = UNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, shallow=cfg.shallow)
+    elif cfg.model == 'unetpp':
+        from segment_models.unet_pp import get_pretrained_unet_pp
+        model = get_pretrained_unet_pp(n_channels, out_channels=2+dataset.bg_opt)
     elif cfg.model == 'uctransnet':
         from segment_models.uctransnet.UCTransNet import UCTransNet
         from segment_models.uctransnet.Config import get_CTranS_config
