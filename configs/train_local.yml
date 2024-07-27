@@ -32,7 +32,7 @@ data_subfolder: raw_data
 levels: 1
 kernel_size: 0
 activation: Null
-method: window
+method: pooling
 feature_keys:
   - intensity
   - azimuth
