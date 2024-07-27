@@ -26,9 +26,10 @@ def test_main(cfg, dataset, model, mm_model, th):
         preds, truth, metrics = epoch_branch(cfg, dataloader, model, mm_model, branch_type='test', th=th, log_img=True)
 
     # pixel-wise assessment
-    y_pred, y_true = [(el.cpu().numpy()>th).flatten() for el in [preds, truth]]
+    y_true = truth.moveaxis(1, 0).flatten(start_dim=1).cpu().numpy()
+    y_pred = np.array([(preds[:, i].cpu().numpy()>th[i]).flatten() for i in range(preds.shape[1])])
     from sklearn.metrics import classification_report
-    report = classification_report(y_pred, y_true, target_names=['benign', 'malignant'], digits=4, output_dict=bool(cfg.logging))
+    report = classification_report(y_pred.T, y_true.T, target_names=['benign', 'malignant'], digits=4, output_dict=bool(cfg.logging))
 
     if cfg.logging:
         # convert report to wandb table

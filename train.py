@@ -31,7 +31,7 @@ def batch_preprocess(batch, cfg):
 
     return frames, truth
 
-def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0, th=.5):
+def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0, th=None):
     
     imgs = None
     wnum = len(cfg.wlens)
@@ -56,7 +56,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
             # skip unlabeled pixels
             m = torch.any(truth, dim=1, keepdim=True).repeat(1, preds.shape[1], 1, 1).bool()
             preds, truth = preds[m], truth[m]
-        loss = criterion(preds, truth)
+        loss = criterion(preds, truth) if criterion else None
 
     if train_opt:
         if True:
@@ -73,8 +73,10 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
             loss.backward()
 
     # metrics
-    dice = compute_generalized_dice(preds>th, truth, include_background=truth.shape[1]==3)
-    iou = compute_iou(preds>th, truth, include_background=truth.shape[1]==3, ignore_empty=False)
+    th = [.5,] * preds.shape[1] if th is None else th
+    preds = torch.stack([preds[:, i]>th[i] for i in range(preds.shape[1])], dim=1)
+    dice = compute_generalized_dice(preds, truth, include_background=truth.shape[1]==3)
+    iou = compute_iou(preds, truth, include_background=truth.shape[1]==3, ignore_empty=False)
     metrics = {'dice': dice, 'iou': iou, 't_s': torch.tensor([t_s])}
 
     return loss, preds, metrics, imgs
@@ -138,6 +140,23 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
         return preds, truth, metrics_dict
     else:
         return model, mm_model, step
+
+def get_threshold(cfg, dataset, model, mm_model):
+
+    from torch.utils.data import DataLoader
+    loader_args = dict(batch_size=len(dataset), num_workers=1, pin_memory=True)
+    loader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
+    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=0)
+
+    from utils.find_threshold import find_optimal_threshold
+    for batch in loader:
+            frames, truth = batch_preprocess(batch, cfg)
+            if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
+            preds = batch_it(frames, truth)[1]
+
+    th = find_optimal_threshold(preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy(), truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy(), num_classes=2+cfg.bg_opt)
+
+    return th
 
 
 if __name__ == '__main__':
@@ -237,7 +256,7 @@ if __name__ == '__main__':
         ''')
 
     # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
-    th=0.5 
+    th = [0.5,] * (2+cfg.bg_opt)
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
@@ -281,5 +300,6 @@ if __name__ == '__main__':
 
     # perform test
     dataset = HORAO(cfg.data_dir, 'test.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    th = get_threshold(cfg, val_set, model, mm_model)
     from test import test_main
     test_main(cfg, dataset, model, mm_model, th=th)
