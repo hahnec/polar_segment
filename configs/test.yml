@@ -3,6 +3,7 @@ flips: False
 perspective: 0
 elastic: 0
 rotation: 0
+crop: 0
 shuffle_crop: 0
 
 model: unet
