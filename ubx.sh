@@ -21,8 +21,11 @@ python -m pip install pip --upgrade
 rm -rf venv
 
 sh ./install.sh
+
 source ~/33_polar_segment/venv/bin/activate
+
+python -m pip install torch torchvision torchaudio
 
 python -c "import torch; print(torch.cuda.is_available())"
 
-sh ./train.sh
+sh ./train_stack.sh
