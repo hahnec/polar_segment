@@ -74,7 +74,8 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 
     # metrics
     th = [.5,] * preds.shape[1] if th is None else th
-    preds = torch.stack([preds[:, i]>th[i] for i in range(preds.shape[1])], dim=1)
+    th = torch.tensor(th, device=preds.device).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
+    preds = preds>th
     dice = compute_generalized_dice(preds, truth, include_background=truth.shape[1]==3)
     iou = compute_iou(preds, truth, include_background=truth.shape[1]==3, ignore_empty=False)
     metrics = {'dice': dice, 'iou': iou, 't_s': torch.tensor([t_s])}
