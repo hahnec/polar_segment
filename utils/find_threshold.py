@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import f1_score
+from sklearn.metrics import roc_curve
 
 def find_optimal_threshold(predictions, ground_truth, num_classes, thresholds=np.arange(0, 1.05, 0.05)):
     """
@@ -17,21 +17,11 @@ def find_optimal_threshold(predictions, ground_truth, num_classes, thresholds=np
     optimal_thresholds = []
 
     for class_idx in range(num_classes):
-        best_threshold = 0
-        best_f1 = 0
-
-        for threshold in thresholds:
-            # Apply threshold to predictions for the current class
-            binary_predictions = (predictions[:, class_idx] >= threshold).astype(int)
-            # Calculate F1 score
-            f1 = f1_score(ground_truth[:, class_idx], binary_predictions)
-
-            if f1 > best_f1:
-                best_f1 = f1
-                best_threshold = threshold
-
+        fpr, tpr, thresholds = roc_curve(ground_truth[:, class_idx], predictions[:, class_idx])
+        best_threshold = thresholds[np.argmax(tpr - fpr)]  # You can use different criteria for best threshold
+        
         optimal_thresholds.append(best_threshold)
-    
+
     return optimal_thresholds
 
 
