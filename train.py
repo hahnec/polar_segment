@@ -156,6 +156,7 @@ def get_threshold(cfg, dataset, model, mm_model):
     y_pred = preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
     y_true = truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
     th = find_optimal_threshold(y_pred, y_true, num_classes=2+cfg.bg_opt)
+    th = torch.tensor(th, device=preds.device)[None, :, None, None]
 
     return th
 
