@@ -28,13 +28,3 @@ def find_optimal_threshold(predictions, ground_truth, num_classes, thresholds=np
         optimal_thresholds.append(best_threshold)
 
     return optimal_thresholds
-
-
-if __name__ == '__main__':
-
-    predictions = np.array([[0.1, 0.4], [0.6, 0.8], [0.5, 0.3]])
-    ground_truth = np.array([[0, 0], [1, 1], [1, 0]])
-    num_classes = 2
-
-    optimal_thresholds = find_optimal_threshold(predictions, ground_truth, num_classes)
-    print("Optimal thresholds:", optimal_thresholds)
