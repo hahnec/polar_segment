@@ -174,7 +174,7 @@ if __name__ == '__main__':
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
         from mm.models import MuellerMatrixPyramid as MMM
-        mm_model = MMM(feature_keys=feat_keys, perc=.95, levels=1, kernel_size=0, wnum=len(dataset.wlens))
+        mm_model = MMM(feature_keys=feat_keys, perc=.95, levels=3, kernel_size=0, method='averaging', wnum=len(dataset.wlens))
 
         healthy_pixels = 0
         healthy_samples = 0
@@ -199,7 +199,7 @@ if __name__ == '__main__':
                 t_total = time.perf_counter() -t
                 print('MM processing time: %s' % str(t_total))
 
-            if True:
+            if False:
                 import matplotlib.pyplot as plt
                 fig, axs = plt.subplots(1, 4)
                 axs[0].set_title(['healthy', 'tumor'][label[0]])
