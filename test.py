@@ -38,6 +38,7 @@ def test_main(cfg, dataset, model, mm_model, th):
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
+        wandb.log({'accuracy': report['accuracy']})
         # upload other metrics to wandb
         wandb.log(metrics)
         table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
@@ -138,5 +139,7 @@ if __name__ == '__main__':
             Test size:       {len(dataset)}
             Device:          {cfg.device}
         ''')
-
-    test_main(cfg, dataset, model, mm_model, th=0.5)
+    
+    from train import get_threshold
+    th = get_threshold(cfg, dataset, model, mm_model)
+    test_main(cfg, dataset, model, mm_model, th=th)
