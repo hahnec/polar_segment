@@ -17,8 +17,10 @@ def find_optimal_threshold(predictions, ground_truth, num_classes, thresholds=np
     optimal_thresholds = []
 
     for class_idx in range(num_classes):
-        fpr, tpr, thresholds = roc_curve(ground_truth[:, class_idx], predictions[:, class_idx])
-        best_threshold = thresholds[np.argmax(tpr - fpr)]  # You can use different criteria for best threshold
+        fpr, tpr, thresholds = roc_curve(ground_truth[class_idx], predictions[class_idx])
+        gmeans = (tpr * (1-fpr))**.5
+        th_idx = np.argmax(gmeans)
+        best_threshold = thresholds[th_idx]
         
         optimal_thresholds.append(best_threshold)
 

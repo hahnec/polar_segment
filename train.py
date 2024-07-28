@@ -31,7 +31,7 @@ def batch_preprocess(batch, cfg):
 
     return frames, truth
 
-def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0, th=None):
+def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
     imgs = None
     wnum = len(cfg.wlens)
@@ -73,9 +73,6 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
             loss.backward()
 
     # metrics
-    th = [.5,] * preds.shape[1] if th is None else th
-    th = torch.tensor(th, device=preds.device).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
-    preds = preds>th
     dice = compute_generalized_dice(preds, truth, include_background=truth.shape[1]==3)
     iou = compute_iou(preds, truth, include_background=truth.shape[1]==3, ignore_empty=False)
     metrics = {'dice': dice, 'iou': iou, 't_s': torch.tensor([t_s])}
@@ -87,7 +84,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     train_opt = 0 if optimizer is None else 1
     model.train() if train_opt else model.eval()
-    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, th=th, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
+    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
     desc = f'Steps {len(dataloader.dataset)}' if epoch is None else f'Epoch {epoch}/{cfg.epochs}'
 
     step = 0 if step is None else step
@@ -125,7 +122,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
 
             # metrics extension
             for k in metrics_dict.keys():
-                metrics_dict[k].extend(metrics[k].cpu().numpy())
+                metrics_dict[k].extend(metrics[k].detach().cpu().numpy())
 
     if cfg.logging and log_img:
         if best_frame_pred is not None: wandb.log({'best_img_pred': wandb.Image(best_frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), 'epoch': epoch})
