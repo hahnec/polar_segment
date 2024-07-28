@@ -151,9 +151,9 @@ def get_threshold(cfg, dataset, model, mm_model):
 
     from utils.find_threshold import find_optimal_threshold
     for batch in loader:
-            frames, truth = batch_preprocess(batch, cfg)
-            if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
-            preds = batch_it(frames, truth)[1]
+        frames, truth = batch_preprocess(batch, cfg)
+        if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
+        preds = batch_it(frames, truth)[1]
 
     y_pred = preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
     y_true = truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
