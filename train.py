@@ -155,7 +155,9 @@ def get_threshold(cfg, dataset, model, mm_model):
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             preds = batch_it(frames, truth)[1]
 
-    th = find_optimal_threshold(preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy(), truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy(), num_classes=2+cfg.bg_opt)
+    y_pred = preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
+    y_true = truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
+    th = find_optimal_threshold(y_pred, y_true, num_classes=2+cfg.bg_opt)
 
     return th
 
