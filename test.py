@@ -38,7 +38,7 @@ def test_main(cfg, dataset, model, mm_model, th):
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
-        wandb.log(flat_report)
+        wandb.log({f'{outer_key}.{inner_key}': inner_val for outer_key, outer_val in report.items() for inner_key, inner_val in outer_val.items()})
         # upload other metrics to wandb
         wandb.log(metrics)
         table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
