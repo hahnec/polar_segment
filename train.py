@@ -79,7 +79,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 
     return loss, preds, metrics, imgs
 
-def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=0.5, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
+def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     train_opt = 0 if optimizer is None else 1
@@ -256,7 +256,6 @@ if __name__ == '__main__':
         ''')
 
     # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
-    th = [0.5,] * (2+cfg.bg_opt)
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
@@ -266,10 +265,10 @@ if __name__ == '__main__':
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
-            model, mm_model, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, th=th, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
+            model, mm_model, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
         # validation
         with torch.no_grad():
-            model, mm_model, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, th=th, log_img=1, epoch=epoch)
+            model, mm_model, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=1, epoch=epoch)
 
         if cfg.logging:
             histograms = {}
@@ -284,7 +283,6 @@ if __name__ == '__main__':
             wb.log({
                 **histograms,
                 'lr': optimizer.param_groups[0]['lr'],
-                'th': th,
                 'epoch': epoch,
             })
 
