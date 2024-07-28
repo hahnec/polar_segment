@@ -301,6 +301,6 @@ if __name__ == '__main__':
     # perform test
     dataset = HORAO(cfg.data_dir, 'test.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     th = get_threshold(cfg, val_set, model, mm_model)
-    if cfg.logging: wb.log({'th': torch.stack(th).cpu().numpy().flatten()})
+    if cfg.logging: wb.log({'th': th})
     from test import test_main
     test_main(cfg, dataset, model, mm_model, th=th)
