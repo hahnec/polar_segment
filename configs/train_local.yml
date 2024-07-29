@@ -24,6 +24,7 @@ group: Null
 # dataset paths
 data_path: TumorMeasurementsCalib/
 ubx_dir: /storage/homefs/ch21z139/01_datasets/${data_path}
+usb_dir: /media/chris/EB62-383C/${data_path}
 loc_dir: /home/chris/Datasets/data/${data_path}
 map_dir: Null
 data_dir: ${loc_dir}
@@ -40,7 +41,7 @@ feature_keys:
   - std
 wlens:
   - 550
-#  - 650
+  - 650
 
 # augmentation settings
 flips: False
