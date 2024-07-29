@@ -125,10 +125,10 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
                 metrics_dict[k].extend(metrics[k].cpu().numpy())
 
     if cfg.logging and log_img:
-        if best_frame_pred is not None: wandb.log({'best_img_pred': wandb.Image(best_frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), 'epoch': epoch})
-        if best_frame_mask is not None: wandb.log({'best_img_mask': wandb.Image(best_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 'epoch': epoch})
-        if poor_frame_pred is not None: wandb.log({'poor_img_pred': wandb.Image(poor_frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), 'epoch': epoch})
-        if poor_frame_mask is not None: wandb.log({'poor_img_mask': wandb.Image(poor_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 'epoch': epoch})
+        if best_frame_pred is not None: wandb.log({'best_img_pred_'+branch_type: wandb.Image(best_frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), 'epoch': epoch})
+        if best_frame_mask is not None: wandb.log({'best_img_mask_'+branch_type: wandb.Image(best_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 'epoch': epoch})
+        if poor_frame_pred is not None: wandb.log({'poor_img_pred_'+branch_type: wandb.Image(poor_frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), 'epoch': epoch})
+        if poor_frame_mask is not None: wandb.log({'poor_img_mask_'+branch_type: wandb.Image(poor_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 'epoch': epoch})
 
     # consolidate metrics to one scalar value per key
     for k in metrics_dict.keys():
