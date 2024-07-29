@@ -214,7 +214,7 @@ if __name__ == '__main__':
         dataset, val_set = random_split(dataset, [n_train, n_val], generator=torch.Generator().manual_seed(cfg.seed))
 
     # create data loaders
-    num_workers = min(4, os.cpu_count())
+    num_workers = max(2, os.cpu_count())
     loader_args = dict(batch_size=cfg.batch_size, num_workers=num_workers, pin_memory=True)
     train_loader = DataLoader(dataset, shuffle=True, drop_last=False, **loader_args)
     valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, **loader_args)
