@@ -20,3 +20,5 @@ python train.py model=unet levels=1 kernel_size=0 data_subfolder=polarimetry wle
 python train.py model=unet levels=1 kernel_size=0 data_subfolder=polarimetry_PDDN wlens='[550]'
 python train.py model=mlp lr=1e-3 levels=1 kernel_size=0 data_subfolder=polarimetry_PDDN wlens='[550]'
 python train.py model=mlp lr=1e-3 levels=3 kernel_size=0 data_subfolder=polarimetry_PDDN wlens='[550]'
+# resnet
+python train.py model=resnet lr=1e-5 levels=1 kernel_size=0 crop=50 data_subfolder=polarimetry_PDDN wlens='[550]'
