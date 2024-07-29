@@ -11,9 +11,9 @@ crop: 0
 shallow: 0
 
 # training
-batch_size: 2
+batch_size: 8
 lr: 1e-4
-epochs: 100
+epochs: 50
 weight_decay: 1e-8
 val_fraction: 0.1
 amp: False
