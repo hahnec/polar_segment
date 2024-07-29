@@ -300,7 +300,7 @@ if __name__ == '__main__':
                 'epoch': epoch,
             })
 
-        scheduler.step(epoch)
+        scheduler.step()
 
     # save weights
     if cfg.logging:
