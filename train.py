@@ -120,7 +120,13 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
                 bidx = score.argmin()
                 poor_score = score[bidx]
                 poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
-
+            
+            # log all test images
+            if branch_type == 'test':
+                frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=th)
+                wandb.log({'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), branch_type+'_step': step})
+                wandb.log({'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), branch_type+'_step': step})
+                
             # metrics extension
             for k in metrics_dict.keys():
                 metrics_dict[k].extend(metrics[k].detach().cpu().numpy())

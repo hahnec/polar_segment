@@ -23,7 +23,7 @@ def test_main(cfg, dataset, model, mm_model, th):
     dataloader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
 
     with torch.no_grad():
-        preds, truth, metrics = epoch_branch(cfg, dataloader, model, mm_model, branch_type='test', th=th, log_img=True)
+        preds, truth, metrics = epoch_branch(cfg, dataloader, model, mm_model, branch_type='test', th=th)
 
     # pixel-wise assessment
     y_true = truth.moveaxis(1, 0).flatten(start_dim=1).cpu().numpy()
