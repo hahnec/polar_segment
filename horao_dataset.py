@@ -165,7 +165,7 @@ if __name__ == '__main__':
     batch_size = 1
     patch_size = 4
     bg_opt = 1
-    base_dir = '/home/chris/Datasets/data/TumorMeasurementsCalib/'
+    base_dir = '/media/chris/EB62-383C/TumorMeasurementsCalib/'
     feat_keys = ['azimuth', 'std', 'mask']
 
     img_list = []
@@ -176,11 +176,11 @@ if __name__ == '__main__':
         from mm.models import MuellerMatrixPyramid as MMM
         mm_model = MMM(feature_keys=feat_keys, perc=.95, levels=3, kernel_size=0, method='averaging', wnum=len(dataset.wlens))
 
-        healthy_pixels = 0
-        healthy_samples = 0
+        bg_pixels = 0
         tumor_pixels = 0
         tumor_samples = 0
-        bg_pixels = 0
+        healthy_pixels = 0
+        healthy_samples = 0
         for batch in loader:
             imgs, masks, label = batch
 
