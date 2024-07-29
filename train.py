@@ -17,6 +17,7 @@ from utils.weighted_bce import WeightedDiceBCE
 from utils.transforms_segment import *
 from utils.draw_segment_img import draw_segmentation_imgs
 from utils.batch_segment_shuffle import BatchSegmentShuffler
+from utils.find_threshold import get_threshold
 from mm.models import init_mm_model
 
 def batch_preprocess(batch, cfg):
@@ -145,31 +146,6 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
         return preds, truth, metrics_dict
     else:
         return model, mm_model, step
-
-def get_threshold(cfg, dataset, model, mm_model):
-
-    from torch.utils.data import DataLoader
-    loader_args = dict(batch_size=1, num_workers=1, pin_memory=True)
-    loader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
-    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=0)
-
-    from utils.find_threshold import find_optimal_threshold
-    preds_list, truth_list = [], []
-    for batch in loader:
-        frames, truth = batch_preprocess(batch, cfg)
-        if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
-        preds = batch_it(frames, truth)[1]
-        truth_list.append(truth.detach())
-        preds_list.append(preds.detach())
-    truth = torch.cat(truth_list, dim=0)
-    preds = torch.cat(preds_list, dim=0)
-
-    y_pred = preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
-    y_true = truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
-    th = find_optimal_threshold(y_pred, y_true, num_classes=2+cfg.bg_opt)
-    th = torch.tensor(th, device=preds.device)[None, :, None, None]
-
-    return th
 
 
 if __name__ == '__main__':

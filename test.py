@@ -140,6 +140,6 @@ if __name__ == '__main__':
             Device:          {cfg.device}
         ''')
     
-    from train import get_threshold
+    from utils.find_threshold import get_threshold
     th = get_threshold(cfg, dataset, model, mm_model)
     test_main(cfg, dataset, model, mm_model, th=th)
