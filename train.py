@@ -154,13 +154,15 @@ def get_threshold(cfg, dataset, model, mm_model):
     batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=0)
 
     from utils.find_threshold import find_optimal_threshold
-    preds_list = []
+    preds_list, truth_list = [], []
     for batch in loader:
         frames, truth = batch_preprocess(batch, cfg)
         if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
         preds = batch_it(frames, truth)[1]
-        preds_list.append(preds)
-    preds = torch.stack(preds_list, dim=0)
+        truth_list.append(truth.detach())
+        preds_list.append(preds.detach())
+    truth = torch.cat(truth_list, dim=0)
+    preds = torch.cat(preds_list, dim=0)
 
     y_pred = preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
     y_true = truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
