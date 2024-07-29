@@ -15,7 +15,7 @@
 module load Python/3.9.5-GCCcore-10.3.0
 module load CUDA/11.8.0
 
-wandb login --relogin
+#wandb login --relogin
 
 python -m pip install pip --upgrade
 rm -rf venv
@@ -23,8 +23,6 @@ rm -rf venv
 sh ./install.sh
 
 source ~/33_polar_segment/venv/bin/activate
-
-python -m pip install torch torchvision torchaudio
 
 python -c "import torch; print(torch.cuda.is_available())"
 
