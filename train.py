@@ -224,7 +224,7 @@ if __name__ == '__main__':
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=2+dataset.bg_opt)
-    if cfg.model == 'resnet':
+    elif cfg.model == 'resnet':
         from segment_models.resnet import PatchResNet
         model = PatchResNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, patch_size=50)
     elif cfg.model == 'unet':
