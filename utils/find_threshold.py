@@ -49,8 +49,8 @@ def get_threshold(cfg, dataset, model, mm_model):
     truth = torch.cat(truth_list, dim=0)
     preds = torch.cat(preds_list, dim=0)
 
-    y_pred = preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
-    y_true = truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
+    y_pred = preds.moveaxis(0, -1).reshape(2+cfg.bg_opt, -1).detach().cpu().numpy()
+    y_true = truth.moveaxis(0, -1).reshape(2+cfg.bg_opt, -1).detach().cpu().numpy()
     th = find_optimal_threshold(y_pred, y_true, num_classes=2+cfg.bg_opt)
     th = torch.tensor(th, device=preds.device)[None, :, None, None]
 
