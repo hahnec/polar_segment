@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
     # instantiate logging
     if cfg.logging:
-        wb = wandb.init(project='polar_segment', resume='allow', anonymous='must', config=dict(cfg), group='train')
+        wb = wandb.init(project='polar_segment', resume='allow', anonymous='must', config=dict(cfg), group=cfg.group)
         wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, val_fraction=cfg.val_fraction, amp=cfg.amp))
 
         logging.info(f'''Starting training:

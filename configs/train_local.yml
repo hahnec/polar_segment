@@ -19,6 +19,7 @@ val_fraction: 0.1
 amp: False
 bg_opt: False
 labeled_only: 0
+group: Null
 
 # dataset paths
 data_path: TumorMeasurementsCalib/

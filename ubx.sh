@@ -28,4 +28,4 @@ python -m pip install torch torchvision torchaudio
 
 python -c "import torch; print(torch.cuda.is_available())"
 
-sh ./train_stack.sh
+sh ./train_stack.sh $1
