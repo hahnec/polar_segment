@@ -7,7 +7,6 @@ import wandb
 from pathlib import Path
 from torch.utils.data import DataLoader
 from omegaconf import OmegaConf
-from monai import transforms
 
 from horao_dataset import HORAO
 from utils.transforms_segment import *
@@ -27,9 +26,10 @@ def test_main(cfg, dataset, model, mm_model, th):
         preds, truth, metrics = epoch_branch(cfg, dataloader, model, mm_model, branch_type='test', th=th, log_img=True)
 
     # pixel-wise assessment
-    y_pred, y_true = [(el.cpu().numpy()>th).flatten() for el in [preds, truth]]
+    y_true = truth.moveaxis(1, 0).flatten(start_dim=1).cpu().numpy()
+    y_pred = torch.stack([(preds[:, i]>th[:, i]).flatten() for i in range(preds.shape[1])]).cpu().numpy()
     from sklearn.metrics import classification_report
-    report = classification_report(y_pred, y_true, target_names=['benign', 'malignant'], digits=4, output_dict=cfg.logging)
+    report = classification_report(y_pred.T, y_true.T, target_names=['benign', 'malignant'], digits=4, output_dict=bool(cfg.logging))
 
     if cfg.logging:
         # convert report to wandb table
@@ -38,7 +38,9 @@ def test_main(cfg, dataset, model, mm_model, th):
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
+        wandb.log({f'{outer_key}.{inner_key}': inner_val for outer_key, outer_val in report.items() for inner_key, inner_val in outer_val.items()})
         # upload other metrics to wandb
+        wandb.log(metrics)
         table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
         wandb.log({'metrics': table_metrics})
     else: 
@@ -107,6 +109,9 @@ if __name__ == '__main__':
     elif cfg.model == 'unet':
         from segment_models.unet import UNet
         model = UNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, shallow=cfg.shallow)
+    elif cfg.model == 'unetpp':
+        from segment_models.unet_pp import get_pretrained_unet_pp
+        model = get_pretrained_unet_pp(n_channels, out_channels=2+dataset.bg_opt)
     elif cfg.model == 'uctransnet':
         from segment_models.uctransnet.UCTransNet import UCTransNet
         from segment_models.uctransnet.Config import get_CTranS_config
@@ -134,5 +139,7 @@ if __name__ == '__main__':
             Test size:       {len(dataset)}
             Device:          {cfg.device}
         ''')
-
-    test_main(cfg, dataset, model, mm_model, th=0.5)
+    
+    from train import get_threshold
+    th = get_threshold(cfg, dataset, model, mm_model)
+    test_main(cfg, dataset, model, mm_model, th=th)

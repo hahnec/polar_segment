@@ -174,5 +174,5 @@ mm
 mm_torch/
 mm_torch
 deprecated/
-./results.txt
+results.txt
 wandb/

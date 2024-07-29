@@ -31,7 +31,7 @@ def batch_preprocess(batch, cfg):
 
     return frames, truth
 
-def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0, th=.5):
+def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
     imgs = None
     wnum = len(cfg.wlens)
@@ -56,7 +56,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
             # skip unlabeled pixels
             m = torch.any(truth, dim=1, keepdim=True).repeat(1, preds.shape[1], 1, 1).bool()
             preds, truth = preds[m], truth[m]
-        loss = criterion(preds, truth)
+        loss = criterion(preds, truth) if criterion else None
 
     if train_opt:
         if True:
@@ -73,13 +73,14 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
             loss.backward()
 
     # metrics
+    th = 0.5 if th is None else th
     dice = compute_generalized_dice(preds>th, truth, include_background=truth.shape[1]==3)
     iou = compute_iou(preds>th, truth, include_background=truth.shape[1]==3, ignore_empty=False)
     metrics = {'dice': dice, 'iou': iou, 't_s': torch.tensor([t_s])}
 
     return loss, preds, metrics, imgs
 
-def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=0.5, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
+def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     train_opt = 0 if optimizer is None else 1
@@ -122,7 +123,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
 
             # metrics extension
             for k in metrics_dict.keys():
-                metrics_dict[k].extend(metrics[k].cpu().numpy())
+                metrics_dict[k].extend(metrics[k].detach().cpu().numpy())
 
     if cfg.logging and log_img:
         if best_frame_pred is not None: wandb.log({'best_img_pred_'+branch_type: wandb.Image(best_frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), 'epoch': epoch})
@@ -138,6 +139,26 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
         return preds, truth, metrics_dict
     else:
         return model, mm_model, step
+
+def get_threshold(cfg, dataset, model, mm_model):
+
+    from torch.utils.data import DataLoader
+    loader_args = dict(batch_size=len(dataset), num_workers=1, pin_memory=True)
+    loader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
+    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=0)
+
+    from utils.find_threshold import find_optimal_threshold
+    for batch in loader:
+        frames, truth = batch_preprocess(batch, cfg)
+        if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
+        preds = batch_it(frames, truth)[1]
+
+    y_pred = preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
+    y_true = truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
+    th = find_optimal_threshold(y_pred, y_true, num_classes=2+cfg.bg_opt)
+    th = torch.tensor(th, device=preds.device)[None, :, None, None]
+
+    return th
 
 
 if __name__ == '__main__':
@@ -190,7 +211,7 @@ if __name__ == '__main__':
     valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, **loader_args)
 
     # model selection
-    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len([k for k in dataset.keys if k != 'intensity'])
+    n_channels = mm_model.ochs - cfg.levels*len(cfg.wlens) if cfg.data_subfolder.__contains__('raw') else len([k for k in dataset.keys if k != 'intensity'])
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=2+dataset.bg_opt)
@@ -237,7 +258,6 @@ if __name__ == '__main__':
         ''')
 
     # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
-    th=0.5 
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
@@ -247,10 +267,10 @@ if __name__ == '__main__':
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
-            model, mm_model, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, th=th, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
+            model, mm_model, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
         # validation
         with torch.no_grad():
-            model, mm_model, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, th=th, log_img=1, epoch=epoch)
+            model, mm_model, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=1, epoch=epoch)
 
         if cfg.logging:
             histograms = {}
@@ -265,7 +285,6 @@ if __name__ == '__main__':
             wb.log({
                 **histograms,
                 'lr': optimizer.param_groups[0]['lr'],
-                'th': th,
                 'epoch': epoch,
             })
 
@@ -281,5 +300,7 @@ if __name__ == '__main__':
 
     # perform test
     dataset = HORAO(cfg.data_dir, 'test.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    th = get_threshold(cfg, val_set, model, mm_model)
+    if cfg.logging: wb.log({'th': th})
     from test import test_main
     test_main(cfg, dataset, model, mm_model, th=th)

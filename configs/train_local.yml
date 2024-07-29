@@ -11,9 +11,9 @@ crop: 224
 shallow: 0
 
 # training
-batch_size: 8
+batch_size: 4
 lr: 1e-4
-epochs: 100
+epochs: 50
 weight_decay: 1e-8
 val_fraction: 0.1
 amp: False
@@ -32,7 +32,7 @@ data_subfolder: raw_data
 levels: 1
 kernel_size: 0
 activation: Null
-method: window
+method: pooling
 feature_keys:
   - intensity
   - azimuth
