@@ -1,5 +1,4 @@
 from torch import nn
-from mm.utils.roll_win import batched_rolling_window_metric
 
 
 class PatchResNet(nn.Module):
