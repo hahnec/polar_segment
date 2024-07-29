@@ -143,15 +143,18 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
 def get_threshold(cfg, dataset, model, mm_model):
 
     from torch.utils.data import DataLoader
-    loader_args = dict(batch_size=len(dataset), num_workers=1, pin_memory=True)
+    loader_args = dict(batch_size=1, num_workers=1, pin_memory=True)
     loader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
     batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=0)
 
     from utils.find_threshold import find_optimal_threshold
+    preds_list = []
     for batch in loader:
         frames, truth = batch_preprocess(batch, cfg)
         if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
         preds = batch_it(frames, truth)[1]
+        preds_list.append(preds)
+    preds = torch.stack(preds_list, dim=0)
 
     y_pred = preds.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
     y_true = truth.moveaxis(0, -1).reshape(2, -1).detach().cpu().numpy()
@@ -302,7 +305,7 @@ if __name__ == '__main__':
         logging.info(f'Checkpoint {epoch} saved!')
 
     # perform test
-    dataset = HORAO(cfg.data_dir, 'test.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    dataset = HORAO(cfg.data_dir, 'test.txt', transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     th = get_threshold(cfg, val_set, model, mm_model)
     if cfg.logging: wb.log({'th': th})
     from test import test_main
