@@ -40,7 +40,7 @@ feature_keys:
   - std
 wlens:
   - 550
-  - 650
+#  - 650
 
 # augmentation settings
 flips: False
