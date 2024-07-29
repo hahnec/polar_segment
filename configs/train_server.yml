@@ -1,0 +1,3 @@
+# override config for server
+logging: 1
+data_dir: ${ubx_dir}

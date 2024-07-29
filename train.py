@@ -153,6 +153,9 @@ if __name__ == '__main__':
     # load configuration
     cfg = OmegaConf.load('./configs/train_local.yml')
 
+    # override loaded configuration with server settings
+    if Path(cfg.ubx_dir).exists(): cfg = OmegaConf.merge(cfg, './configs/train_server.yml')
+
     # override loaded configuration with CLI arguments
     cfg = OmegaConf.merge(cfg, OmegaConf.from_cli())
 
