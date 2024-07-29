@@ -126,7 +126,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
                 frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=th)
                 wandb.log({'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), branch_type+'_step': step})
                 wandb.log({'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), branch_type+'_step': step})
-                
+
             # metrics extension
             for k in metrics_dict.keys():
                 metrics_dict[k].extend(metrics[k].detach().cpu().numpy())
@@ -238,7 +238,7 @@ if __name__ == '__main__':
         from segment_models.uctransnet.Config import get_CTranS_config
         model = UCTransNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
     else:
-        raise Exception('Model name not recognized')
+        raise Exception('Model %s not recognized' % cfg.model)
 
     model = model.to(memory_format=torch.channels_last)
     model.to(device=cfg.device)
