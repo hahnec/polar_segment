@@ -150,5 +150,5 @@ if __name__ == '__main__':
         ''')
     
     from utils.find_threshold import get_threshold
-    th = get_threshold(cfg, dataset, model, mm_model) if not cfg.label_only else None
+    th = get_threshold(cfg, dataset, model, mm_model) if not cfg.labeled_only else None
     test_main(cfg, dataset, model, mm_model, th=th)
