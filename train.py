@@ -1,5 +1,6 @@
 import os
 import time
+import copy
 import logging
 import random
 import numpy as np
@@ -10,7 +11,7 @@ from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 from omegaconf import OmegaConf
 from monai import transforms
-from monai.metrics import compute_generalized_dice, compute_iou
+from monai.metrics import compute_generalized_dice, compute_iou, compute_roc_auc
 
 from horao_dataset import HORAO
 from utils.weighted_bce import WeightedDiceBCE
@@ -145,7 +146,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
     if branch_type == 'test':
         return preds, truth, metrics_dict
     else:
-        return model, mm_model, step
+        return model, mm_model, metrics_dict, step
 
 
 if __name__ == '__main__':
@@ -257,13 +258,20 @@ if __name__ == '__main__':
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = 0, 0
+    best_model, best_epoch_score = model, 0
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
-            model, mm_model, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
+            model, mm_model, metrics_dict, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
         # validation
         with torch.no_grad():
-            model, mm_model, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=1, epoch=epoch)
+            model, mm_model, metrics_dict, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=1, epoch=epoch)
+
+        # best model selection
+        if best_epoch_score < metrics_dict['dice']:
+            best_epoch_score = metrics_dict['dice']
+            best_model = copy.deepcopy(model).eval()
+            best_mm_model = copy.deepcopy(mm_model).eval()
 
         if cfg.logging:
             histograms = {}
@@ -287,13 +295,16 @@ if __name__ == '__main__':
     if cfg.logging:
         dir_checkpoint = Path('./ckpts/')
         dir_checkpoint.mkdir(parents=True, exist_ok=True)
-        state_dict = model.state_dict()
+        state_dict = best_model.state_dict()
         torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pth'.format(epoch)))))
+        if cfg.kernel_size > 0:
+            state_dict_mm = best_mm_model.state_dict()
+            torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pth'.format(epoch)))))
         logging.info(f'Checkpoint {epoch} saved!')
 
     # perform test
     dataset = HORAO(cfg.data_dir, 'test.txt', transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
-    th = get_threshold(cfg, val_set, model, mm_model)
+    th = get_threshold(cfg, val_set, best_model, best_mm_model)
     if cfg.logging: wb.log({'th': th})
     from test import test_main
-    test_main(cfg, dataset, model, mm_model, th=th)
+    test_main(cfg, dataset, best_model, best_mm_model, th=th)
