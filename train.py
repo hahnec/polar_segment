@@ -79,7 +79,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
     # binarize predictions
     if cfg.labeled_only and truth.shape[1] == 2:
         preds_b = torch.zeros_like(truth)
-        preds_b[preds.argmax(1, keepdim=True)] = 1
+        preds_b[..., preds.argmax(1).squeeze()] = 1
     else:
         th = 0.5 if th is None else th
         preds_b = preds>th

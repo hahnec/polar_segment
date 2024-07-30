@@ -25,11 +25,20 @@ def test_main(cfg, dataset, model, mm_model, th):
     with torch.no_grad():
         preds, truth, metrics = epoch_branch(cfg, dataloader, model, mm_model, branch_type='test', th=th)
 
+    # binarize predictions
+    if cfg.labeled_only and truth.shape[1] == 2:
+        preds_b = torch.zeros_like(truth)
+        preds_b[..., preds.argmax(1).squeeze()] = 1
+    else:
+        th = 0.5 if th is None else th
+        preds_b = preds > th
+
     # pixel-wise assessment
+    m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape).flatten()
     y_true = truth.moveaxis(1, 0).flatten(start_dim=1).cpu().numpy()
-    y_pred = torch.stack([(preds[:, i]>th[:, i]).flatten() for i in range(preds.shape[1])]).cpu().numpy()
+    y_pred = preds_b.moveaxis(1, 0).flatten(start_dim=1).cpu().numpy()
     from sklearn.metrics import classification_report
-    report = classification_report(y_pred.T, y_true.T, target_names=['bg', 'benign', 'malignant'][-preds.shape[1]:], digits=4, output_dict=bool(cfg.logging))
+    report = classification_report(y_pred[:, m].T, y_true[:, m].T, target_names=['bg', 'benign', 'malignant'][-preds.shape[1]:], digits=4, output_dict=bool(cfg.logging))
 
     if cfg.logging:
         # convert report to wandb table
@@ -141,5 +150,5 @@ if __name__ == '__main__':
         ''')
     
     from utils.find_threshold import get_threshold
-    th = get_threshold(cfg, dataset, model, mm_model)
+    th = get_threshold(cfg, dataset, model, mm_model) if not cfg.label_only else None
     test_main(cfg, dataset, model, mm_model, th=th)
