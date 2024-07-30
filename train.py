@@ -56,9 +56,11 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         t_s = time.perf_counter() - t_s
         if cfg.labeled_only:
             # skip unlabeled pixels
-            m = torch.any(truth, dim=1, keepdim=True).squeeze().bool()
-            preds, truth = preds[..., m], truth[..., m]
-        loss = criterion(preds, truth) if criterion else None
+            m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1).bool()
+            p, t = preds[m], truth[m]
+        else:
+            p, t = preds, truth
+        loss = criterion(p, t) if criterion else None
 
     if train_opt:
         if True:
@@ -74,10 +76,17 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         else:
             loss.backward()
 
+    # binarize predictions
+    if cfg.labeled_only and truth.shape[1] == 2:
+        preds_b = torch.zeros_like(truth)
+        preds_b[preds.argmax(1, keepdim=True)] = 1
+    else:
+        th = 0.5 if th is None else th
+        preds_b = preds>th
+
     # metrics
-    th = 0.5 if th is None else th
-    dice = compute_generalized_dice(preds>th, truth, include_background=cfg.bg_opt)
-    iou = compute_iou(preds>th, truth, include_background=cfg.bg_opt, ignore_empty=False)
+    dice = compute_generalized_dice(preds_b, truth, include_background=cfg.bg_opt)
+    iou = compute_iou(preds_b, truth, include_background=cfg.bg_opt, ignore_empty=False)
     metrics = {'dice': dice, 'iou': iou, 't_s': torch.tensor([t_s])}
 
     return loss, preds, metrics, imgs
