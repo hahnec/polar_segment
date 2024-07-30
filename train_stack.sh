@@ -6,8 +6,6 @@ python train.py group=$1 model=mlp lr=1e-3 levels=1 kernel_size=0
 python train.py group=$1 model=mlp lr=1e-3 levels=1 kernel_size=3
 python train.py group=$1 model=mlp lr=1e-3 levels=3 kernel_size=3
 python train.py group=$1 model=mlp lr=1e-3 levels=3 kernel_size=3 activation=True
-python train.py group=$1 model=mlp lr=1e-3 levels=5 kernel_size=3
-python train.py group=$1 model=mlp lr=1e-3 levels=5 kernel_size=0
 # U-net
 python train.py group=$1 model=unet levels=1 kernel_size=0
 python train.py group=$1 model=unet levels=3 kernel_size=0 method=averaging
