@@ -11,7 +11,6 @@ from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 from omegaconf import OmegaConf
 from monai import transforms
-from monai.metrics import compute_generalized_dice, compute_iou, compute_roc_auc
 
 from horao_dataset import HORAO
 from utils.weighted_bce import WeightedDiceBCE
@@ -50,17 +49,14 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         mask = frames[:, -wnum:].unsqueeze(1)
         frames = frames[:, :-wnum]
 
+    # skip unlabeled pixels
+    m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1).bool() if cfg.labeled_only else torch.ones_like(truth)
+
     with torch.autocast(cfg.device if cfg.device != 'mps' else 'cpu', enabled=cfg.amp):
         t_s = time.perf_counter()
         preds = model(frames)
         t_s = time.perf_counter() - t_s
-        if cfg.labeled_only and False:
-            # skip unlabeled pixels
-            m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1).bool()
-            p, t = preds[m], truth[m]
-        else:
-            p, t = preds, truth
-        loss = criterion(p, t) if criterion and len(p) > 0 else torch.tensor(float('nan'))
+        loss = criterion(preds, truth) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
 
     if train_opt and not torch.isnan(loss):
         if True:
@@ -85,8 +81,9 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         preds_b = preds>th
 
     # metrics
-    dice = compute_generalized_dice(preds_b, truth, include_background=True)
-    iou = compute_iou(preds_b, truth, include_background=True, ignore_empty=False)
+    from utils.metrics import compute_dice_score, compute_iou
+    dice = compute_dice_score(preds_b, truth, mask=m).unsqueeze(0)
+    iou = compute_iou(preds_b, truth, mask=m).unsqueeze(0)
     metrics = {'dice': dice, 'iou': iou, 't_s': torch.tensor([t_s])}
 
     return loss, preds, metrics, imgs
