@@ -280,7 +280,8 @@ if __name__ == '__main__':
         if best_epoch_score < metrics_dict['dice']:
             best_epoch_score = metrics_dict['dice']
             best_model = copy.deepcopy(model).eval()
-            best_mm_model = copy.deepcopy(mm_model).eval()
+            if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
+                best_mm_model = copy.deepcopy(mm_model).eval()
 
         if cfg.logging:
             histograms = {}
@@ -306,7 +307,7 @@ if __name__ == '__main__':
         dir_checkpoint.mkdir(parents=True, exist_ok=True)
         state_dict = best_model.state_dict()
         torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pth'.format(epoch)))))
-        if cfg.kernel_size > 0:
+        if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
             state_dict_mm = best_mm_model.state_dict()
             torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pth'.format(epoch)))))
         logging.info(f'Checkpoint {epoch} saved!')
