@@ -56,7 +56,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         t_s = time.perf_counter()
         preds = model(frames)
         t_s = time.perf_counter() - t_s
-        loss = criterion(preds, truth) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
+        loss = criterion(preds[m], truth[m]) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
 
     if train_opt and not torch.isnan(loss):
         if True:
