@@ -66,7 +66,7 @@ class HORAO(Dataset):
         return string_map.get(input_string, input_string)
 
     def __len__(self):
-        return len(self.ids)(255*labels[..., 1])
+        return len(self.ids)
 
     def __getitem__(self, i):
 
@@ -112,7 +112,7 @@ class HORAO(Dataset):
                     frame, mask = specular_removal_cv(np.array(intensity, dtype=np.float32), size=4, method='navier')
                     #from utils.specular_removal_torch import specular_removal_t
                     #frame = specular_removal_t(frame, intensity>65530)
-                labels[mask.astype(bool), :] = 0
+                labels[mask.astype(bool), :] = 0    # mask clipped areas
                 # calibration
                 amat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'A'))
                 wmat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'W'))
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     feat_keys = ['azimuth', 'std', 'tot_P']
 
     img_list = []
-    for data_type in ['polarimetry', 'raw_data']:
+    for data_type in ['raw_data', 'polarimetry']:
         dataset = HORAO(base_dir, 'val1.txt', bg_opt=bg_opt, data_subfolder=data_type, keys=feat_keys, wlens=[550])
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
