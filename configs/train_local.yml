@@ -39,6 +39,7 @@ feature_keys:
   - intensity
   - azimuth
   - std
+  - totp
 wlens:
   - 550
 
