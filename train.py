@@ -50,7 +50,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         frames = frames[:, :-wnum]
 
     # skip unlabeled pixels
-    m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1).bool() if cfg.labeled_only else torch.ones_like(truth)
+    m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1).bool() if cfg.labeled_only else torch.ones_like(truth, dtype=bool)
 
     with torch.autocast(cfg.device if cfg.device != 'mps' else 'cpu', enabled=cfg.amp):
         t_s = time.perf_counter()
