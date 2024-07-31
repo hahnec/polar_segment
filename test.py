@@ -27,7 +27,7 @@ def test_main(cfg, dataset, model, mm_model, th):
 
     # pixel-wise assessment
     n_channels = int(preds.shape[1])
-    m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape).flatten()
+    m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
     y_true = truth.argmax(1).flatten().cpu().numpy()
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     from sklearn.metrics import classification_report
