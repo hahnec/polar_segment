@@ -12,6 +12,9 @@ def compute_dice_score(preds, truth, mask):
     Returns:
     - dice_score (float): Dice score for valid pixels
     """
+
+    mask = mask.bool()
+    
     # Flatten the tensors
     pred_flat = preds[mask].view(-1)
     target_flat = truth[mask].view(-1)
@@ -33,6 +36,9 @@ def compute_iou(preds, truth, mask):
     Returns:
     - iou (float): IoU for valid pixels
     """
+
+    mask = mask.bool()
+
     # Flatten the tensors
     pred_flat = preds[mask].view(-1)
     target_flat = truth[mask].view(-1)

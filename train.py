@@ -50,13 +50,13 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         frames = frames[:, :-wnum]
 
     # skip unlabeled pixels
-    m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1).bool() if cfg.labeled_only else torch.ones_like(truth, dtype=bool)
+    m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1) if cfg.labeled_only else torch.ones_like(truth)
 
     with torch.autocast(cfg.device if cfg.device != 'mps' else 'cpu', enabled=cfg.amp):
         t_s = time.perf_counter()
         preds = model(frames)
         t_s = time.perf_counter() - t_s
-        loss = criterion(preds[m], truth[m]) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
+        loss = criterion(preds*m, truth*m) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
 
     if train_opt and not torch.isnan(loss):
         if True:
