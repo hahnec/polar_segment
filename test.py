@@ -25,20 +25,13 @@ def test_main(cfg, dataset, model, mm_model, th):
     with torch.no_grad():
         preds, truth, metrics = epoch_branch(cfg, dataloader, model, mm_model, branch_type='test', th=th)
 
-    # binarize predictions
-    if cfg.labeled_only and truth.shape[1] == 2:
-        preds_b = torch.zeros_like(truth)
-        preds_b[..., preds.argmax(1).squeeze()] = 1
-    else:
-        th = 0.5 if th is None else th
-        preds_b = preds > th
-
     # pixel-wise assessment
+    n_channels = int(preds.shape[1])
     m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape).flatten()
     y_true = truth.argmax(1).flatten().cpu().numpy()
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     from sklearn.metrics import classification_report
-    report = classification_report(y_true[m], y_pred[m], target_names=['bg', 'benign', 'malignant'][-preds.shape[1]:], digits=4, output_dict=bool(cfg.logging))
+    report = classification_report(y_true[m], y_pred[m], target_names=['bg', 'malignant', 'benign'][-n_channels:], digits=4, output_dict=bool(cfg.logging))
 
     if cfg.logging:
         # convert report to wandb table
