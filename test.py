@@ -19,7 +19,7 @@ def test_main(cfg, dataset, model, mm_model, th):
 
     # create data loaders
     num_workers = min(2, os.cpu_count())
-    loader_args = dict(batch_size=1, num_workers=num_workers, pin_memory=True)
+    loader_args = dict(batch_size=len(dataset), num_workers=num_workers, pin_memory=True)
     dataloader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
 
     with torch.no_grad():
@@ -35,10 +35,10 @@ def test_main(cfg, dataset, model, mm_model, th):
 
     # pixel-wise assessment
     m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape).flatten()
-    y_true = truth.moveaxis(1, 0).flatten(start_dim=1).cpu().numpy()
-    y_pred = preds_b.moveaxis(1, 0).flatten(start_dim=1).cpu().numpy()
+    y_true = truth.argmax(1).flatten().cpu().numpy()
+    y_pred = preds.argmax(1).flatten().cpu().numpy()
     from sklearn.metrics import classification_report
-    report = classification_report(y_pred[:, m].T, y_true[:, m].T, target_names=['bg', 'benign', 'malignant'][-preds.shape[1]:], digits=4, output_dict=bool(cfg.logging))
+    report = classification_report(y_true[m], y_pred[m], target_names=['bg', 'benign', 'malignant'][-preds.shape[1]:], digits=4, output_dict=bool(cfg.logging))
 
     if cfg.logging:
         # convert report to wandb table
