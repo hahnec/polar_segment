@@ -54,7 +54,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         t_s = time.perf_counter()
         preds = model(frames)
         t_s = time.perf_counter() - t_s
-        if cfg.labeled_only:
+        if cfg.labeled_only and False:
             # skip unlabeled pixels
             m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1).bool()
             p, t = preds[m], truth[m]
