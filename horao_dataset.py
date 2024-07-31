@@ -66,7 +66,7 @@ class HORAO(Dataset):
         return string_map.get(input_string, input_string)
 
     def __len__(self):
-        return len(self.ids)
+        return len(self.ids)(255*labels[..., 1])
 
     def __getitem__(self, i):
 
@@ -112,7 +112,7 @@ class HORAO(Dataset):
                     frame, mask = specular_removal_cv(np.array(intensity, dtype=np.float32), size=4, method='navier')
                     #from utils.specular_removal_torch import specular_removal_t
                     #frame = specular_removal_t(frame, intensity>65530)
-                labels[mask[..., None].repeat(labels.shape[-1], -1)] = 0
+                labels[mask.astype(bool), :] = 0
                 # calibration
                 amat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'A'))
                 wmat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'W'))
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     patch_size = 4
     bg_opt = 1
     base_dir = '/media/chris/EB62-383C/TumorMeasurementsCalib/'
-    feat_keys = ['azimuth', 'std', 'mask']
+    feat_keys = ['azimuth', 'std', 'tot_P']
 
     img_list = []
     for data_type in ['polarimetry', 'raw_data']:
@@ -199,7 +199,7 @@ if __name__ == '__main__':
                 t_total = time.perf_counter() -t
                 print('MM processing time: %s' % str(t_total))
 
-            if False:
+            if True:
                 import matplotlib.pyplot as plt
                 fig, axs = plt.subplots(1, 4)
                 axs[0].set_title(['healthy', 'tumor'][label[0]])
