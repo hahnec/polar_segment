@@ -85,8 +85,8 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         preds_b = preds>th
 
     # metrics
-    dice = compute_generalized_dice(preds_b, truth, include_background=cfg.bg_opt)
-    iou = compute_iou(preds_b, truth, include_background=cfg.bg_opt, ignore_empty=False)
+    dice = compute_generalized_dice(preds_b, truth, include_background=True)
+    iou = compute_iou(preds_b, truth, include_background=True, ignore_empty=False)
     metrics = {'dice': dice, 'iou': iou, 't_s': torch.tensor([t_s])}
 
     return loss, preds, metrics, imgs
