@@ -44,13 +44,14 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         imgs = frames[:, p_indices]
         frames = frames[:, n_indices]
 
-    if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
-        # remove the feasibility mask from the features
-        mask = frames[:, -wnum:].unsqueeze(1)
-        frames = frames[:, :-wnum]
-
     # skip unlabeled pixels
     m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1) if cfg.labeled_only else torch.ones_like(truth)
+
+    if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
+        # remove the feasibility mask from the features
+        mask = frames[:, -wnum:]
+        frames = frames[:, :-wnum]
+        m = (m.float() * mask).bool()
 
     with torch.autocast(cfg.device if cfg.device != 'mps' else 'cpu', enabled=cfg.amp):
         t_s = time.perf_counter()
