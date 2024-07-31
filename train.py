@@ -134,9 +134,13 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
             
             # log all test images
             if cfg.logging and branch_type == 'test':
-                frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=th)
-                wandb.log({'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption="blue: healthy; orange: tumor;"), branch_type+'_step': step})
-                wandb.log({'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), branch_type+'_step': step})
+                for bidx in range(truth.shape[0]):
+                    frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
+                    wandb.log({
+                        'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption="blue: healthy; orange: tumor;"),
+                        'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 
+                        branch_type+'_step': step+bidx
+                    })
 
             # metrics extension
             for k in metrics_dict.keys():
