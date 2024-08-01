@@ -16,8 +16,8 @@ def compute_dice_score(preds, truth, mask=None):
     if mask is not None: mask = mask.bool()
 
     # Flatten the tensors
-    preds_flat = preds[mask].reshape(-1) if mask is not None else preds.reshape(-1)
-    truth_flat = truth[mask].reshape(-1) if mask is not None else truth.reshape(-1)
+    preds_flat = preds[mask].flatten() if mask is not None else preds.flatten()
+    truth_flat = truth[mask].flatten() if mask is not None else truth.flatten()
     
     intersection = (preds_flat * truth_flat).sum()
     dice_score = (2. * intersection) / (preds_flat.sum() + truth_flat.sum())
@@ -40,8 +40,8 @@ def compute_iou(preds, truth, mask=None):
     if mask is not None: mask = mask.bool()
 
     # Flatten the tensors
-    preds_flat = preds[mask].reshape(-1) if mask is not None else preds.reshape(-1)
-    truth_flat = truth[mask].reshape(-1) if mask is not None else truth.reshape(-1)
+    preds_flat = preds[mask].flatten() if mask is not None else preds.flatten()
+    truth_flat = truth[mask].flatten() if mask is not None else truth.flatten()
     
     intersection = (preds_flat * truth_flat).sum()
     union = preds_flat.sum() + truth_flat.sum() - intersection
@@ -53,8 +53,8 @@ def compute_accuracy(preds, truth, mask=None):
 
     if mask is not None: mask = mask.bool()
 
-    preds_flat = preds[mask].reshape(-1) if mask is not None else preds.reshape(-1)
-    truth_flat = truth[mask].reshape(-1) if mask is not None else truth.reshape(-1)
+    preds_flat = preds[mask].flatten() if mask is not None else preds.flatten()
+    truth_flat = truth[mask].flatten() if mask is not None else truth.flatten()
     
     eq_map = torch.eq(preds_flat, truth_flat)
     acc = eq_map.sum() / len(eq_map)
