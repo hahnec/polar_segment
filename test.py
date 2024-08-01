@@ -34,17 +34,17 @@ def test_main(cfg, dataset, model, mm_model, th):
     report = classification_report(y_true[m], y_pred[m], target_names=['bg', 'malignant', 'benign'][-n_channels:], digits=4, output_dict=bool(cfg.logging))
 
     if cfg.logging:
+        # upload other metrics to wandb
+        wandb.log(metrics)
+        wandb.log({'accuracy': metrics['acc']})
+        table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
+        wandb.log({'metrics': table_metrics})
         # convert report to wandb table
         flat_report = flatten_dict_to_rows(report)
         table_report = wandb.Table(columns=['category', 'precision', 'recall', 'f1-score', 'support', 'accuracy'])
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
-        wandb.log({'accuracy': metrics['acc']})
-        # upload other metrics to wandb
-        wandb.log(metrics)
-        table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
-        wandb.log({'metrics': table_metrics})
     else: 
         with open('./results.txt', "a") as f:
             f.write(report)
