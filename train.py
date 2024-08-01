@@ -60,7 +60,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         loss = criterion(preds*m, truth*m) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
 
     if train_opt and not torch.isnan(loss):
-        if True:
+        if False:
             optimizer.zero_grad(set_to_none=True)
             scale = grad_scaler.get_scale()
             grad_scaler.update()
@@ -267,7 +267,7 @@ if __name__ == '__main__':
     # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
-    criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
+    criterion = torch.nn.CrossEntropyLoss() #WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = 0, 0
