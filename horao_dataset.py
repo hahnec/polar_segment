@@ -166,7 +166,7 @@ if __name__ == '__main__':
     patch_size = 4
     bg_opt = 1
     base_dir = '/media/chris/EB62-383C/TumorMeasurementsCalib/'
-    feat_keys = ['azimuth', 'std', 'tot_P']
+    feat_keys = ['totp', 'azimuth', 'std']
 
     img_list = []
     for data_type in ['raw_data', 'polarimetry']:
@@ -174,7 +174,7 @@ if __name__ == '__main__':
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
         from mm.models import MuellerMatrixPyramid as MMM
-        mm_model = MMM(feature_keys=feat_keys, perc=.95, levels=3, kernel_size=0, method='averaging', wnum=len(dataset.wlens))
+        mm_model = MMM(feature_keys=feat_keys, perc=.95, levels=1, kernel_size=0, method='averaging', wnum=len(dataset.wlens), mask_fun=None, filter_opt=True)
 
         bg_pixels = 0
         tumor_pixels = 0
