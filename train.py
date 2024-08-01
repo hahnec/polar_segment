@@ -92,7 +92,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
 
 def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
-    criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
+    criterion = torch.nn.CrossEntropyLoss() #WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     train_opt = 0 if optimizer is None else 1
     model.train() if train_opt else model.eval()
     batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, th=th, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
@@ -267,7 +267,6 @@ if __name__ == '__main__':
     # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
-    criterion = torch.nn.CrossEntropyLoss() #WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = 0, 0
