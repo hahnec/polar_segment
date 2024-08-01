@@ -280,8 +280,8 @@ if __name__ == '__main__':
             model, mm_model, metrics_dict, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=1, epoch=epoch)
 
         # best model selection
-        if best_epoch_score < metrics_dict['dice']:
-            best_epoch_score = metrics_dict['dice']
+        if best_epoch_score < metrics_dict['acc']:
+            best_epoch_score = metrics_dict['acc']
             best_model = copy.deepcopy(model).eval()
             if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
                 best_mm_model = copy.deepcopy(mm_model).eval()
