@@ -118,10 +118,11 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
                     branch_type+'_loss': loss.item(),
                     branch_type+'_dice': metrics['dice'].mean().item(),
                     branch_type+'_iou ': metrics['iou'].mean().item(),
+                    branch_type+'_acc ': metrics['acc'].mean().item(),
                     branch_type+'_step': step,
                 })
 
-            score = metrics['dice']
+            score = metrics['acc']
             if torch.any(score > best_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmax()
                 best_score = score[bidx]
