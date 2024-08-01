@@ -60,7 +60,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         loss = criterion(preds*m, truth*m) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
 
     if train_opt and not torch.isnan(loss):
-        if False:
+        if True:
             optimizer.zero_grad(set_to_none=True)
             scale = grad_scaler.get_scale()
             grad_scaler.update()
@@ -92,7 +92,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
 
 def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
-    criterion = torch.nn.CrossEntropyLoss() #WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
+    criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     train_opt = 0 if optimizer is None else 1
     model.train() if train_opt else model.eval()
     batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, th=th, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
