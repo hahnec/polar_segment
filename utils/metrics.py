@@ -1,6 +1,6 @@
 import torch
 
-def compute_dice_score(preds, truth, mask):
+def compute_dice_score(preds, truth, mask=None):
     """
     Compute the Dice score for valid pixels.
 
@@ -13,18 +13,18 @@ def compute_dice_score(preds, truth, mask):
     - dice_score (float): Dice score for valid pixels
     """
 
-    mask = mask.bool()
+    if mask is not None: mask = mask.bool()
 
     # Flatten the tensors
-    pred_flat = preds[mask].view(-1)
-    target_flat = truth[mask].view(-1)
+    preds_flat = preds[mask].view(-1) if mask is not None else preds.view(-1)
+    truth_flat = truth[mask].view(-1) if mask is not None else truth.view(-1)
     
-    intersection = (pred_flat * target_flat).sum()
-    dice_score = (2. * intersection) / (pred_flat.sum() + target_flat.sum())
+    intersection = (preds_flat * truth_flat).sum()
+    dice_score = (2. * intersection) / (preds_flat.sum() + truth_flat.sum())
     
     return dice_score
 
-def compute_iou(preds, truth, mask):
+def compute_iou(preds, truth, mask=None):
     """
     Compute the IoU for valid pixels.
 
@@ -37,14 +37,14 @@ def compute_iou(preds, truth, mask):
     - iou (float): IoU for valid pixels
     """
 
-    mask = mask.bool()
+    if mask is not None: mask = mask.bool()
 
     # Flatten the tensors
-    pred_flat = preds[mask].view(-1)
-    target_flat = truth[mask].view(-1)
+    preds_flat = preds[mask].view(-1) if mask is not None else preds.view(-1)
+    truth_flat = truth[mask].view(-1) if mask is not None else truth.view(-1)
     
-    intersection = (pred_flat * target_flat).sum()
-    union = pred_flat.sum() + target_flat.sum() - intersection
+    intersection = (preds_flat * truth_flat).sum()
+    union = preds_flat.sum() + truth_flat.sum() - intersection
     iou = intersection / union
     
     return iou
