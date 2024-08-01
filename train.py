@@ -99,7 +99,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
     desc = f'Steps {len(dataloader.dataset)}' if epoch is None else f'Epoch {epoch}/{cfg.epochs}'
 
     step = 0 if step is None else step
-    metrics_dict = {'dice': [], 'iou': [], 't_mm': [], 't_s': []}
+    metrics_dict = {'dice': [], 'iou': [], 'acc': [], 't_mm': [], 't_s': []}
     best_score, best_frame_pred, best_frame_mask = 0, None, None
     poor_score, poor_frame_pred, poor_frame_mask = 1, None, None
     with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
