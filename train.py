@@ -278,7 +278,7 @@ if __name__ == '__main__':
             model, mm_model, metrics_dict, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
         # validation
         with torch.no_grad():
-            model, mm_model, metrics_dict, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=1, epoch=epoch)
+            model, mm_model, metrics_dict, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet', epoch=epoch)
 
         # best model selection
         if best_epoch_score < metrics_dict['acc']:
