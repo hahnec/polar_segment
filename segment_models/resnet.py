@@ -10,6 +10,7 @@ class PatchResNet(nn.Module):
         self.patch_size = patch_size
         self.step_size = 1
         self.testing = testing
+        self.n_classes = n_classes
 
     def forward(self, x):
         if not self.testing:
@@ -23,7 +24,8 @@ class PatchResNet(nn.Module):
             patches = x_padded.unfold(2, self.patch_size, self.step_size).unfold(3, self.patch_size, self.step_size)
             
             s = 1
-            y = torch.zeros_like(x)
+            b, _, h, w = x.shape
+            y = torch.zeros(b, self.n_classes, h, w)
             for i in range(0, x.size(3), s):
                 # Reshape patches to (batch_size * num_patches_y * num_patches_x, channels, patch_size, patch_size)
                 p = patches[:, :, :, i*s:(i+1)*s].permute(0, 2, 3, 1, 4, 5).contiguous()
