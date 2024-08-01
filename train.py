@@ -198,6 +198,31 @@ if __name__ == '__main__':
     # mueller matrix model
     mm_model = init_mm_model(cfg) if cfg.data_subfolder.__contains__('raw') else None
 
+    # model selection
+    n_channels = mm_model.ochs - cfg.levels*len(cfg.wlens) if cfg.data_subfolder.__contains__('raw') else len([k for k in cfg.feature_keys if k != 'intensity'])
+    if cfg.model == 'mlp':
+        from segment_models.mlp import MLP
+        model = MLP(n_channels=n_channels, n_classes=2+cfg.bg_opt)
+    elif cfg.model == 'resnet':
+        from horao_dataset import PatchHORAO as HORAO
+        from segment_models.resnet import PatchResNet
+        model = PatchResNet(n_channels=n_channels, n_classes=2+cfg.bg_opt, patch_size=50)
+    elif cfg.model == 'unet':
+        from segment_models.unet import UNet
+        model = UNet(n_channels=n_channels, n_classes=2+cfg.bg_opt, shallow=cfg.shallow)
+    elif cfg.model == 'unetpp':
+        from segment_models.unet_pp import get_pretrained_unet_pp
+        model = get_pretrained_unet_pp(n_channels, out_channels=2+cfg.bg_opt)
+    elif cfg.model == 'uctransnet':
+        from segment_models.uctransnet.UCTransNet import UCTransNet
+        from segment_models.uctransnet.Config import get_CTranS_config
+        model = UCTransNet(n_channels=n_channels, n_classes=2+cfg.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
+    else:
+        raise Exception('Model %s not recognized' % cfg.model)
+
+    model = model.to(memory_format=torch.channels_last)
+    model.to(device=cfg.device)
+
     # create dataset
     dataset = HORAO(cfg.data_dir, 'train1.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     if (Path(cfg.data_dir) / 'cases' / 'val1.txt').exists():
@@ -213,30 +238,6 @@ if __name__ == '__main__':
     loader_args = dict(batch_size=cfg.batch_size, num_workers=num_workers, pin_memory=True)
     train_loader = DataLoader(dataset, shuffle=True, drop_last=False, **loader_args)
     valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, **loader_args)
-
-    # model selection
-    n_channels = mm_model.ochs - cfg.levels*len(cfg.wlens) if cfg.data_subfolder.__contains__('raw') else len([k for k in dataset.keys if k != 'intensity'])
-    if cfg.model == 'mlp':
-        from segment_models.mlp import MLP
-        model = MLP(n_channels=n_channels, n_classes=2+dataset.bg_opt)
-    elif cfg.model == 'resnet':
-        from segment_models.resnet import PatchResNet
-        model = PatchResNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, patch_size=50)
-    elif cfg.model == 'unet':
-        from segment_models.unet import UNet
-        model = UNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, shallow=cfg.shallow)
-    elif cfg.model == 'unetpp':
-        from segment_models.unet_pp import get_pretrained_unet_pp
-        model = get_pretrained_unet_pp(n_channels, out_channels=2+dataset.bg_opt)
-    elif cfg.model == 'uctransnet':
-        from segment_models.uctransnet.UCTransNet import UCTransNet
-        from segment_models.uctransnet.Config import get_CTranS_config
-        model = UCTransNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
-    else:
-        raise Exception('Model %s not recognized' % cfg.model)
-
-    model = model.to(memory_format=torch.channels_last)
-    model.to(device=cfg.device)
 
     if cfg.model_file is not None:
         ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.model_file.split('_')[0])]
@@ -316,6 +317,9 @@ if __name__ == '__main__':
         logging.info(f'Checkpoint {epoch} saved!')
 
     # perform test
+    if cfg.model == 'resnet': 
+        best_model.testing = True
+        from horao_dataset import HORAO
     dataset = HORAO(cfg.data_dir, 'test.txt', transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     th = get_threshold(cfg, val_set, best_model, best_mm_model) if not cfg.labeled_only else None
     if cfg.logging: wb.log({'th': th})

@@ -1,6 +1,7 @@
+import torch
+from torch.utils.data import Dataset
 import numpy as np
 from pathlib import Path
-from torch.utils.data import Dataset
 from PIL import Image
 
 
@@ -151,11 +152,30 @@ class HORAO(Dataset):
 
         return frames, labels, img_class
 
+class PatchHORAO(HORAO):
+    def __init__(self, *args, **kwargs):
+        self.patch_size = kwargs.pop('patch_size', 50)
+        super(PatchHORAO, self).__init__(*args, **kwargs)
+        self.b = self.patch_size // 2
+
+    def __getitem__(self, i):
+        # run through conventional dataloader
+        frames, labels, img_class = super().__getitem__(i)
+        
+        # get 2d-coordinate pair from a labeled pixel
+        binary_map_crop = torch.any(labels, 0)[self.b:-self.b, self.b:-self.b]
+        non_zero_indices = torch.nonzero(binary_map_crop, as_tuple=False)
+        random_index = torch.randint(0, non_zero_indices.size(0), (1,)).item()
+        coords = non_zero_indices[random_index] + self.b
+
+        # select patch based on 2d-coordinate
+        patch = frames[:, coords[0]-self.b:coords[0]+self.b, coords[1]-self.b:coords[1]+self.b]
+        
+        return patch, labels[:, coords[0], coords[1]], img_class
 
 if __name__ == '__main__':
 
     import time
-    import torch
     import random
     from torch.utils.data import DataLoader
 
