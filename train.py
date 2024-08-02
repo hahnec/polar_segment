@@ -75,17 +75,17 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
 
     # binarize predictions
     if cfg.labeled_only and truth.shape[1] == 2:
-        preds_b = torch.zeros_like(truth)
-        preds_b[..., preds.argmax(1).squeeze()] = 1
+        truth_b = truth.argmax(1)
+        preds_b = preds.argmax(1)
     else:
         th = 0.5 if th is None else th
         preds_b = preds>th
 
     # metrics
     from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
-    dice = compute_dice_score(preds_b, truth, mask=m).unsqueeze(0)
-    iou = compute_iou(preds_b, truth, mask=m).unsqueeze(0)
-    acc = compute_accuracy(preds_b, truth, mask=m).unsqueeze(0)
+    dice = compute_dice_score(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
+    iou = compute_iou(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
+    acc = compute_accuracy(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
     metrics = {'dice': dice, 'iou': iou, 'acc': acc, 't_s': torch.tensor([t_s])}
 
     return loss, preds, metrics, imgs
