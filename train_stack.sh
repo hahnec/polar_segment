@@ -1,8 +1,8 @@
 # resnet
-python train.py group=$1 model=resnet batch_size=1 lr=1e-5 levels=1 kernel_size=0
-python train.py group=$1 model=resnet batch_size=1 lr=1e-5 levels=1 kernel_size=0 data_subfolder=polarimetry_PDDN 
+python train.py group=$1 model=resnet lr=1e-5 levels=1 kernel_size=0
+python train.py group=$1 model=resnet lr=1e-5 levels=1 kernel_size=0 data_subfolder=polarimetry_PDDN 
 # U-net
-python train.py group=$0 model=unet levels=1 kernel_size=0
+python train.py group=$1 model=unet levels=1 kernel_size=0
 python train.py group=$1 model=unet levels=3 kernel_size=0 method=averaging
 python train.py group=$1 model=unet levels=3 kernel_size=3 activation=True
 python train.py group=$1 model=unetpp levels=1 kernel_size=0 crop=224
