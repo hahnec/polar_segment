@@ -106,7 +106,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
             loss, preds, metrics, imgs = batch_it(frames, truth)
-            metrics['t_mm'] = torch.tensor([t_mm])
+            metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             pbar.set_postfix(**{'loss (batch)': loss.item()})
             pbar.update(batch[0].shape[0])
