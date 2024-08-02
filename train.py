@@ -32,7 +32,7 @@ def batch_preprocess(batch, cfg):
 
     return frames, truth
 
-def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
+def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
     imgs = None
     wnum = len(cfg.wlens)
@@ -45,7 +45,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
         frames = frames[:, n_indices]
 
     # initialize label selection
-    m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1) if False else torch.ones_like(truth)
+    m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1) if cfg.labeled_only else torch.ones_like(truth)
 
     if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
         # remove the feasibility mask from the features
@@ -76,13 +76,14 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
     # binarize predictions
     truth_b = truth.argmax(1)
     preds_b = preds.argmax(1)
+    mask = torch.any(truth, dim=1)
 
     # metrics
     from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
-    dice = compute_dice_score(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
-    iou = compute_iou(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
-    acc = compute_accuracy(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
-    metrics = {'dice': dice, 'iou': iou, 'acc': acc, 't_s': torch.tensor([t_s])}
+    dice = compute_dice_score(preds_b, truth_b, mask=mask).unsqueeze(0)
+    iou = compute_iou(preds_b, truth_b, mask=mask).unsqueeze(0)
+    acc = compute_accuracy(preds_b, truth_b, mask=mask).unsqueeze(0)
+    metrics = {'dice': dice, 'iou': iou, 'acc': acc, 't_s': torch.tensor([t_s/frames.size(0)])}
 
     return loss, preds, metrics, imgs
 
@@ -91,7 +92,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     train_opt = 0 if optimizer is None else 1
     model.train() if train_opt else model.eval()
-    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, th=th, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
+    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
     desc = f'Steps {len(dataloader.dataset)}' if epoch is None else f'Epoch {epoch}/{cfg.epochs}'
 
     step = 0 if step is None else step
