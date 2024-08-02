@@ -32,7 +32,7 @@ def batch_preprocess(batch, cfg):
 
     return frames, truth
 
-def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
+def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
     imgs = None
     wnum = len(cfg.wlens)
@@ -76,13 +76,14 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
     # binarize predictions
     truth_b = truth.argmax(1)
     preds_b = preds.argmax(1)
+    mask = torch.any(truth, dim=1)
 
     # metrics
     from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
-    dice = compute_dice_score(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
-    iou = compute_iou(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
-    acc = compute_accuracy(preds_b, truth_b, mask=m[:, 0]).unsqueeze(0)
-    metrics = {'dice': dice, 'iou': iou, 'acc': acc, 't_s': torch.tensor([t_s])}
+    dice = compute_dice_score(preds_b, truth_b, mask=mask).unsqueeze(0)
+    iou = compute_iou(preds_b, truth_b, mask=mask).unsqueeze(0)
+    acc = compute_accuracy(preds_b, truth_b, mask=mask).unsqueeze(0)
+    metrics = {'dice': dice, 'iou': iou, 'acc': acc, 't_s': torch.tensor([t_s/frames.size(0)])}
 
     return loss, preds, metrics, imgs
 
