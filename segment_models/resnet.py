@@ -28,7 +28,7 @@ class PatchResNet(nn.Module):
             b, _, h, w = x.shape
             y = torch.zeros(b, self.n_classes, h, w, device=x.device, dtype=x.dtype)
             for b in tqdm(range(0, x.size(0))):
-                for i in range(0, x.size(3)//s, s):
+                for i in range(0, x.size(3)//s):
                     # Reshape patches to (batch_size * num_patches_y * num_patches_x, channels, patch_size, patch_size)
                     p = patches[b, :, :, i*s:(i+1)*s].permute(1, 2, 0, 3, 4).contiguous()
                     p = p.view(-1, x.size(1), self.patch_size, self.patch_size)
