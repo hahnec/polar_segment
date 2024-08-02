@@ -313,12 +313,11 @@ if __name__ == '__main__':
             torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pth'.format(epoch)))))
         logging.info(f'Checkpoint {epoch} saved!')
 
+    # adjust settings for patch-wise ResNet model
+    if cfg.model == 'resnet': best_model.testing = True
+    from horao_dataset import HORAO
+
     # perform test
-    if cfg.model == 'resnet': 
-        best_model.testing = True
-        from horao_dataset import HORAO
     dataset = HORAO(cfg.data_dir, 'test.txt', transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
-    th = get_threshold(cfg, val_set, best_model, best_mm_model) if not cfg.labeled_only else None
-    if cfg.logging: wb.log({'th': th})
     from test import test_main
-    test_main(cfg, dataset, best_model, best_mm_model, th=th)
+    test_main(cfg, dataset, best_model, best_mm_model)

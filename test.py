@@ -15,7 +15,7 @@ from mm.models import init_mm_model
 from train import epoch_branch
 
 
-def test_main(cfg, dataset, model, mm_model, th):
+def test_main(cfg, dataset, model, mm_model, th=None):
 
     # create data loaders
     num_workers = min(2, os.cpu_count())
