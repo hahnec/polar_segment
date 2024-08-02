@@ -182,6 +182,8 @@ if __name__ == '__main__':
     import time
     import random
     from torch.utils.data import DataLoader
+    from utils.mm_rotation import RawRandomMuellerRotation
+    from utils.transforms_segment import *
 
     random.seed(3008)
     torch.manual_seed(3008)
@@ -189,12 +191,12 @@ if __name__ == '__main__':
     batch_size = 1
     patch_size = 4
     bg_opt = 1
-    base_dir = '/media/chris/EB62-383C/TumorMeasurementsCalib/'
-    feat_keys = ['totp', 'azimuth', 'std']
+    base_dir = '/home/chris/Datasets/data/TumorMeasurementsCalib/'
+    feat_keys = ['azimuth', 'std'] #'totp', 
 
     img_list = []
     for data_type in ['raw_data', 'polarimetry']:
-        dataset = HORAO(base_dir, 'val1.txt', bg_opt=bg_opt, data_subfolder=data_type, keys=feat_keys, wlens=[550])
+        dataset = HORAO(base_dir, 'val1.txt', bg_opt=bg_opt, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=[ToTensor(), RawRandomMuellerRotation(180, p=1, any=False), SwapDims()])
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
         from mm.models import MuellerMatrixPyramid as MMM
@@ -227,7 +229,7 @@ if __name__ == '__main__':
                 import matplotlib.pyplot as plt
                 fig, axs = plt.subplots(1, 4)
                 axs[0].set_title(['healthy', 'tumor'][label[0]])
-                axs[0].imshow(imgs[0][0]/imgs[0][0].max())
+                axs[0].imshow(imgs[0][0])
                 axs[1].imshow(masks[0, ..., 0])
                 axs[2].imshow(masks[0, ..., -1])
                 axs[3].imshow(masks[0, ..., -2])
