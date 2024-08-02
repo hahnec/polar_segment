@@ -11,6 +11,5 @@ def draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=None, alpha=0.5):
     img = (imgs[bidx, 0][None].repeat(3, 1, 1)/imgs[bidx, 0].max()*255).cpu().to(torch.uint8)
     frame_pred = draw_segmentation_masks(img, masks=combined_masks[:2], alpha=alpha, colors=['orange', 'blue'])
     frame_mask = draw_segmentation_masks(img, masks=combined_masks[2:], alpha=alpha, colors=['red', 'green'])
-    #imageio.imsave('./mask.png', (best_frame.permute(1,2,0)/best_frame.max()*255).cpu().numpy().astype(np.uint8))
 
     return frame_pred, frame_mask
