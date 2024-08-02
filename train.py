@@ -17,7 +17,6 @@ from utils.weighted_bce import WeightedDiceBCE
 from utils.transforms_segment import *
 from utils.draw_segment_img import draw_segmentation_imgs
 from utils.batch_segment_shuffle import BatchSegmentShuffler
-from utils.find_threshold import get_threshold
 from mm.models import init_mm_model
 
 def batch_preprocess(batch, cfg):
@@ -193,7 +192,7 @@ if __name__ == '__main__':
         ]
 
     # mueller matrix model
-    mm_model = init_mm_model(cfg) if cfg.data_subfolder.__contains__('raw') else None
+    mm_model = init_mm_model(cfg, filter_opt=False) if cfg.data_subfolder.__contains__('raw') else None
 
     # model selection
     n_channels = mm_model.ochs - cfg.levels*len(cfg.wlens) if cfg.data_subfolder.__contains__('raw') else len([k for k in cfg.feature_keys if k != 'intensity'])
