@@ -84,8 +84,8 @@ class RandomMuellerRotation(object):
         """
 
         if random.random() < self.p:
-            angle = self.get_params(self.degrees)
             # spatial transformation
+            angle = self.get_params(self.degrees)
             img = img[:, 0].permute(0, 3, 1, 2)
             rotated_img = F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
             rotated_img = rotated_img.permute(0, 2, 3, 1).unsqueeze(1)
@@ -192,11 +192,11 @@ class RawRandomMuellerRotation(object):
         """
 
         if random.random() < self.p:
+            # spatial transformation
             angle = self.get_params(self.degrees)
+            frame = F.rotate(frame, angle, self.resample, self.expand, self.center, self.fill).moveaxis(0, -1)
             # unravel matrices
-            I, A, W = frame[:16], frame[16:32], frame[32:]
-            # spatial transformations
-            I, A, W = [F.rotate(el, angle, self.resample, self.expand, self.center, self.fill).moveaxis(0, -1) for el in [I, A, W]]
+            I, A, W = frame[..., :16], frame[..., 16:32], frame[..., 32:]
             # HxWx16 to HxWx4x4 matrix reshaping
             shape = (*A.shape[:-1], 4, 4)
             I, A, W = [el.reshape(shape) for el in [I, A, W]]
