@@ -40,7 +40,7 @@ __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "CenterCr
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
            "RandomPerspective", "RandomErasing",
-           "HEDJitter", "AutoRandomRotation", "RandomGaussBlur", "RandomAffineCV2", "RandomElastic", "EmptyTransform"]
+           "HEDJitter", "AutoRandomRotation", "RandomGaussBlur", "RandomAffineCV2", "RandomElastic", "EmptyTransform", "SwapDims"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -113,6 +113,17 @@ class ToTensor(object):
         if label is not None:
             return F.to_tensor(img), F.to_tensor(label)
         return F.to_tensor(img)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+    
+class SwapDims(object):
+
+    def __call__(self, img, label=None, *args, **kwargs):
+
+        if label is not None:
+            return img.permute(1, 2, 0), label.permute(1, 2, 0)
+        return img.permute(1, 2, 0)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
