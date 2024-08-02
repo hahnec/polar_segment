@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from tqdm import tqdm
 
 class PatchResNet(nn.Module):
     def __init__(self, n_channels=1, n_classes=2, patch_size=50, testing=False):
@@ -23,18 +24,19 @@ class PatchResNet(nn.Module):
             # Unfold the input tensor to create patches
             patches = x_padded.unfold(2, self.patch_size, self.step_size).unfold(3, self.patch_size, self.step_size)
             
-            s = 1
+            s = 2
             b, _, h, w = x.shape
             y = torch.zeros(b, self.n_classes, h, w, device=x.device, dtype=x.dtype)
-            for i in range(0, x.size(3), s):
-                # Reshape patches to (batch_size * num_patches_y * num_patches_x, channels, patch_size, patch_size)
-                p = patches[:, :, :, i*s:(i+1)*s].permute(0, 2, 3, 1, 4, 5).contiguous()
-                p = p.view(-1, x.size(1), self.patch_size, self.patch_size)
-                
-                yp = self.model(p)
+            for b in tqdm(range(0, x.size(0))):
+                for i in range(0, x.size(3), s):
+                    # Reshape patches to (batch_size * num_patches_y * num_patches_x, channels, patch_size, patch_size)
+                    p = patches[b, :, :, i*s:(i+1)*s].permute(1, 2, 0, 3, 4).contiguous()
+                    p = p.view(-1, x.size(1), self.patch_size, self.patch_size)
 
-                # Reshape the output back to the patch grid
-                y[..., i*s:(i+1)*s] = yp.view(x.size(0), x.size(2), 1, -1).permute(0, 3, 1, 2)
-                del yp, p
+                    yp = self.model(p)
+
+                    # Reshape the output back to the patch grid
+                    y[b, ... , i*s:(i+1)*s] = yp.view(x.size(2), s, -1).permute(2, 0, 1)
+                    del yp, p
                 
             return y

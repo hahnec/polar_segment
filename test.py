@@ -112,6 +112,10 @@ if __name__ == '__main__':
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=2+dataset.bg_opt,)
+    elif cfg.model == 'resnet':
+        from horao_dataset import PatchHORAO as HORAO
+        from segment_models.resnet import PatchResNet
+        model = PatchResNet(n_channels=n_channels, n_classes=2+cfg.bg_opt, patch_size=50, testing=True)
     elif cfg.model == 'unet':
         from segment_models.unet import UNet
         model = UNet(n_channels=n_channels, n_classes=2+dataset.bg_opt, shallow=cfg.shallow)
@@ -132,7 +136,7 @@ if __name__ == '__main__':
     if cfg.model_file is not None:
         ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.model_file.split('_')[0])]
         state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)
-        model.load_state_dict(state_dict)
+        model.load_state_dict(state_dict) if cfg.model != 'resnet' else model.model.load_state_dict(state_dict)
         logging.info(f'Model loaded from {cfg.model_file}')
 
     # instantiate logging
