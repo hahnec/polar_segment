@@ -33,7 +33,7 @@ def test_main(cfg, dataset, model, mm_model, th=None):
     
     try:
         from sklearn.metrics import classification_report
-        report = classification_report(y_true[m], y_pred[m], target_names=['bg', 'malignant', 'benign'][-n_channels:], digits=4, output_dict=bool(cfg.logging))
+        report = classification_report(y_true[m], y_pred[m], target_names=['bg', 'benign', 'malignant'][-n_channels:], digits=4, output_dict=bool(cfg.logging))
     except ValueError as e:
         print(e)
 
