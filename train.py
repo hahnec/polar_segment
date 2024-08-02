@@ -74,12 +74,8 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, th=None, criterion=None, 
             loss.backward()
 
     # binarize predictions
-    if cfg.labeled_only and truth.shape[1] == 2:
-        truth_b = truth.argmax(1)
-        preds_b = preds.argmax(1)
-    else:
-        th = 0.5 if th is None else th
-        preds_b = preds>th
+    truth_b = truth.argmax(1)
+    preds_b = preds.argmax(1)
 
     # metrics
     from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
