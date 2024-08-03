@@ -13,6 +13,7 @@ class HORAO(Dataset):
             transforms=[], 
             transforms_img=[], 
             bg_opt=0, 
+            benign_accumulate = False,
             wlens=[550], 
             data_subfolder='polarimetry',
             keys=['azimuth', 'std'],
@@ -25,6 +26,7 @@ class HORAO(Dataset):
         self.data_subfolder = data_subfolder
         self.wlens = wlens
         self.bg_opt = int(bool(bg_opt))
+        self.benign_accumulate = bool(benign_accumulate)
         
         if self.data_subfolder.__contains__('polarimetry'):
             self.keys = [self.map_string(k) for k in keys]
@@ -79,7 +81,7 @@ class HORAO(Dataset):
         labels = np.array(Image.open(label_fname))#, dtype=np.float32)
         labels = labels[None].repeat(2, 0)
         labels[~img_class] = 0
-        if img_class == 0:
+        if img_class == 0 and self.benign_accumulate:
             labels = labels.astype(bool)
             labels[0] = True
             fnames = self.label_paths[i].parent.glob('BG_*.tif')
