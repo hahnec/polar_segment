@@ -13,7 +13,7 @@ class HORAO(Dataset):
             transforms=[], 
             transforms_img=[], 
             bg_opt=0, 
-            benign_accumulate = False,
+            benign_accumulate = True,
             wlens=[550], 
             data_subfolder='polarimetry',
             keys=['azimuth', 'std'],
@@ -193,12 +193,13 @@ if __name__ == '__main__':
     batch_size = 1
     patch_size = 4
     bg_opt = 1
-    base_dir = '/home/chris/Datasets/data/TumorMeasurementsCalib/'
-    feat_keys = ['azimuth', 'std'] #'totp', 
+    base_dir = '/media/chris/EB62-383C/TumorMeasurementsCalib/'
+    feat_keys = ['azimuth'] #, 'linr', 'totp', 'std'] #
 
     img_list = []
     for data_type in ['raw_data', 'polarimetry']:
-        dataset = HORAO(base_dir, 'val1.txt', bg_opt=bg_opt, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=[ToTensor(), RawRandomMuellerRotation(180, p=1, any=False), SwapDims()])
+        transforms = [ToTensor(), RawRandomMuellerRotation(180, p=1, any=False), SwapDims()] if data_type.__contains__('raw_data') else []
+        dataset = HORAO(base_dir, 'val1.txt', bg_opt=bg_opt, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
         from mm.models import MuellerMatrixPyramid as MMM
@@ -258,7 +259,7 @@ if __name__ == '__main__':
         a = img_list[0+s+i][0, 0].detach().cpu()
         b = img_list[h+s+i][0, 0].detach().cpu()
         m = img_list[h+s+i][0, -1].detach().cpu()
-        c = abs(a-b)
+        #c = abs(a-b)
         c[m==0] = 0
         axs[0, i].imshow(a)
         axs[1, i].imshow(b)
