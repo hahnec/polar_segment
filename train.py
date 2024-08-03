@@ -119,7 +119,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                     branch_type+'_step': step,
                 })
 
-            score = metrics['acc'].mean(-1)
+            score = metrics['acc']
             if torch.any(score > best_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmax()
                 best_score = score[bidx]
