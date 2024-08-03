@@ -9,3 +9,4 @@ omegaconf
 scikit-learn
 wandb
 transformers
+matplotlib
