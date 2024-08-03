@@ -75,14 +75,15 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     # metrics
     from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
     mask = torch.any(truth, dim=1)
-    ious, accs, dices = [], [], []
-    for c in range(truth.shape[1]):
-        preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=truth.shape[1]).float()
-        if len(preds_b.shape) == 4: preds_b = preds_b.permute(0, 3, 1, 2)
-        ious.append(compute_iou(preds_b[:, c], truth[:, c], mask=mask))
-        accs.append(compute_accuracy(preds_b[:, c], truth[:, c], mask=mask))
-        dices.append(compute_dice_score(preds_b[:, c], truth[:, c], mask=mask))
-    metrics = {'dice': torch.stack(dices), 'iou': torch.stack(ious), 'acc': torch.stack(accs), 't_s': torch.tensor([t_s/frames.size(0)])}
+    ious, accs, dices = [torch.zeros(truth.shape[:2], dtype=float),] * 3
+    for i in range(truth.shape[0]):
+        for c in range(truth.shape[1]):
+            preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=truth.shape[1]).float()
+            if len(preds_b.shape) == 4: preds_b = preds_b.permute(0, 3, 1, 2)
+            ious[i, c] = compute_iou(preds_b[i, c], truth[i, c], mask=mask[i])
+            accs[i, c] = compute_accuracy(preds_b[i, c], truth[i, c], mask=mask[i])
+            dices[i, c] = compute_dice_score(preds_b[i, c], truth[i, c], mask=mask[i])
+    metrics = {'dice': torch.tensor(dices), 'iou': torch.tensor(ious), 'acc': torch.tensor(accs), 't_s': torch.tensor([t_s/frames.size(0)])}
 
     return loss, preds, metrics, imgs
 
@@ -118,7 +119,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                     branch_type+'_step': step,
                 })
 
-            score = metrics['acc']
+            score = metrics['acc'].mean(-1)
             if torch.any(score > best_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmax()
                 best_score = score[bidx]
