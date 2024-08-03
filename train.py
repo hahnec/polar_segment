@@ -77,9 +77,10 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     mask = torch.any(truth, dim=1)
     ious, accs, dices = [], [], []
     for c in range(truth.shape[1]):
-        ious.append(compute_iou(preds[:, c], truth[:, c], mask=mask))
-        accs.append(compute_accuracy(preds[:, c], truth[:, c], mask=mask))
-        dices.append(compute_dice_score(preds[:, c], truth[:, c], mask=mask))
+        preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=truth.shape[1]).permute(0, 3, 1, 2).float()
+        ious.append(compute_iou(preds_b[:, c], truth[:, c], mask=mask))
+        accs.append(compute_accuracy(preds_b[:, c], truth[:, c], mask=mask))
+        dices.append(compute_dice_score(preds_b[:, c], truth[:, c], mask=mask))
     metrics = {'dice': torch.stack(dices), 'iou': torch.stack(ious), 'acc': torch.stack(accs), 't_s': torch.tensor([t_s/frames.size(0)])}
 
     return loss, preds, metrics, imgs
