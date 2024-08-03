@@ -86,7 +86,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 
     return loss, preds, metrics, imgs
 
-def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
+def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     train_opt = 0 if optimizer is None else 1
@@ -275,10 +275,10 @@ if __name__ == '__main__':
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
-            model, mm_model, metrics_dict, train_step = epoch_branch(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
+            model, mm_model, metrics_dict, train_step = epoch_iter(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
         # validation
         with torch.no_grad():
-            model, mm_model, metrics_dict, valid_step = epoch_branch(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet', epoch=epoch)
+            model, mm_model, metrics_dict, valid_step = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet', epoch=epoch)
 
         # best model selection
         if best_epoch_score < metrics_dict['acc']:

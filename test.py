@@ -12,7 +12,7 @@ from horao_dataset import HORAO
 from utils.transforms_segment import *
 
 from mm.models import init_mm_model
-from train import epoch_branch
+from train import epoch_iter
 
 
 def test_main(cfg, dataset, model, mm_model, th=None):
@@ -23,7 +23,7 @@ def test_main(cfg, dataset, model, mm_model, th=None):
     dataloader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
 
     with torch.no_grad():
-        preds, truth, metrics = epoch_branch(cfg, dataloader, model, mm_model, branch_type='test', th=th)
+        preds, truth, metrics = epoch_iter(cfg, dataloader, model, mm_model, branch_type='test', th=th)
 
     # pixel-wise assessment
     n_channels = int(preds.shape[1])
