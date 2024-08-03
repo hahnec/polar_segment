@@ -83,7 +83,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         ious[i] = compute_iou(preds_b[i], truth[i], mask=mask[i]).detach()
         accs[i] = compute_accuracy(preds_b[i], truth[i], mask=mask[i]).detach()
         dices[i] = compute_dice_score(preds_b[i], truth[i], mask=mask[i]).detach()
-    metrics = {'dice': torch.tensor(dices), 'iou': torch.tensor(ious), 'acc': torch.tensor(accs), 't_s': torch.tensor([t_s/frames.size(0)])}
+    metrics = {'dice': dices, 'iou': ious, 'acc': accs, 't_s': torch.tensor([t_s/frames.size(0)])}
 
     return loss, preds, metrics, imgs
 
