@@ -15,7 +15,7 @@ from monai import transforms
 from horao_dataset import HORAO
 from utils.weighted_bce import WeightedDiceBCE
 from utils.transforms_segment import *
-from utils.draw_segment_img import draw_segmentation_imgs
+from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
 from utils.batch_segment_shuffle import BatchSegmentShuffler
 from mm.models import init_mm_model
 
@@ -132,9 +132,12 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
                     frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
+                    img_class = int(batch[-1][bidx])
+                    heatmap = draw_heatmap(preds[bidx, img_class+int(cfg.bg_opt)], mask=torch.any(truth, dim=1))
                     wandb.log({
                         'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption="blue: healthy; orange: tumor;"),
                         'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 
+                        'heatmap_'+branch_type: wandb.Image(heatmap, caption="heatmap " + ['benign', 'malignant'][img_class]), 
                         branch_type+'_step': step+bidx
                     })
 
