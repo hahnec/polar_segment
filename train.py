@@ -131,7 +131,7 @@ def epoch_branch(cfg, dataloader, model, mm_model=None, branch_type='test', step
                 for bidx in range(truth.shape[0]):
                     frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
                     img_class = int(batch[-1][bidx])
-                    heatmap = draw_heatmap(preds[bidx, img_class+int(cfg.bg_opt)], mask=torch.any(truth, dim=1))
+                    heatmap = draw_heatmap(preds[bidx, img_class+int(cfg.bg_opt)], mask=torch.any(truth[bidx], dim=0))
                     wandb.log({
                         'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption="blue: healthy; orange: tumor;"),
                         'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 
