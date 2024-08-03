@@ -15,6 +15,7 @@ from monai import transforms
 from horao_dataset import HORAO
 from utils.weighted_bce import WeightedDiceBCE
 from utils.transforms_segment import *
+from utils.mm_rotation import RawRandomMuellerRotation
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
 from utils.batch_segment_shuffle import BatchSegmentShuffler
 from mm.models import init_mm_model
@@ -187,11 +188,8 @@ if __name__ == '__main__':
     # augmentation transforms
     transforms = [
             ToTensor(), 
-            #RandomElastic(alpha=1, sigma=cfg.elastic) if cfg.elastic > 0 else EmptyTransform(), 
-            RandomPerspective(cfg.perspective) if cfg.perspective > 0 else EmptyTransform(), 
             RandomCrop(size=int(cfg.crop)) if cfg.crop > 0 else EmptyTransform(), 
-            RandomVerticalFlip() if cfg.flips else EmptyTransform(), 
-            RandomHorizontalFlip() if cfg.flips else EmptyTransform(), 
+            RawRandomMuellerRotation(degrees=cfg.rotation, p=.5, any=False) if cfg.rotation > 0 else EmptyTransform(),
             #transforms.RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
             #Normalize(mean=0, std=1), 
         ]
