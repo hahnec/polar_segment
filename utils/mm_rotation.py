@@ -67,8 +67,8 @@ class RandomMuellerRotation(object):
         theta = deg / 180 * math.pi
         rmat = torch.tensor([
             [1, 0, 0, 0],
-            [0, math.cos(2*theta), -math.sin(2*theta), 0],
-            [0, math.sin(2*theta), +math.cos(2*theta), 0],
+            [0, +math.cos(2*theta), math.sin(2*theta), 0],
+            [0, -math.sin(2*theta), math.cos(2*theta), 0],
             [0, 0, 0, 1],
         ])
 
@@ -90,7 +90,8 @@ class RandomMuellerRotation(object):
             rotated_img = F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
             rotated_img = rotated_img.permute(0, 2, 3, 1).unsqueeze(1)
             # mueller matrix transformation
-            rotated_img = self.get_rmat(angle) @ rotated_img.view(*rotated_img.shape[:-1], 4, 4) @ self.get_rmat(-angle)
+            rmat = self.get_rmat(angle)
+            rotated_img = rmat @ rotated_img.view(*rotated_img.shape[:-1], 4, 4) @ rmat.transpose(-2, -1)
             rotated_img = rotated_img.flatten(-2, -1)
             if label is not None:
                 label = label[:, 0].permute(0, 3, 1, 2)
@@ -175,8 +176,8 @@ class RawRandomMuellerRotation(object):
         theta = deg / 180 * math.pi
         rmat = torch.tensor([
             [1, 0, 0, 0],
-            [0, math.cos(2*theta), -math.sin(2*theta), 0],
-            [0, math.sin(2*theta), +math.cos(2*theta), 0],
+            [0, +math.cos(2*theta), math.sin(2*theta), 0],
+            [0, -math.sin(2*theta), math.cos(2*theta), 0],
             [0, 0, 0, 1],
         ])
 
@@ -202,8 +203,9 @@ class RawRandomMuellerRotation(object):
             I, A, W = [el.reshape(shape) for el in [I, A, W]]
             if transpose: I, A, W = [el.transpose(-2, -1) for el in [I, A, W]]
             # mueller matrix transformation: A_theta = (R_theta @ A_inv)_inv since R_theta @ M @ R_-theta = R_theta @ A_inv @ I @ W_inv @ R_-theta
-            A = torch.linalg.inv(self.get_rmat(angle) @ torch.linalg.inv(A))
-            W = torch.linalg.inv(torch.linalg.inv(W) @ self.get_rmat(-angle))
+            R = self.get_rmat(angle)
+            A = torch.linalg.inv(R @ torch.linalg.inv(A))
+            W = torch.linalg.inv(torch.linalg.inv(W) @ R.transpose(-2, -1))
             # HxWx4 to HxWx16 matrix reshaping
             if transpose: I, A, W = [el.transpose(-2, -1) for el in [I, A, W]]
             I, A, W = [el.flatten(-2, -1).moveaxis(-1, 0) for el in [I, A, W]]
