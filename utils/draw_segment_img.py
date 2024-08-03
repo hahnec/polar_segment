@@ -16,7 +16,7 @@ def draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=None, alpha=0.5):
     return frame_pred, frame_mask
 
 
-def draw_heatmap(pred, img=None, mask=None, alpha=0.5, colormap='jet'):
+def draw_heatmap(pred, img=None, mask=None, alpha=0.3, colormap='jet'):
 
     if isinstance(pred, torch.Tensor): pred = pred.cpu().numpy()
     norm = (pred - pred.min()) / (pred.max() - pred.min())
@@ -31,7 +31,8 @@ def draw_heatmap(pred, img=None, mask=None, alpha=0.5, colormap='jet'):
 
     if img is not None:
         if isinstance(img, torch.Tensor): img = img.cpu().numpy()
+        if len(img.shape) == 2: img = img[..., None]
         img = (img - img.min()) / (img.max() - img.min())
-        heatmap = img * (1 - alpha) + heatmap * alpha
+        heatmap = img * (1 - alpha) + heatmap[..., :3] * alpha
     
     return heatmap
