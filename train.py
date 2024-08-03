@@ -72,17 +72,15 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         else:
             loss.backward()
 
-    # binarize predictions
-    truth_b = truth.argmax(1)
-    preds_b = preds.argmax(1)
-    mask = torch.any(truth, dim=1)
-
     # metrics
     from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
-    dice = compute_dice_score(preds_b, truth_b, mask=mask).unsqueeze(0)
-    iou = compute_iou(preds_b, truth_b, mask=mask).unsqueeze(0)
-    acc = compute_accuracy(preds_b, truth_b, mask=mask).unsqueeze(0)
-    metrics = {'dice': dice, 'iou': iou, 'acc': acc, 't_s': torch.tensor([t_s/frames.size(0)])}
+    mask = torch.any(truth, dim=1)
+    ious, accs, dices = [], [], []
+    for c in range(truth.shape[1]):
+        ious.append(compute_iou(preds[:, c], truth[:, c], mask=mask))
+        accs.append(compute_accuracy(preds[:, c], truth[:, c], mask=mask))
+        dices.append(compute_dice_score(preds[:, c], truth[:, c], mask=mask))
+    metrics = {'dice': torch.stack(dices), 'iou': torch.stack(ious), 'acc': torch.stack(accs), 't_s': torch.tensor([t_s/frames.size(0)])}
 
     return loss, preds, metrics, imgs
 
