@@ -24,25 +24,18 @@ def batch_preprocess(batch, cfg):
     
     # device
     frames, truth = batch[:2]
+    imgs = frames[:, :16].mean(1)
     frames = frames.to(device=cfg.device, dtype=torch.float32, memory_format=torch.channels_last)
     truth = truth.to(device=cfg.device, dtype=frames.dtype)
 
     if random.random() < cfg.shuffle_crop and frames.shape[0] > 1:
         frames, truth = BatchSegmentShuffler('mask')(frames, truth)
 
-    return frames, truth
+    return frames, truth, imgs
 
 def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
-    imgs = None
     wnum = len(cfg.wlens)
-    if 'intensity' in cfg.feature_keys:
-        # split intensity images from frames
-        s = frames.shape[1] // cfg.levels
-        p_indices = torch.cat([(s-1)*i + torch.arange(wnum) for i in range(cfg.levels)])
-        n_indices = torch.arange(frames.shape[1])[~torch.isin(torch.arange(frames.shape[1]), p_indices)]
-        imgs = frames[:, p_indices]
-        frames = frames[:, n_indices]
 
     # initialize label selection
     m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1) if cfg.labeled_only else torch.ones_like(truth)
@@ -85,7 +78,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         dices[i] = compute_dice_score(preds_b[i], truth[i], mask=mask[i]).detach()
     metrics = {'dice': dices, 'iou': ious, 'acc': accs, 't_s': torch.tensor([t_s/frames.size(0)])}
 
-    return loss, preds, metrics, imgs
+    return loss, preds, metrics
 
 def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
@@ -101,11 +94,11 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     poor_score, poor_frame_pred, poor_frame_mask = 1, None, None
     with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
         for batch in dataloader:
-            frames, truth = batch_preprocess(batch, cfg)
+            frames, truth, imgs = batch_preprocess(batch, cfg)
             t = time.perf_counter()
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
-            loss, preds, metrics, imgs = batch_it(frames, truth)
+            loss, preds, metrics = batch_it(frames, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             pbar.set_postfix(**{'loss (batch)': loss.item()})
@@ -197,7 +190,7 @@ if __name__ == '__main__':
     mm_model = init_mm_model(cfg, filter_opt=False) if cfg.data_subfolder.__contains__('raw') else None
 
     # model selection
-    n_channels = mm_model.ochs - cfg.levels*len(cfg.wlens) if cfg.data_subfolder.__contains__('raw') else len([k for k in cfg.feature_keys if k != 'intensity'])
+    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len([k for k in cfg.feature_keys if k != 'intensity'])
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=2+cfg.bg_opt)
