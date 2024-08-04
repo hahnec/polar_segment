@@ -24,7 +24,7 @@ def batch_preprocess(batch, cfg):
     
     # device
     frames, truth = batch[:2]
-    imgs = frames[:, :16].mean(1)
+    imgs = frames[:, :16].mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0]
     frames = frames.to(device=cfg.device, dtype=torch.float32, memory_format=torch.channels_last)
     truth = truth.to(device=cfg.device, dtype=frames.dtype)
 
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     mm_model = init_mm_model(cfg, filter_opt=False) if cfg.data_subfolder.__contains__('raw') else None
 
     # model selection
-    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len([k for k in cfg.feature_keys if k != 'intensity'])
+    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len(cfg.feature_keys)
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=2+cfg.bg_opt)
