@@ -26,7 +26,7 @@ def draw_heatmap(pred, img=None, mask=None, alpha=0.3, colormap='jet'):
     heatmap = cmap(norm)
 
     if mask is not None:
-        if isinstance(mask, torch.Tensor): mask = mask.cpu().numpy()
+        if isinstance(mask, torch.Tensor): mask = mask.bool().cpu().numpy()
         heatmap[mask==0] = 0
 
     if img is not None:
