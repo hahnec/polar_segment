@@ -2,7 +2,7 @@ import torch
 from torchvision.utils import draw_segmentation_masks
 
 
-def draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=None, alpha=0.5):
+def draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=None, alpha=0.3):
 
     if th is None:
         preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=truth.shape[1]).permute(0, 3, 1, 2).bool()
