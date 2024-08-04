@@ -35,13 +35,12 @@ def batch_preprocess(batch, cfg):
 
 def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
-    wnum = len(cfg.wlens)
-
     # initialize label selection
     m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1) if cfg.labeled_only else torch.ones_like(truth)
 
+    # remove the feasibility mask from the features
     if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
-        # remove the feasibility mask from the features
+        wnum = len(cfg.wlens)
         mask = frames[:, -wnum:]
         frames = frames[:, :-wnum]
         m = (m.float() * mask).bool()
