@@ -176,3 +176,6 @@ mm_torch
 deprecated/
 results.txt
 wandb/
+artifacts/
+dl_wandb/
+configs/keys.yml
