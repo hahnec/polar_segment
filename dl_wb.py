@@ -87,7 +87,8 @@ if __name__ == "__main__":
         for i, media in enumerate(media_files):
             if isinstance(media, dict) and 'path' in media:
                 image_url = 'https://api.wandb.ai/files/hahnec/' + project_name + '/' + run.url.split('runs/')[-1] + '/' + media['path']
-                image_name = f"{run.name}_{i}_{os.path.basename(image_url)}"
+                base_name = '_'.join(os.path.basename(image_url).split('_')[:-1])+'.png' # skip hash clutter
+                image_name = f"{run.name}_{i}_{base_name}"
                 save_path = os.path.join(output_dir, image_name)
                 download_image(image_url, save_path)
 
