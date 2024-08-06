@@ -30,10 +30,11 @@ def test_main(cfg, dataset, model, mm_model, th=None):
     m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
     y_true = truth.argmax(1).flatten().cpu().numpy()
     y_pred = preds.argmax(1).flatten().cpu().numpy()
+    target_names = ['bg', 'benign', 'malignant'] if n_channels < 4 else ['bg', 'hwm', 'hgm', 'twm', 'tgm']
     
     try:
         from sklearn.metrics import classification_report
-        report = classification_report(y_true[m], y_pred[m], target_names=['bg', 'benign', 'malignant'][-n_channels:], digits=4, output_dict=bool(cfg.logging))
+        report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
     except ValueError as e:
         print(e)
 
