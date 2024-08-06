@@ -17,7 +17,7 @@ epochs: 100
 weight_decay: 1e-8
 val_fraction: 0.1
 amp: False
-bg_opt: False
+bg_opt: True
 labeled_only: True
 group: Null
 class_num: 4
