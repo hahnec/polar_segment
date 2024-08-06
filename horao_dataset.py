@@ -123,9 +123,10 @@ class HORAO(Dataset):
                 matter_labels[matter_labels==255] = 2
             else:
                 # WM/GM encoding is different for tumor data
-                matter_labels = np.zeros_like(matter_labels[..., 0])
-                matter_labels[matter_labels[..., 1]==77] = 1
-                matter_labels[matter_labels[..., 1]==153] = 2
+                placeholder = np.zeros_like(matter_labels[..., 0])
+                placeholder[matter_labels[..., 1]==77] = 1
+                placeholder[matter_labels[..., 1]==153] = 2
+                matter_labels = placeholder
             oh_mat_labels = np.eye(3)[matter_labels.astype(int)]
             labels = self.create_multilabels(labels, oh_mat_labels)
 
