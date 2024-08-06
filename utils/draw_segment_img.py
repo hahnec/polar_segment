@@ -4,14 +4,15 @@ from torchvision.utils import draw_segmentation_masks
 
 def draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=None, alpha=0.3):
 
+    n_channels = truth.shape[1]
     if th is None:
         preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=truth.shape[1]).permute(0, 3, 1, 2).bool()
-        combined_masks = torch.stack((preds_b[bidx, -1], preds_b[bidx, -2], truth[bidx, -1]>0, truth[bidx, -2]>0)).cpu()
+        combined_masks = torch.stack((preds_b[bidx], truth[bidx]>0)).cpu()
     else:
-        combined_masks = torch.stack((preds[bidx, -1]>th[bidx][-1], preds[bidx, -2]>th[bidx][-2], truth[bidx, -1]>0, truth[bidx, -2]>0)).cpu()
+        combined_masks = torch.stack((preds[bidx]>th[bidx], truth[bidx]>0)).cpu()
     img = (imgs[bidx][None].repeat(3, 1, 1)/imgs[bidx].max()*255).cpu().to(torch.uint8)
-    frame_pred = draw_segmentation_masks(img, masks=combined_masks[:2], alpha=alpha, colors=['orange', 'blue'])
-    frame_mask = draw_segmentation_masks(img, masks=combined_masks[2:], alpha=alpha, colors=['red', 'green'])
+    frame_pred = draw_segmentation_masks(img, masks=combined_masks[0], alpha=alpha, colors=['cyan', 'blue', 'green', 'orange', 'red'][:n_channels])
+    frame_mask = draw_segmentation_masks(img, masks=combined_masks[1], alpha=alpha, colors=['cyan', 'blue', 'green', 'orange', 'red'][:n_channels])
 
     return frame_pred, frame_mask
 
