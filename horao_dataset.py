@@ -59,9 +59,9 @@ class HORAO(Dataset):
                 img_class = 1
             if class_num > 2:
                 if id.startswith('HT'):
-                    matter_fname = self.base_dir / str(id) / 'annotation' / 'merged_no_border.png'
+                    matter_fname = self.base_dir / str(id) / 'annotation' / 'merged.png' #_no_border
                 else: 
-                    matter_fname = self.base_dir / str(id) / 'histology' / 'labels_augmented_GM_WM_masked_FG_no_border.png'
+                    matter_fname = self.base_dir / str(id) / 'histology' / 'labels_augmented_GM_WM_masked_FG.png' #_no_border
                 self.matter_paths.append(matter_fname)
 
             self.label_paths.append(label_fname)
