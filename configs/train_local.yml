@@ -20,6 +20,7 @@ amp: False
 bg_opt: False
 labeled_only: True
 group: Null
+class_num: 4
 
 # dataset paths
 data_path: TumorMeasurementsCalib/

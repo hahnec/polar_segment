@@ -192,21 +192,21 @@ if __name__ == '__main__':
     n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len(cfg.feature_keys)
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
-        model = MLP(n_channels=n_channels, n_classes=2+cfg.bg_opt)
+        model = MLP(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt)
     elif cfg.model == 'resnet':
         from horao_dataset import PatchHORAO as HORAO
         from segment_models.resnet import PatchResNet
-        model = PatchResNet(n_channels=n_channels, n_classes=2+cfg.bg_opt, patch_size=50)
+        model = PatchResNet(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt, patch_size=50)
     elif cfg.model == 'unet':
         from segment_models.unet import UNet
-        model = UNet(n_channels=n_channels, n_classes=2+cfg.bg_opt, shallow=cfg.shallow)
+        model = UNet(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt, shallow=cfg.shallow)
     elif cfg.model == 'unetpp':
         from segment_models.unet_pp import get_pretrained_unet_pp
-        model = get_pretrained_unet_pp(n_channels, out_channels=2+cfg.bg_opt)
+        model = get_pretrained_unet_pp(n_channels, out_channels=cfg.class_num+cfg.bg_opt)
     elif cfg.model == 'uctransnet':
         from segment_models.uctransnet.UCTransNet import UCTransNet
         from segment_models.uctransnet.Config import get_CTranS_config
-        model = UCTransNet(n_channels=n_channels, n_classes=2+cfg.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
+        model = UCTransNet(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
     else:
         raise Exception('Model %s not recognized' % cfg.model)
 
@@ -214,9 +214,9 @@ if __name__ == '__main__':
     model.to(device=cfg.device)
 
     # create dataset
-    dataset = HORAO(cfg.data_dir, 'train1.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    dataset = HORAO(cfg.data_dir, 'train1.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     if (Path(cfg.data_dir) / 'cases' / 'val1.txt').exists():
-        val_set = HORAO(cfg.data_dir, 'val1.txt', transforms=transforms, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+        val_set = HORAO(cfg.data_dir, 'val1.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     else:
         # split into train and validation partitions (if needed)
         n_val = int(len(dataset) * cfg.val_fraction)
