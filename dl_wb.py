@@ -71,7 +71,7 @@ if __name__ == "__main__":
     for run in runs:
 
         metrics = {}
-        for col in ['dice', 'iou', 't_mm', 't_s']:
+        for col in ['accuracy', 'dice', 'iou', 't_mm', 't_s']:
             metrics[col] = run.summary.get(col)
         md_metrics = dict_to_markdown_table(metrics)
         with open('dl_wandb/metrics_%s.md' % str(run.name), 'w') as file:
