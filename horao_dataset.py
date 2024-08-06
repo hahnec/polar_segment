@@ -68,8 +68,18 @@ class HORAO(Dataset):
         
         return string_map.get(input_string, input_string)
 
-    def __len__(self):
-        return len(self.ids)
+    @staticmethod
+    def create_multilabels(labels, matter_labels):
+        hwm = np.equal(labels[..., -2], matter_labels[..., -1])
+        hgm = np.equal(labels[..., -2], matter_labels[..., -2])
+        twm = np.equal(labels[..., -1], matter_labels[..., -1])
+        tgm = np.equal(labels[..., -1], matter_labels[..., -2])
+        new = np.stack([hwm, hgm, twm, tgm], axis=-1).astype(float)
+        if len(labels.shape) == 3:
+            bg = ~np.any(new, -1)[..., None]
+            return np.concatenate([bg.astype(float), new], axis=-1)
+        
+        return new
 
     def __getitem__(self, i):
 
@@ -94,6 +104,21 @@ class HORAO(Dataset):
         labels = labels.astype(np.float32)
         if labels.max() > 1: labels /= 255
 
+        # consider white matter / grey matter
+        if len(self.matter_paths) > 0: 
+            matter_fname = self.matter_paths[i]
+            matter_labels = np.array(Image.open(matter_fname))
+            if img_class == 0:
+                matter_labels[matter_labels==128] = 1
+                matter_labels[matter_labels==255] = 2
+            else:
+                # WM/GM encoding is different for tumor data
+                matter_labels = np.zeros_like(matter_labels[..., 0])
+                matter_labels[matter_labels[..., 1]==77] = 1
+                matter_labels[matter_labels[..., 1]==153] = 2
+            oh_mat_labels = np.eye(3)[matter_labels.astype(int)]
+            labels = self.create_multilabels(labels, oh_mat_labels)
+
         # iterate over wavelengths
         frames = []
         for wlen in self.wlens:
@@ -115,7 +140,7 @@ class HORAO(Dataset):
                     frame, mask = specular_removal_cv(np.array(intensity, dtype=np.float32), size=4, method='navier')
                     #from utils.specular_removal_torch import specular_removal_t
                     #frame = specular_removal_t(frame, intensity>65530)
-                labels[mask.astype(bool), :] = 0    # mask clipped areas
+                if self.cases_file.__contains__('train'): labels[mask.astype(bool), :] = 0    # mask clipped areas
                 # calibration
                 amat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'A'))
                 wmat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'W'))
@@ -153,6 +178,9 @@ class HORAO(Dataset):
             frames, labels = transform(frames, label=labels)
 
         return frames, labels, img_class
+
+    def __len__(self):
+        return len(self.ids)
 
 class PatchHORAO(HORAO):
     def __init__(self, *args, **kwargs):
