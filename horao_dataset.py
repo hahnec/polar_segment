@@ -28,6 +28,7 @@ class HORAO(Dataset):
         self.wlens = wlens
         self.bg_opt = int(bool(bg_opt))
         self.benign_accumulate = bool(benign_accumulate)
+        self.cases_file = str(cases_file)
         
         if self.data_subfolder.__contains__('polarimetry'):
             self.keys = [self.map_string(k) for k in keys]
