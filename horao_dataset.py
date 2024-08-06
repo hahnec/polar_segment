@@ -17,6 +17,7 @@ class HORAO(Dataset):
             wlens=[550], 
             data_subfolder='polarimetry',
             keys=['azimuth', 'std'],
+            class_num=4,
         ):
 
         self.base_dir = Path(path)
@@ -34,15 +35,16 @@ class HORAO(Dataset):
         with open(self.base_dir / 'cases' / cases_file) as f:
             self.ids = [line.rstrip('\n') for line in f]
 
-        self.get_filenames()
+        self.get_filenames(class_num=class_num)
 
-    def get_filenames(self):
+    def get_filenames(self, class_num=2):
 
         filename = (str(self.wlens[0]) + '_Intensite.cod') if self.data_subfolder.__contains__('raw') else 'MM.npz'
 
         self.img_paths = []
         self.label_paths = []
         self.img_classes = []
+        self.matter_paths = []
         for id in self.ids:
             img_fname = self.base_dir / str(id) / self.data_subfolder / (str(self.wlens[0])+'nm') / filename
             self.img_paths.append(img_fname)
@@ -54,6 +56,13 @@ class HORAO(Dataset):
             else:
                 label_fname = self.base_dir / str(id) / 'annotation' / 'ROI.tif'
                 img_class = 1
+            if class_num > 2:
+                if id.startswith('HT'):
+                    matter_fname = self.base_dir / str(id) / 'annotation' / 'merged_no_border.png'
+                else: 
+                    matter_fname = self.base_dir / str(id) / 'histology' / 'labels_augmented_GM_WM_masked_FG_no_border.png'
+                self.matter_paths.append(matter_fname)
+
             self.label_paths.append(label_fname)
             self.img_classes.append(img_class)
             assert label_fname.exists(), f'No label found for the ID {id}: {label_fname}'
