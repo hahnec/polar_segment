@@ -11,8 +11,8 @@ def draw_segmentation_imgs(imgs, preds, truth, bidx=0, th=None, alpha=0.3):
     else:
         combined_masks = torch.stack((preds[bidx]>th[bidx], truth[bidx]>0)).cpu()
     img = (imgs[bidx][None].repeat(3, 1, 1)/imgs[bidx].max()*255).cpu().to(torch.uint8)
-    frame_pred = draw_segmentation_masks(img, masks=combined_masks[0], alpha=alpha, colors=['cyan', 'blue', 'green', 'orange', 'red'][:n_channels])
-    frame_mask = draw_segmentation_masks(img, masks=combined_masks[1], alpha=alpha, colors=['cyan', 'blue', 'green', 'orange', 'red'][:n_channels])
+    frame_pred = draw_segmentation_masks(img, masks=combined_masks[0], alpha=alpha, colors=['gray', 'blue', 'green', 'orange', 'red'][:n_channels])
+    frame_mask = draw_segmentation_masks(img, masks=combined_masks[1], alpha=alpha, colors=['gray', 'blue', 'green', 'orange', 'red'][:n_channels])
 
     return frame_pred, frame_mask
 
