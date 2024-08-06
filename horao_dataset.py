@@ -80,10 +80,10 @@ class HORAO(Dataset):
 
     @staticmethod
     def create_multilabels(labels, matter_labels):
-        hwm = np.equal(labels[..., -2], matter_labels[..., -1])
-        hgm = np.equal(labels[..., -2], matter_labels[..., -2])
-        twm = np.equal(labels[..., -1], matter_labels[..., -1])
-        tgm = np.equal(labels[..., -1], matter_labels[..., -2])
+        hwm = labels[..., -2].astype(bool) & matter_labels[..., -1].astype(bool)
+        hgm = labels[..., -2].astype(bool) & matter_labels[..., -2].astype(bool)
+        twm = labels[..., -1].astype(bool) & matter_labels[..., -1].astype(bool)
+        tgm = labels[..., -1].astype(bool) & matter_labels[..., -2].astype(bool)
         new = np.stack([hwm, hgm, twm, tgm], axis=-1).astype(float)
         if len(labels.shape) == 3:
             bg = ~np.any(new, -1)[..., None]
