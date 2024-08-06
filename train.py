@@ -125,13 +125,13 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
                     frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
-                    img_class = int(batch[-1][bidx])
+                    out_class = int(batch[-1][bidx]) * cfg.class_num//2 + int(cfg.bg_opt)
                     hmask = (preds[bidx].argmax(0) == 0) if cfg.bg_opt else None
-                    heatmap = draw_heatmap(preds[bidx, img_class+int(cfg.bg_opt)], img=imgs[bidx], mask=hmask)
+                    heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
                     wandb.log({
                         'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption="blue: healthy; orange: tumor;"),
                         'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT;"), 
-                        'heatmap_'+branch_type: wandb.Image(heatmap, caption="heatmap " + ['benign', 'malignant'][img_class]), 
+                        'heatmap_'+branch_type: wandb.Image(heatmap, caption="heatmap " + ['benign', 'malignant'][int(batch[-1][bidx])]), 
                         branch_type+'_step': step+bidx
                     })
 
