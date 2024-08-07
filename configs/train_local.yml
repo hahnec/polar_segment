@@ -38,9 +38,10 @@ activation: Null
 method: pooling
 feature_keys:
   - intensity
-  - azimuth
+#  - azimuth
   - std
   - totp
+  - linr
 wlens:
   - 550
 
