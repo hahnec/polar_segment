@@ -32,21 +32,6 @@ def test_main(cfg, dataset, model, mm_model):
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     target_names = ['bg', 'benign', 'malignant'] if n_channels < 4 else ['bg', 'hwm', 'hgm', 'twm', 'tgm']
 
-    if n_channels > 3:
-        from utils.multi_loss import reduce_ht
-        h_pred, t_pred, h_true, t_true = reduce_ht(preds, truth)
-        ht_pred, ht_true = torch.cat([h_pred, t_pred], dim=1), torch.cat([h_true, t_true], dim=1)
-        if n_channels == 5:
-            ht_pred = torch.cat([preds[:, 0], ht_pred], dim=1)
-            ht_true = torch.cat([truth[:, 0], ht_true], dim=1)
-        from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
-        iou_ht = compute_iou(ht_pred, ht_true)
-        acc_ht = compute_accuracy(ht_pred, ht_true)
-        dice_ht = compute_dice_score(ht_pred, ht_true)
-        if cfg.logging:
-            wandb.log({'iou_ht_reduce': iou_ht})
-            wandb.log({'acc_ht_reduce': acc_ht})
-            wandb.log({'dice_ht_reduce': dice_ht})
     try:
         from sklearn.metrics import classification_report
         report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
