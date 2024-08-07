@@ -311,6 +311,6 @@ if __name__ == '__main__':
     from horao_dataset import HORAO
 
     # perform test
-    dataset = HORAO(cfg.data_dir, 'test.txt', transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    dataset = HORAO(cfg.data_dir, 'test.txt', transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     from test import test_main
     test_main(cfg, dataset, best_model, best_mm_model)
