@@ -115,11 +115,11 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             if torch.any(score > best_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmax()
                 best_score = score[bidx]
-                best_frame_pred, best_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
+                best_frame_pred, best_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx)
             if torch.any(score < poor_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmin()
                 poor_score = score[bidx]
-                poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
+                poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx)
             
             # log all test images
             if cfg.logging and branch_type == 'test':
