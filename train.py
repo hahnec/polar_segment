@@ -124,7 +124,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             # log all test images
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
-                    frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, th=th)
+                    frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx)
                     out_class = int(batch[-1][bidx]) * cfg.class_num//2 + int(cfg.bg_opt)
                     hmask = (preds[bidx].argmax(0) == 0) if cfg.bg_opt else None
                     heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
