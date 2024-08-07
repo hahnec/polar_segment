@@ -101,6 +101,12 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
             loss, preds, metrics = batch_it(frames, truth)
+
+            # reduce prediction to healthy tumor in test
+            if cfg.class_num > 3 and branch_type == 'test': 
+                from utils.multi_loss import reduce_ht
+                preds, _ = reduce_ht(preds, torch.zeros_like(preds)) 
+
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             pbar.set_postfix(**{'loss (batch)': loss.item()})
@@ -128,7 +134,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
                     frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx)
-                    out_class = int(batch[-1][bidx]) * cfg.class_num//2 + int(cfg.bg_opt)
+                    out_class = int(batch[-1][bidx]) + int(cfg.bg_opt)
                     hmask = (preds[bidx].argmax(0) == 0) if cfg.bg_opt else None
                     heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
                     wandb.log({
@@ -314,6 +320,6 @@ if __name__ == '__main__':
     from horao_dataset import HORAO
 
     # perform test
-    dataset = HORAO(cfg.data_dir, 'test.txt', transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    dataset = HORAO(cfg.data_dir, 'test.txt', transforms=[ToTensor()], class_num=2, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     from test import test_main
     test_main(cfg, dataset, best_model, best_mm_model)
