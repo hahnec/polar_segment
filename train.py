@@ -70,7 +70,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     mask = torch.any(truth, dim=1)
     ious, accs, dices = [torch.zeros(truth.shape[0], dtype=torch.float) for _ in range(3)]
     for i in range(truth.shape[0]):
-        preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=truth.shape[1]).float()
+        preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=preds.shape[1]).float()
         if len(preds_b.shape) == 4: preds_b = preds_b.permute(0, 3, 1, 2)
         ious[i] = compute_iou(preds_b[i], truth[i], mask=mask[i]).detach()
         accs[i] = compute_accuracy(preds_b[i], truth[i], mask=mask[i]).detach()
