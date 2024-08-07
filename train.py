@@ -65,6 +65,12 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         else:
             loss.backward()
 
+    # reduce prediction to healthy/tumor classes
+    if cfg.class_num > 3 and truth.shape[1] != preds.shape[1]: 
+        from utils.multi_loss import reduce_ht
+        h_pred, t_pred, _, _ = reduce_ht(preds, torch.zeros_like(preds))
+        preds = torch.stack([preds[:, 0], h_pred, t_pred], dim=1) if cfg.bg_opt else torch.stack([h_pred, t_pred], dim=1)
+
     # metrics
     from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
     mask = torch.any(truth, dim=1)
@@ -81,8 +87,8 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 
 def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
-    criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
-    if cfg.class_num > 3:
+    criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5) if branch_type != 'test' else None
+    if cfg.class_num > 3 and branch_type != 'test':
         from utils.multi_loss import multi_loss_aggregation
         criterion = lambda x, y: multi_loss_aggregation(x, y, loss_fun=WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5))
     train_opt = 0 if optimizer is None else 1
@@ -101,12 +107,6 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
             loss, preds, metrics = batch_it(frames, truth)
-
-            # reduce prediction to healthy tumor in test
-            if cfg.class_num > 3 and branch_type == 'test': 
-                from utils.multi_loss import reduce_ht
-                preds, _ = reduce_ht(preds, torch.zeros_like(preds)) 
-
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             pbar.set_postfix(**{'loss (batch)': loss.item()})
