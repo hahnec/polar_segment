@@ -1,20 +1,20 @@
 import torch
 
 
-def reduce_ht(x, y):
+def reduce_ht(x, y, reduce_fun=torch.mean):
 
-    h_pred = torch.mean(torch.stack([x[:, -3], x[:, -4]], dim=0), dim=0)
-    t_pred = torch.mean(torch.stack([x[:, -1], x[:, -2]], dim=0), dim=0)
+    h_pred = reduce_fun(torch.stack([x[:, -3], x[:, -4]], dim=0), dim=0)
+    t_pred = reduce_fun(torch.stack([x[:, -1], x[:, -2]], dim=0), dim=0)
     h_true = torch.logical_or(y[:, -3], y[:, -4]).float()
     t_true = torch.logical_or(y[:, -1], y[:, -2]).float()
 
     return h_pred, t_pred, h_true, t_true
 
 
-def reduce_wg(x, y):
+def reduce_wg(x, y, reduce_fun=torch.mean):
 
-    w_pred = torch.mean(torch.stack([x[:, -2], x[:, -4]], dim=0), dim=0)
-    g_pred = torch.mean(torch.stack([x[:, -1], x[:, -3]], dim=0), dim=0)
+    w_pred = reduce_fun(torch.stack([x[:, -2], x[:, -4]], dim=0), dim=0)
+    g_pred = reduce_fun(torch.stack([x[:, -1], x[:, -3]], dim=0), dim=0)
     w_true = torch.logical_or(y[:, -2], y[:, -4]).float()
     g_true = torch.logical_or(y[:, -1], y[:, -3]).float()
 
