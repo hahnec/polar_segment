@@ -79,7 +79,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 
     return loss, preds, metrics
 
-def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, th=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
+def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
     criterion = WeightedDiceBCE(dice_weight=0.5, BCE_weight=0.5)
     train_opt = 0 if optimizer is None else 1
