@@ -15,8 +15,9 @@ from monai import transforms
 from horao_dataset import HORAO
 from utils.weighted_bce import WeightedDiceBCE
 from utils.transforms_segment import *
-from utils.mm_rotation import RawRandomMuellerRotation
+from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
+from utils.mm_rotation import RawRandomMuellerRotation
 from utils.batch_segment_shuffle import BatchSegmentShuffler
 from mm.models import init_mm_model
 
@@ -72,7 +73,6 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         preds = torch.stack([preds[:, 0], h_pred, t_pred], dim=1) if cfg.bg_opt else torch.stack([h_pred, t_pred], dim=1)
 
     # metrics
-    from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
     mask = torch.any(truth, dim=1)
     ious, accs, dices = [torch.zeros(truth.shape[0], dtype=torch.float) for _ in range(3)]
     for i in range(truth.shape[0]):
