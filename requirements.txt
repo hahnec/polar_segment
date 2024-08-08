@@ -10,3 +10,4 @@ scikit-learn
 wandb
 transformers
 matplotlib
+segmentation-models-pytorch
