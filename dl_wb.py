@@ -57,9 +57,9 @@ if __name__ == "__main__":
 
     # Define the project and group name
     project_name = 'polar_segment'
-    group_name = 'bg_opt_imgs'
+    group_name = '4_class_multi_viable_test_wo_bg'
     table_key = 'report'
-    media_key = 'img_mask_test'
+    media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
 
     api = wandb.Api()
 
@@ -83,13 +83,14 @@ if __name__ == "__main__":
             file.write(md_table)
 
         # images
-        media_files = run.history(keys=[media_key]).get(media_key, [])
-        for i, media in enumerate(media_files):
-            if isinstance(media, dict) and 'path' in media:
-                image_url = 'https://api.wandb.ai/files/hahnec/' + project_name + '/' + run.url.split('runs/')[-1] + '/' + media['path']
-                base_name = '_'.join(os.path.basename(image_url).split('_')[:-1])+'.png' # skip hash clutter
-                image_name = f"{run.name}_{i}_{base_name}"
-                save_path = os.path.join(output_dir, image_name)
-                download_image(image_url, save_path)
+        for media_key in media_keys:
+            media_files = run.history(keys=[media_key]).get(media_key, [])
+            for i, media in enumerate(media_files):
+                if isinstance(media, dict) and 'path' in media:
+                    image_url = 'https://api.wandb.ai/files/hahnec/' + project_name + '/' + run.url.split('runs/')[-1] + '/' + media['path']
+                    base_name = '_'.join(os.path.basename(image_url).split('_')[:-1])+'.png' # skip hash clutter
+                    image_name = f"{run.name}_{i}_{base_name}"
+                    save_path = os.path.join(output_dir, image_name)
+                    download_image(image_url, save_path)
 
     print("Done.")
