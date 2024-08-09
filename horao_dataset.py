@@ -233,7 +233,7 @@ if __name__ == '__main__':
     patch_size = 4
     bg_opt = 1
     base_dir = '/media/chris/EB62-383C/TumorMeasurementsCalib/'
-    feat_keys = ['linr', 'azimuth'] #'azimuth'] #, , 'totp', 'std'] #
+    feat_keys = ['std', 'mask'] #'azimuth', 'linr', 'totp'] #
 
     img_list = []
     for data_type in ['raw_data', 'polarimetry']:
@@ -287,29 +287,30 @@ if __name__ == '__main__':
             print('%s bg pixels' % str(bg_pixels))
 
     print('comparison')
-    s = 0
+    s = 1
     h = len(img_list) // 2
 
     import matplotlib.pyplot as plt
     fig, axs = plt.subplots(3, h//4)
     for i in range(h//4):
-        #axs[0, i].set_title('polarimetry')
-        #axs[1, i].set_title('raw_data')
+        axs[0, i].set_title('mm_torch')
+        axs[1, i].set_title('libmpMuelMat')
+        axs[2, i].set_title('log. difference')
         a = img_list[0+s+i][0, 0].detach().cpu()
         b = img_list[h+s+i][0, 0].detach().cpu()
-        m = img_list[h+s+i][0, -1].detach().cpu()
+        m = img_list[0+s+i][0, -1].detach().cpu()
         c = abs(a-b)
         c[m==0] = 0
         axs[0, i].imshow(a)
         axs[1, i].imshow(b)
-        axs[2, i].imshow(c)
+        axs[2, i].imshow(np.log(c))
     plt.tight_layout()
     plt.show()
 
     diffs = []
     for i in range(h):
-        mask = img_list[h+i][:, -1].bool()
+        mask = img_list[0+s+i][:, -1].bool()
         diff = img_list[i][:, 0][mask] - img_list[h+i][:, 0][mask]
-        diffs.append(diff.abs().mean())
+        diffs.append(diff.abs().nanmean())
         print(diffs[-1])
-    print('total diff: %s' % torch.tensor(diffs).mean())
+    print('total diff: %s' % torch.tensor(diffs).nanmean())
