@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 
 def get_pretrained_unet_pp(n_channels, out_channels=2):
 
@@ -27,3 +29,29 @@ def get_pretrained_unet_pp(n_channels, out_channels=2):
         nn.init.kaiming_normal_(model.model.segmentation_head[0].weight, mode='fan_out', nonlinearity='relu')
         
     return model
+
+
+class UnetPP(torch.nn.Module):
+    def __init__(self, n_channels, out_channels=2):
+        super(UnetPP, self).__init__()
+
+        self.parent_model = get_pretrained_unet_pp(n_channels, out_channels)
+
+    def forward(self, x):
+        # Original height and width
+        orig_height, orig_width = x.shape[2], x.shape[3]
+        
+        # Calculate padding
+        pad_height = (32 - orig_height % 32) % 32
+        pad_width = (32 - orig_width % 32) % 32
+        
+        # Apply padding
+        x = F.pad(x, (0, pad_width, 0, pad_height), mode='constant', value=0)
+        
+        # Forward pass through the parent model
+        x = self.parent_model(x)
+        
+        # Crop the output back to the original dimensions
+        x = x[:, :, :orig_height, :orig_width]
+        
+        return x

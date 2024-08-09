@@ -210,8 +210,8 @@ if __name__ == '__main__':
         from segment_models.unet import UNet
         model = UNet(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt, shallow=cfg.shallow)
     elif cfg.model == 'unetpp':
-        from segment_models.unet_pp import get_pretrained_unet_pp
-        model = get_pretrained_unet_pp(n_channels, out_channels=cfg.class_num+cfg.bg_opt)
+        from segment_models.unet_pp import UnetPP
+        model = UnetPP(n_channels, out_channels=cfg.class_num+cfg.bg_opt)
     elif cfg.model == 'uctransnet':
         from segment_models.uctransnet.UCTransNet import UCTransNet
         from segment_models.uctransnet.Config import get_CTranS_config
