@@ -223,6 +223,8 @@ if __name__ == '__main__':
     if cfg.model in ('mlp', 'unet', 'resnet'):
         from segment_models.weights_init import initialize_weights
         model.apply(initialize_weights)
+    if mm_model is not None:
+        mm_model.apply(initialize_weights)
 
     model = model.to(memory_format=torch.channels_last)
     model.to(device=cfg.device)
