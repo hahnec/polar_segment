@@ -13,7 +13,7 @@ from omegaconf import OmegaConf
 from monai import transforms
 
 from horao_dataset import HORAO
-from utils.weighted_bce import WeightedDiceBCE
+from torchvision.ops import sigmoid_focal_loss
 from utils.transforms_segment import *
 from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
@@ -87,7 +87,6 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 
 def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
-    from torchvision.ops import sigmoid_focal_loss
     criterion = (lambda x, y: sigmoid_focal_loss(x, y).mean()) if branch_type != 'test' else None
     if cfg.class_num > 3 and branch_type != 'test':
         from utils.multi_loss import multi_loss_aggregation
