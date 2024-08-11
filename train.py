@@ -51,7 +51,6 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         preds = model(frames)
         t_s = time.perf_counter() - t_s
         loss = criterion(preds*m, truth*m) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
-        if loss is None: loss = torch.tensor(float('inf'))
 
     if train_opt and not torch.isnan(loss):
         if True:
@@ -89,7 +88,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
     from torchvision.ops import sigmoid_focal_loss
-    criterion = lambda x, y: sigmoid_focal_loss(x, y).mean() if branch_type != 'test' else None
+    criterion = (lambda x, y: sigmoid_focal_loss(x, y).mean()) if branch_type != 'test' else None
     if cfg.class_num > 3 and branch_type != 'test':
         from utils.multi_loss import multi_loss_aggregation
         criterion = lambda x, y: multi_loss_aggregation(x, y, loss_fun=lambda x, y: sigmoid_focal_loss(x, y).mean())
