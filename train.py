@@ -110,7 +110,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             loss, preds, metrics = batch_it(frames, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
-            pbar.set_postfix(**{'loss (batch)': loss.item()})
+            pbar.set_postfix(**{'loss (batch)': loss.item() if loss is not None else float('inf')})
             pbar.update(batch[0].shape[0])
             if cfg.logging:
                 wandb.log({
