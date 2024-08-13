@@ -59,9 +59,9 @@ class HORAO(Dataset):
                 img_class = 1
             if class_num > 2:
                 if id.startswith('HT'):
-                    matter_fname = self.base_dir / str(id) / 'annotation' / 'merged.png' #_no_border
+                    matter_fname = self.base_dir / str(id) / 'annotation' / 'merged_no_border.png' #_no_border
                 else: 
-                    matter_fname = self.base_dir / str(id) / 'histology' / 'labels_augmented_GM_WM_masked_FG.png' #_no_border
+                    matter_fname = self.base_dir / str(id) / 'histology' / 'labels_augmented_GM_WM_masked_FG_no_border.png' #_no_border
                 self.matter_paths.append(matter_fname)
 
             self.label_paths.append(label_fname)
@@ -90,7 +90,7 @@ class HORAO(Dataset):
             new = np.stack([labels[..., -2], labels[..., -1], matter_labels[..., -2], matter_labels[..., -1]], axis=-1).astype(float)
         
         if labels.shape[-1] == 3:
-            bg = (labels[..., 0].astype(bool) & matter_labels[..., 0].astype(bool))[..., None]
+            bg = (labels[..., 0].astype(bool) & matter_labels[..., 0].astype(bool))[..., None] # ~np.any(new, -1)[..., None]
             return np.concatenate([bg.astype(float), new], axis=-1)
         
         return new
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     img_list = []
     for data_type in ['raw_data', 'polarimetry']:
         transforms = [ToTensor(), RawRandomMuellerRotation(180, p=0, any=False), SwapDims()] if data_type.__contains__('raw_data') else []
-        dataset = HORAO(base_dir, 'val1.txt', bg_opt=bg_opt, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        dataset = HORAO(base_dir, 'val1.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
         from mm.models import MuellerMatrixPyramid as MMM
