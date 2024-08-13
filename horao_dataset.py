@@ -86,7 +86,7 @@ class HORAO(Dataset):
         tgm = labels[..., -1].astype(bool) & matter_labels[..., -2].astype(bool)
         new = np.stack([hwm, hgm, twm, tgm], axis=-1).astype(float)
         if labels.shape[-1] == 3:
-            bg = labels[..., 0][..., None]
+            bg = (labels[..., 0].astype(bool) & matter_labels[..., 0].astype(bool))[..., None]
             return np.concatenate([bg.astype(float), new], axis=-1)
         
         return new
