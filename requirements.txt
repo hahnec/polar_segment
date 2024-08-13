@@ -11,4 +11,4 @@ wandb
 transformers
 matplotlib
 segmentation-models-pytorch
-ml_collections
+ml-collections
