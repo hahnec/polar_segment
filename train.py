@@ -221,7 +221,7 @@ if __name__ == '__main__':
 
     # model weights initialization
     from segment_models.weights_init import initialize_weights
-    if cfg.model in ('mlp', 'unet', 'resnet'):
+    if cfg.model in ('mlp', 'unet', 'resnet', 'uctransnet'):
         model.apply(initialize_weights)
     if mm_model is not None:
         mm_model.apply(initialize_weights)
