@@ -52,10 +52,10 @@ class HORAO(Dataset):
             assert img_fname.exists(), f'No image found for the ID {id}: {img_fname}'
 
             if id.startswith('HT'):
-                label_fname = self.base_dir / str(id) / 'annotation' / 'WM_merged.png'
+                label_fname = self.base_dir / str(id) / 'annotation' / 'merged_no_border.png'
                 img_class = 0
             else:
-                label_fname = self.base_dir / str(id) / 'annotation' / 'ROI.tif'
+                label_fname = self.base_dir / str(id) / 'annotation' / 'FG.tif'
                 img_class = 1
             if class_num > 2:
                 if id.startswith('HT'):
