@@ -13,7 +13,7 @@ class HORAO(Dataset):
             transforms=[], 
             transforms_img=[], 
             bg_opt=0, 
-            benign_accumulate = True,
+            benign_accumulate = False,
             wlens=[550], 
             data_subfolder='polarimetry',
             keys=['azimuth', 'std'],
