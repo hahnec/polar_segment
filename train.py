@@ -66,11 +66,9 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         else:
             loss.backward()
 
-    # reduce prediction to healthy/tumor classes
-    if truth.shape[1] != preds.shape[1]: 
-        from utils.multi_loss import reduce_ht
-        h_pred, t_pred, _, _ = reduce_ht(preds, torch.zeros_like(preds))
-        preds = torch.stack([preds[:, 0], h_pred, t_pred], dim=1) if cfg.bg_opt else torch.stack([h_pred, t_pred], dim=1)
+    # reduce prediction to healthy/tumor white matter and gray matter classes
+    from utils.multi_loss import reduce_htgm
+    preds, truth = reduce_htgm(preds, truth)
 
     # metrics
     mask = torch.any(truth, dim=1)
@@ -83,7 +81,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         dices[i] = compute_dice_score(preds_b[i], truth[i], mask=mask[i]).detach()
     metrics = {'dice': dices, 'iou': ious, 'acc': accs, 't_s': torch.tensor([t_s/frames.size(0)])}
 
-    return loss, preds, metrics
+    return loss, preds, truth, metrics
 
 def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
 
@@ -106,7 +104,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             t = time.perf_counter()
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
-            loss, preds, metrics = batch_it(frames, truth)
+            loss, preds, truth, metrics = batch_it(frames, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             pbar.set_postfix(**{'loss (batch)': loss.item()})
@@ -327,6 +325,6 @@ if __name__ == '__main__':
     from horao_dataset import HORAO
 
     # perform test
-    dataset = HORAO(cfg.data_dir, 'test2.txt', transforms=[ToTensor()], class_num=2, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    dataset = HORAO(cfg.data_dir, 'test2.txt', transforms=[ToTensor()], class_num=4, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     from test import test_main
     test_main(cfg, dataset, best_model, best_mm_model)

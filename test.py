@@ -30,7 +30,7 @@ def test_main(cfg, dataset, model, mm_model):
     m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
     y_true = truth.argmax(1).flatten().cpu().numpy()
     y_pred = preds.argmax(1).flatten().cpu().numpy()
-    target_names = ['bg', 'benign', 'malignant'] if n_channels < 4 else ['bg', 'hwm', 'hgm', 'twm', 'tgm']
+    target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
 
     try:
         from sklearn.metrics import classification_report

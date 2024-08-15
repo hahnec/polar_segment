@@ -34,3 +34,17 @@ def multi_loss_aggregation(x, y, loss_fun, w_lambda=None):
     if w_lambda is None: w_lambda = torch.tensor([x.shape[1], 1, 1, 1, 1], device=x.device, dtype=x.dtype) / (x.shape[1]+4)
 
     return torch.stack([a_loss, t_loss, h_loss, w_loss, g_loss]) @ w_lambda
+
+def reduce_htgm(x, y, reduce_fun=torch.mean):
+
+    hwm_pred = x[:, -4]
+    twm_pred = x[:, -2]
+    hwm_true = y[:, -4]
+    twm_true = y[:, -2]
+    gm_pred = reduce_fun(torch.stack([x[:, -1], x[:, -3]], dim=0), dim=0)
+    gm_true = torch.logical_or(y[:, -1], y[:, -3]).float()
+
+    pred = torch.stack([x[:, 0], hwm_pred, twm_pred, gm_pred], dim=1) if x.shape[1] == 5 else torch.stack([hwm_pred, twm_pred, gm_pred], dim=1)
+    true = torch.stack([x[:, 0], hwm_true, twm_true, gm_true], dim=1) if x.shape[1] == 5 else torch.stack([hwm_true, twm_true, gm_true], dim=1)
+
+    return pred, true
