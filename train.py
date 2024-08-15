@@ -67,7 +67,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
             loss.backward()
 
     # reduce prediction to healthy/tumor classes
-    if cfg.class_num > 3 and truth.shape[1] != preds.shape[1]: 
+    if truth.shape[1] != preds.shape[1]: 
         from utils.multi_loss import reduce_ht
         h_pred, t_pred, _, _ = reduce_ht(preds, torch.zeros_like(preds))
         preds = torch.stack([preds[:, 0], h_pred, t_pred], dim=1) if cfg.bg_opt else torch.stack([h_pred, t_pred], dim=1)
