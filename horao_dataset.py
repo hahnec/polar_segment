@@ -44,6 +44,7 @@ class HORAO(Dataset):
 
         self.img_paths = []
         self.label_paths = []
+        self.bglabel_paths = []
         self.img_classes = []
         self.matter_paths = []
         for id in self.ids:
@@ -53,9 +54,11 @@ class HORAO(Dataset):
 
             if id.startswith('HT'):
                 label_fname = self.base_dir / str(id) / 'annotation' / 'merged_no_border.png'
+                bglabel_fname = self.base_dir / str(id) / 'annotation' / 'BG_merged.png'
                 img_class = 0
             else:
                 label_fname = self.base_dir / str(id) / 'annotation' / 'FG.tif'
+                bglabel_fname = self.base_dir / str(id) / 'annotation' / 'ROI.tif'
                 img_class = 1
             if class_num > 2:
                 if id.startswith('HT'):
@@ -65,6 +68,7 @@ class HORAO(Dataset):
                 self.matter_paths.append(matter_fname)
 
             self.label_paths.append(label_fname)
+            self.bglabel_paths.append(bglabel_fname)
             self.img_classes.append(img_class)
             assert label_fname.exists(), f'No label found for the ID {id}: {label_fname}'
 
@@ -112,8 +116,9 @@ class HORAO(Dataset):
             for fname in fnames:
                 labels[0] = labels[0] & (np.array(Image.open(fname)) == 0).astype(bool)
         if self.bg_opt:
-            bg = (labels.sum(0) == 0).astype(labels.dtype)
-            labels = np.concatenate((bg[None] * labels.max(), labels), axis=0)
+            bg = np.array(Image.open(self.bglabel_paths[i]), bool)
+            if img_class == 1: bg = ~bg
+            labels = np.concatenate((bg[None].astype(labels.dtype) * labels.max(), labels), axis=0)
         labels = labels.swapaxes(0, 1).swapaxes(1, 2)
         labels = labels.astype(np.float32)
         if labels.max() > 1: labels /= 255
@@ -242,7 +247,7 @@ if __name__ == '__main__':
     img_list = []
     for data_type in ['raw_data', 'polarimetry']:
         transforms = [ToTensor(), RawRandomMuellerRotation(180, p=0, any=False), SwapDims()] if data_type.__contains__('raw_data') else []
-        dataset = HORAO(base_dir, 'val1.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        dataset = HORAO(base_dir, 'val2.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
         from mm.models import MuellerMatrixPyramid as MMM
