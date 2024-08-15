@@ -45,6 +45,6 @@ def reduce_htgm(x, y, reduce_fun=torch.mean):
     gm_true = torch.logical_or(y[:, -1], y[:, -3]).float()
 
     pred = torch.stack([x[:, 0], hwm_pred, twm_pred, gm_pred], dim=1) if x.shape[1] == 5 else torch.stack([hwm_pred, twm_pred, gm_pred], dim=1)
-    true = torch.stack([x[:, 0], hwm_true, twm_true, gm_true], dim=1) if x.shape[1] == 5 else torch.stack([hwm_true, twm_true, gm_true], dim=1)
+    true = torch.stack([y[:, 0], hwm_true, twm_true, gm_true], dim=1) if y.shape[1] == 5 else torch.stack([hwm_true, twm_true, gm_true], dim=1)
 
     return pred, true
