@@ -95,6 +95,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     desc = f'Steps {len(dataloader.dataset)}' if epoch is None else f'Epoch {epoch}/{cfg.epochs}'
 
     step = 0 if step is None else step
+    epoch_loss = 0
     metrics_dict = {'dice': [], 'iou': [], 'acc': [], 't_mm': [], 't_s': []}
     best_score, best_frame_pred, best_frame_mask = 0, None, None
     poor_score, poor_frame_pred, poor_frame_mask = 1, None, None
@@ -107,6 +108,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             loss, preds, truth, metrics = batch_it(frames, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
+            epoch_loss += loss.item()
             pbar.set_postfix(**{'loss (batch)': loss.item()})
             pbar.update(batch[0].shape[0])
             if cfg.logging:
@@ -159,7 +161,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     if branch_type == 'test':
         return preds, truth, metrics_dict
     else:
-        return model, mm_model, metrics_dict, step
+        return model, mm_model, metrics_dict, step, epoch_loss
 
 
 if __name__ == '__main__':
@@ -279,14 +281,15 @@ if __name__ == '__main__':
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
-            model, mm_model, metrics_dict, train_step = epoch_iter(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
+            model, mm_model, metrics_dict, train_step, tloss = epoch_iter(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
         # validation
         with torch.no_grad():
-            model, mm_model, metrics_dict, valid_step = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
+            model, mm_model, metrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
 
         # best model selection
-        if best_epoch_score < metrics_dict['acc']:
-            best_epoch_score = metrics_dict['acc']
+        epoch_score = vloss
+        if best_epoch_score > epoch_score:
+            best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
             if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
                 best_mm_model = copy.deepcopy(mm_model).eval()
