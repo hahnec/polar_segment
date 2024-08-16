@@ -298,12 +298,23 @@ if __name__ == '__main__':
             
             img_list.append(imgs)
 
-        print('%s bg pixels' % str(bg_pixels))
-        print('%s twm pixels' % str(twm_pixels))
-        print('%s hwm pixels' % str(hwm_pixels))
-        print('%s gm pixels' % str(gm_pixels))
+        class_balance = {
+            'background': bg_pixels,
+            'healthy white matter': hwm_pixels,
+            'tumor white matter': twm_pixels,
+            'gray matter': gm_pixels,
+                        }
+
+        try:
+            from utils.rowdict2textable import generate_latex_table
+            generate_latex_table(class_balance)
+        except:
+            pass
+
         print('%s tumor samples' % str(tumor_samples))
         print('%s healthy samples' % str(healthy_samples))
+        for k,v in class_balance.items():
+            print(str(v), k)
 
     print('comparison')
     s = 1
