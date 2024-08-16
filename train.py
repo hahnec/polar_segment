@@ -232,7 +232,7 @@ if __name__ == '__main__':
     model.to(device=cfg.device)
 
     # create dataset
-    dataset = HORAO(cfg.data_dir, 'train2_imbalance.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, worker_init_fn=lambda worker_id: torch.manual_seed(cfg.seed))
+    dataset = HORAO(cfg.data_dir, 'train2_imbalance.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     if (Path(cfg.data_dir) / 'cases' / 'val2.txt').exists():
         val_set = HORAO(cfg.data_dir, 'val2.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     else:
