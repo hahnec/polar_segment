@@ -245,32 +245,41 @@ if __name__ == '__main__':
     feat_keys = ['std', 'mask'] #'azimuth', 'linr', 'totp'] #
 
     img_list = []
-    for data_type in ['raw_data', 'polarimetry']:
+    for data_type in ['polarimetry', 'raw_data']:
         transforms = [ToTensor(), RawRandomMuellerRotation(180, p=0, any=False), SwapDims()] if data_type.__contains__('raw_data') else []
-        dataset = HORAO(base_dir, 'val2.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        train_set = HORAO(base_dir, 'train2_imbalance.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        valid_set = HORAO(base_dir, 'val2.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        test_set = HORAO(base_dir, 'test2.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        dataset = torch.utils.data.ConcatDataset([train_set, valid_set, test_set])
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
         from mm.models import MuellerMatrixPyramid as MMM
-        mm_model = MMM(feature_keys=feat_keys, perc=.95, levels=1, kernel_size=0, method='averaging', wnum=len(dataset.wlens), filter_opt=False)
+        mm_model = MMM(feature_keys=feat_keys, perc=.95, levels=1, kernel_size=0, method='averaging', wnum=len(train_set.wlens), filter_opt=False)
 
         bg_pixels = 0
-        tumor_pixels = 0
+        twm_pixels = 0
+        hwm_pixels = 0
+        gm_pixels = 0
         tumor_samples = 0
-        healthy_pixels = 0
         healthy_samples = 0
         for batch in loader:
-            imgs, masks, label = batch
-
-            healthy_pixels += (masks[:, -2]>0).sum().item()
-            tumor_pixels += (masks[:, -1]>0).sum().item()
-            bg_pixels += (masks[:, 0]>0).sum().item()
-
-            healthy_samples += (label==0).sum().item()
-            tumor_samples += (label!=0).sum().item()
+            imgs, masks, img_class = batch
 
             # move feature dimension for consistency
             imgs = imgs.moveaxis(-1, 1)
-            if dataset.data_subfolder.__contains__('raw'):
+            masks = masks.moveaxis(-1, 1)
+
+            from utils.multi_loss import reduce_htgm
+            masks = reduce_htgm(torch.zeros_like(masks), masks, reduce_fun=torch.mean)[1]
+
+            bg_pixels += (masks[:, 0]>0).sum().item()
+            hwm_pixels += (masks[:, 1]>0).sum().item()
+            twm_pixels += (masks[:, 2]>0).sum().item()
+            gm_pixels += (masks[:, 3]>0).sum().item()
+            tumor_samples += (img_class==1).sum().item()
+            healthy_samples += (img_class==0).sum().item()
+
+            if train_set.data_subfolder.__contains__('raw'):
                 t = time.perf_counter()
                 imgs = mm_model(imgs)
                 t_total = time.perf_counter() -t
@@ -279,7 +288,7 @@ if __name__ == '__main__':
             if False:
                 import matplotlib.pyplot as plt
                 fig, axs = plt.subplots(1, 4)
-                axs[0].set_title(['healthy', 'tumor'][label[0]])
+                axs[0].set_title(['healthy', 'tumor'][img_class[0]])
                 axs[0].imshow(imgs[0][0])
                 axs[1].imshow(masks[0, ..., 0])
                 axs[2].imshow(masks[0, ..., -1])
@@ -289,11 +298,12 @@ if __name__ == '__main__':
             
             img_list.append(imgs)
 
-            print('%s healthy pixels' % str(healthy_pixels))
-            print('%s healthy samples' % str(healthy_samples))
-            print('%s tumor pixels' % str(tumor_pixels))
-            print('%s tumor samples' % str(tumor_samples))
-            print('%s bg pixels' % str(bg_pixels))
+        print('%s bg pixels' % str(bg_pixels))
+        print('%s twm pixels' % str(twm_pixels))
+        print('%s hwm pixels' % str(hwm_pixels))
+        print('%s gm pixels' % str(gm_pixels))
+        print('%s tumor samples' % str(tumor_samples))
+        print('%s healthy samples' % str(healthy_samples))
 
     print('comparison')
     s = 1
