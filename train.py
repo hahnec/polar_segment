@@ -180,7 +180,9 @@ if __name__ == '__main__':
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
     torch.cuda.manual_seed(cfg.seed)
-    torch.cuda.manual_seed_all(cfg.seed)
+    torch.cuda.manual_seed_all(cfg.seed)    # multi-GPU
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
 
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     logging.info(f'Using device {cfg.device}')
@@ -230,7 +232,7 @@ if __name__ == '__main__':
     model.to(device=cfg.device)
 
     # create dataset
-    dataset = HORAO(cfg.data_dir, 'train2.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    dataset = HORAO(cfg.data_dir, 'train2.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, worker_init_fn=lambda worker_id: torch.manual_seed(cfg.seed))
     if (Path(cfg.data_dir) / 'cases' / 'val2.txt').exists():
         val_set = HORAO(cfg.data_dir, 'val2.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     else:
