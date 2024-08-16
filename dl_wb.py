@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     # Define the project and group name
     project_name = 'polar_segment'
-    group_name = '4_class_multi_viable_test_wo_bg'
+    group_name = 'htgm_imbalance'
     table_key = 'report'
     media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
 
@@ -76,6 +76,10 @@ if __name__ == "__main__":
         md_metrics = dict_to_markdown_table(metrics)
         with open('dl_wandb/metrics_%s.md' % str(run.name), 'w') as file:
             file.write(md_metrics)
+
+        if run.state != 'finished':
+            print(run.name + ' ' + run.state)
+            continue
 
         table = run.use_artifact(run.logged_artifacts()[1]).get(table_key)
         md_table = convert_to_markdown(table)
