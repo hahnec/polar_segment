@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     runs = api.runs(path=f'{wandb.Api().default_entity}/{project_name}', filters={"group": group_name})
 
-    output_dir = 'dl_wandb/downloaded_images'
+    output_dir = os.path.join(group_name, 'downloaded_images')
     os.makedirs(output_dir, exist_ok=True)
 
     for run in runs:
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         for col in ['accuracy', 'dice', 'iou', 't_mm', 't_s']:
             metrics[col] = run.summary.get(col)
         md_metrics = dict_to_markdown_table(metrics)
-        with open('dl_wandb/metrics_%s.md' % str(run.name), 'w') as file:
+        with open(os.path.join(group_name, 'metrics_%s.md' % str(run.name)), 'w') as file:
             file.write(md_metrics)
 
         if run.state != 'finished':
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
         table = run.use_artifact(run.logged_artifacts()[1]).get(table_key)
         md_table = convert_to_markdown(table)
-        with open('dl_wandb/table_%s.md' % str(run.name), 'w') as file:
+        with open(os.path.join(group_name, 'table_%s.md' % str(run.name)), 'w') as file:
             file.write(md_table)
 
         # images
