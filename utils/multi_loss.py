@@ -31,7 +31,7 @@ def multi_loss_aggregation(x, y, loss_fun, w_lambda=None):
     w_loss = loss_fun(w_pred, w_true)
     g_loss = loss_fun(g_pred, g_true)
 
-    if w_lambda is None: w_lambda = torch.tensor([x.shape[1], 3, 1, 1, 1], device=x.device, dtype=x.dtype) / (x.shape[1]+4+2)
+    if w_lambda is None: w_lambda = torch.tensor([x.shape[1], 1, 1, 1, 1], device=x.device, dtype=x.dtype) / (x.shape[1]+4+2)
 
     return torch.stack([a_loss, t_loss, h_loss, w_loss, g_loss]) @ w_lambda
 
