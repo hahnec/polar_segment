@@ -1,4 +1,5 @@
 import os
+import json
 import wandb
 import requests
 from omegaconf import OmegaConf
@@ -6,6 +7,7 @@ from PIL import Image
 import numpy as np
 from io import BytesIO
 import imageio
+
 
 def convert_to_markdown(table):
     headers = table.columns
@@ -75,18 +77,25 @@ if __name__ == "__main__":
             continue
         
         # config
-        import json
         with open(os.path.join(group_name, 'config_%s.json' % str(run.name)), 'w') as f:
             json.dump(run.config, f, indent=4)
 
         metrics = {}
         for col in ['accuracy', 'dice', 'iou', 't_mm', 't_s']:
             metrics[col] = run.summary.get(col)
+        with open(os.path.join(group_name, 'metrics_%s.json' % str(run.name)), 'w') as file:
+            json.dump(metrics, file, indent=4)
         md_metrics = dict_to_markdown_table(metrics)
         with open(os.path.join(group_name, 'metrics_%s.md' % str(run.name)), 'w') as file:
             file.write(md_metrics)
 
         table = run.use_artifact(run.logged_artifacts()[1]).get(table_key)
+        table_dict = {
+            row[0]: {table.columns[i]: row[i] for i in range(1, len(table.columns))}
+            for row in table.data
+        }
+        with open(os.path.join(group_name, 'table_%s.json' % str(run.name)), 'w') as file:
+            json.dump(table_dict, file, indent=4)
         md_table = convert_to_markdown(table)
         with open(os.path.join(group_name, 'table_%s.md' % str(run.name)), 'w') as file:
             file.write(md_table)
