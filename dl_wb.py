@@ -70,16 +70,21 @@ if __name__ == "__main__":
 
     for run in runs:
 
+        if run.state != 'finished':
+            print(run.name + ' ' + run.state)
+            continue
+        
+        # config
+        import json
+        with open(os.path.join(group_name, 'config_%s.json' % str(run.name)), 'w') as f:
+            json.dump(run.config, f, indent=4)
+
         metrics = {}
         for col in ['accuracy', 'dice', 'iou', 't_mm', 't_s']:
             metrics[col] = run.summary.get(col)
         md_metrics = dict_to_markdown_table(metrics)
         with open(os.path.join(group_name, 'metrics_%s.md' % str(run.name)), 'w') as file:
             file.write(md_metrics)
-
-        if run.state != 'finished':
-            print(run.name + ' ' + run.state)
-            continue
 
         table = run.use_artifact(run.logged_artifacts()[1]).get(table_key)
         md_table = convert_to_markdown(table)
