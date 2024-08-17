@@ -124,16 +124,16 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             if torch.any(score > best_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmax()
                 best_score = score[bidx]
-                best_frame_pred, best_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx)
+                best_frame_pred, best_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
             if torch.any(score < poor_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmin()
                 poor_score = score[bidx]
-                poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx)
+                poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
             
             # log all test images
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
-                    frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx)
+                    frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
                     out_class = int(batch[-1][bidx]) + int(cfg.bg_opt)
                     hmask = (preds[bidx].argmax(0) == 0) if cfg.bg_opt else None
                     heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
