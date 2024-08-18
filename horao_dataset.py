@@ -299,10 +299,10 @@ if __name__ == '__main__':
             img_list.append(imgs)
 
         class_balance = {
-            'background': bg_pixels,
-            'healthy white matter': hwm_pixels,
-            'tumor white matter': twm_pixels,
-            'gray matter': gm_pixels,
+            'Background': bg_pixels,
+            'Healthy white matter': hwm_pixels,
+            'Tumor white matter': twm_pixels,
+            'Grey matter': gm_pixels,
                         }
 
         try:
