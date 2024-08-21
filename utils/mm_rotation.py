@@ -90,7 +90,7 @@ class RandomMuellerRotation(object):
             rotated_img = F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
             rotated_img = rotated_img.permute(0, 2, 3, 1).unsqueeze(1)
             # mueller matrix transformation
-            rmat = self.get_rmat(angle)
+            rmat = self.get_rmat(angle*-1)
             rotated_img = rmat @ rotated_img.view(*rotated_img.shape[:-1], 4, 4) @ rmat.transpose(-2, -1)
             rotated_img = rotated_img.flatten(-2, -1)
             if label is not None:
