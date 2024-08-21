@@ -74,7 +74,7 @@ class RandomMuellerRotation(object):
 
         return rmat
 
-    def __call__(self, img, label=None, *args, **kwargs):
+    def __call__(self, img, label=None, angle=None, *args, **kwargs):
         """
         Args:
             img (PIL Image): Image to be rotated.
@@ -85,7 +85,7 @@ class RandomMuellerRotation(object):
 
         if random.random() < self.p:
             # spatial transformation
-            angle = self.get_params(self.degrees)
+            angle = self.get_params(self.degrees) if angle is None else angle
             img = img[:, 0].permute(0, 3, 1, 2)
             rotated_img = F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
             rotated_img = rotated_img.permute(0, 2, 3, 1).unsqueeze(1)
@@ -138,7 +138,7 @@ class RawRandomMuellerRotation(object):
 
     """
 
-    def __init__(self, degrees, resample=False, expand=True, center=None, fill=0, p=0.5, any=True):
+    def __init__(self, degrees, resample=False, expand=False, center=None, fill=0, p=0.5, any=True):
         if isinstance(degrees, numbers.Number):
             if degrees < 0:
                 raise ValueError("If degrees is a single number, it must be positive.")
@@ -183,7 +183,7 @@ class RawRandomMuellerRotation(object):
 
         return rmat
 
-    def __call__(self, frame, label=None, transpose=True, *args, **kwargs):
+    def __call__(self, frame, label=None, transpose=True, angle=None, *args, **kwargs):
         """
         Args:
             img (PIL Image): Image to be rotated.
@@ -194,16 +194,19 @@ class RawRandomMuellerRotation(object):
 
         if random.random() < self.p:
             # spatial transformation
-            angle = self.get_params(self.degrees)
+            angle = self.get_params(self.degrees) if angle is None else angle
             frame = F.rotate(frame, angle, self.resample, self.expand, self.center, self.fill).moveaxis(0, -1)
             # unravel matrices
             I, A, W = frame[..., :16], frame[..., 16:32], frame[..., 32:]
             # HxWx16 to HxWx4x4 matrix reshaping
             shape = (*A.shape[:-1], 4, 4)
+            zero_idcs = torch.all(A==torch.zeros_like(A), dim=-1)
             I, A, W = [el.reshape(shape) for el in [I, A, W]]
             if transpose: I, A, W = [el.transpose(-2, -1) for el in [I, A, W]]
+            A[zero_idcs] = torch.eye(4, dtype=A.dtype, device=A.device)
+            W[zero_idcs] = torch.eye(4, dtype=W.dtype, device=W.device)
             # mueller matrix transformation: A_theta = (R_theta @ A_inv)_inv since R_theta @ M @ R_-theta = R_theta @ A_inv @ I @ W_inv @ R_-theta
-            R = self.get_rmat(angle)
+            R = self.get_rmat(angle*-1).to(A.dtype)
             A = torch.linalg.inv(R @ torch.linalg.inv(A))
             W = torch.linalg.inv(torch.linalg.inv(W) @ R.transpose(-2, -1))
             # HxWx4 to HxWx16 matrix reshaping
