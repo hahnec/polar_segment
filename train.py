@@ -126,15 +126,17 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                 best_score = score[bidx]
                 best_frame_pred, best_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
                 if not cfg.bg_opt:
-                    best_frame_pred = torch.cat((best_frame_pred, bg[bidx]), dim=0)
-                    best_frame_mask = torch.cat((best_frame_mask, bg[bidx]), dim=0)
+                    alpha = (~bg[bidx]).float()*255
+                    best_frame_pred = torch.cat((best_frame_pred, alpha), dim=0)
+                    best_frame_mask = torch.cat((best_frame_mask, alpha), dim=0)
             if torch.any(score < poor_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmin()
                 poor_score = score[bidx]
                 poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
                 if not cfg.bg_opt:
-                    poor_frame_pred = torch.cat((poor_frame_pred, bg[bidx]), dim=0)
-                    poor_frame_mask = torch.cat((poor_frame_mask, bg[bidx]), dim=0)
+                    alpha = (~bg[bidx]).float()*255
+                    poor_frame_pred = torch.cat((poor_frame_pred, alpha), dim=0)
+                    poor_frame_mask = torch.cat((poor_frame_mask, alpha), dim=0)
             # log all test images
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
@@ -143,9 +145,10 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                     hmask = (preds[bidx].argmax(0) == 0) if cfg.bg_opt else None
                     heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
                     if not cfg.bg_opt:
-                        frame_pred = torch.cat((frame_pred, bg[bidx]), dim=0)
-                        frame_mask = torch.cat((frame_mask, bg[bidx]), dim=0)
-                        heatmap = np.concatenate((heatmap, bg[bidx].moveaxis(0, -1).cpu().numpy()), axis=-1)
+                        alpha = (~bg[bidx]).float()*255
+                        frame_pred = torch.cat((frame_pred, alpha), dim=0)
+                        frame_mask = torch.cat((frame_mask, alpha), dim=0)
+                        heatmap = np.concatenate((heatmap, (~bg[bidx]).float().moveaxis(0, -1).cpu().numpy()), axis=-1)
                     wandb.log({
                         'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=['benign', 'malignant'][int(batch[2][bidx])]),
                         'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=['benign-GT', 'malignant-GT'][int(batch[2][bidx])]), 
