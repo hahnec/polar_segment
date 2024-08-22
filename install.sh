@@ -1,8 +1,7 @@
 git clone git@github.com:hahnec/mm_torch
 ln -s mm_torch/mm_torch ./mm
 
-git clone git@github.com:hahnec/polar_augment polar_augment_repo
-ln -s polar_augment_repo/polar_augment ./polar_augment
+git clone git@github.com:hahnec/polar_augment
 
 python -m pip install pip --upgrade
 python -m venv venv
