@@ -17,8 +17,8 @@ from torchvision.ops import sigmoid_focal_loss
 from utils.transforms_segment import *
 from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
-from utils.mm_rotation import RawRandomMuellerRotation
-from utils.batch_segment_shuffle import BatchSegmentShuffler
+from polar_augment.augmentations.rotation_raw import RawRandomMuellerRotation
+from polar_augment.augmentations.batch_segment_shuffle import BatchSegmentShuffler
 from mm.models import init_mm_model
 
 def batch_preprocess(batch, cfg):
