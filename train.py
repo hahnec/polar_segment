@@ -142,6 +142,10 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                     out_class = int(batch[2][bidx]) + int(cfg.bg_opt)
                     hmask = (preds[bidx].argmax(0) == 0) if cfg.bg_opt else None
                     heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
+                    if not cfg.bg_opt:
+                        frame_pred = torch.cat((frame_pred, bg[bidx]), dim=0)
+                        frame_mask = torch.cat((frame_mask, bg[bidx]), dim=0)
+                        heatmap = torch.cat((heatmap.cpu(), bg[bidx].cpu()), dim=0)
                     wandb.log({
                         'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=['benign', 'malignant'][int(batch[-1][bidx])]),
                         'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=['benign-GT', 'malignant-GT'][int(batch[-1][bidx])]), 
