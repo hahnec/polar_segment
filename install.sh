@@ -1,6 +1,7 @@
 git clone git@github.com:hahnec/mm_torch
 ln -s mm_torch/mm_torch ./mm
 
+python -m pip install pip --upgrade
 python -m venv venv
 source venv/bin/activate
 
