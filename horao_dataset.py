@@ -115,10 +115,10 @@ class HORAO(Dataset):
             fnames = self.label_paths[i].parent.glob('BG_*.tif')
             for fname in fnames:
                 labels[0] = labels[0] & (np.array(Image.open(fname)) == 0).astype(bool)
+        bg = np.array(Image.open(self.bglabel_paths[i]), bool)[None]
+        if img_class == 1: bg = ~bg
         if self.bg_opt:
-            bg = np.array(Image.open(self.bglabel_paths[i]), bool)
-            if img_class == 1: bg = ~bg
-            labels = np.concatenate((bg[None].astype(labels.dtype) * labels.max(), labels), axis=0)
+            labels = np.concatenate((bg.astype(labels.dtype) * labels.max(), labels), axis=0)
         labels = labels.swapaxes(0, 1).swapaxes(1, 2)
         labels = labels.astype(np.float32)
         if labels.max() > 1: labels /= 255
@@ -197,7 +197,7 @@ class HORAO(Dataset):
         for transform in self.transforms:
             frames, labels = transform(frames, label=labels)
 
-        return frames, labels, img_class
+        return frames, labels, img_class, bg
 
     def __len__(self):
         return len(self.ids)
@@ -210,7 +210,7 @@ class PatchHORAO(HORAO):
 
     def __getitem__(self, i):
         # run through conventional dataloader
-        frames, labels, img_class = super().__getitem__(i)
+        frames, labels, img_class, bg = super().__getitem__(i)
         
         # get arbitrary 2d coordinate pair from a labeled pixel
         binary_map_crop = torch.any(labels, dim=0, keepdim=False)[self.b:-self.b, self.b:-self.b]
@@ -225,7 +225,7 @@ class PatchHORAO(HORAO):
         # select patch based on 2d coordinate
         patch = frames[:, coords[0]-self.b:coords[0]+self.b, coords[1]-self.b:coords[1]+self.b]
         
-        return patch, labels[:, coords[0], coords[1]], img_class
+        return patch, labels[:, coords[0], coords[1]], img_class, bg[:, coords[0], coords[1]]
 
 if __name__ == '__main__':
 
@@ -263,7 +263,7 @@ if __name__ == '__main__':
         tumor_samples = 0
         healthy_samples = 0
         for batch in loader:
-            imgs, masks, img_class = batch
+            imgs, masks, img_class, bg = batch
 
             # move feature dimension for consistency
             imgs = imgs.moveaxis(-1, 1)

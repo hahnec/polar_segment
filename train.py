@@ -24,7 +24,7 @@ from mm.models import init_mm_model
 def batch_preprocess(batch, cfg):
     
     # device
-    frames, truth = batch[:2]
+    frames, truth, img_class, bg = batch
     imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
     frames = frames.to(device=cfg.device, dtype=torch.float32, memory_format=torch.channels_last)
     truth = truth.to(device=cfg.device, dtype=frames.dtype)
@@ -32,7 +32,7 @@ def batch_preprocess(batch, cfg):
     if random.random() < cfg.shuffle_crop and frames.shape[0] > 1:
         frames, truth = BatchSegmentShuffler('mask')(frames, truth)
 
-    return frames, truth, imgs
+    return frames, truth, imgs, bg
 
 def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
@@ -101,7 +101,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     poor_score, poor_frame_pred, poor_frame_mask = 1, None, None
     with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
         for batch in dataloader:
-            frames, truth, imgs = batch_preprocess(batch, cfg)
+            frames, truth, imgs, bg = batch_preprocess(batch, cfg)
             t = time.perf_counter()
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
@@ -125,11 +125,16 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                 bidx = score.argmax()
                 best_score = score[bidx]
                 best_frame_pred, best_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
+                if not cfg.bg_opt:
+                    best_frame_pred = torch.cat((best_frame_pred, bg[bidx]), dim=0)
+                    best_frame_mask = torch.cat((best_frame_mask, bg[bidx]), dim=0)
             if torch.any(score < poor_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmin()
                 poor_score = score[bidx]
                 poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
-            
+                if not cfg.bg_opt:
+                    poor_frame_pred = torch.cat((poor_frame_pred, bg[bidx]), dim=0)
+                    poor_frame_mask = torch.cat((poor_frame_mask, bg[bidx]), dim=0)
             # log all test images
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
