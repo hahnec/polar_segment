@@ -178,7 +178,7 @@ if __name__ == '__main__':
         with open(el, 'r') as f:
             tab = json.load(f)
         metrics.append(tab)
-    save_textable(metrics, models, methods, categories=['accuracy', 'dice', 'iou', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex')
+    save_textable(metrics, models, methods, categories=['accuracy', 'dice', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex')
 
     # image results
     mapping_labels = {
