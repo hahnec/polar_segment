@@ -26,8 +26,6 @@ class MLP(torch.nn.Module):
         x = self.act_fun(x)
         x = self.dropout(x)
         x = self.output_layer(x)
-        x = self.dropout(x)
-        x = torch.nn.functional.softmax(x, dim=1)
         return x.view(dims[0], *dims[2:], self.n_classes).permute(0, 3, 1, 2) if len(dims) == 4 else x
 
 
