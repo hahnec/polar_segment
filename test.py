@@ -38,6 +38,13 @@ def test_main(cfg, dataset, model, mm_model):
     except ValueError as e:
         print(e)
 
+    # ROC curve
+    from sklearn.metrics import roc_curve, auc
+    fpr, tpr, thresholds = roc_curve(y_true[m], y_pred[m])
+    roc_auc = auc(fpr, tpr)
+    wandb.log({"auc" : roc_auc})
+    wandb.log({"roc" : wandb.plot.roc_curve(y_true[m], y_pred[m], labels=target_names[-n_channels:])})
+
     if cfg.logging:
         # upload other metrics to wandb
         wandb.log(metrics)
