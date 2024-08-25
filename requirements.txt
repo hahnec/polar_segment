@@ -12,3 +12,4 @@ transformers
 matplotlib
 segmentation-models-pytorch
 ml-collections
+pandas
