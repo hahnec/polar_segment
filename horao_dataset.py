@@ -232,7 +232,7 @@ if __name__ == '__main__':
     import time
     import random
     from torch.utils.data import DataLoader
-    from utils.mm_rotation import RawRandomMuellerRotation
+    from polar_augment.augmentations.rotation_raw import RandomPolarRotation
     from utils.transforms_segment import *
 
     random.seed(3008)
@@ -246,7 +246,7 @@ if __name__ == '__main__':
 
     img_list = []
     for data_type in ['polarimetry', 'raw_data']:
-        transforms = [ToTensor(), RawRandomMuellerRotation(180, p=0, any=False), SwapDims()] if data_type.__contains__('raw_data') else []
+        transforms = [ToTensor(), RandomPolarRotation(180, p=0, any=False), SwapDims()] if data_type.__contains__('raw_data') else []
         train_set = HORAO(base_dir, 'train2_imbalance.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
         valid_set = HORAO(base_dir, 'val2.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
         test_set = HORAO(base_dir, 'test2.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
