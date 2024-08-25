@@ -38,13 +38,6 @@ def test_main(cfg, dataset, model, mm_model):
     except ValueError as e:
         print(e)
 
-    # ROC curve
-    from sklearn.metrics import roc_curve, auc
-    fpr, tpr, thresholds = roc_curve(y_true[m], y_pred[m])
-    roc_auc = auc(fpr, tpr)
-    wandb.log({"auc" : roc_auc})
-    wandb.log({"roc" : wandb.plot.roc_curve(y_true[m], y_pred[m], labels=target_names[-n_channels:])})
-
     if cfg.logging:
         # upload other metrics to wandb
         wandb.log(metrics)
@@ -57,6 +50,12 @@ def test_main(cfg, dataset, model, mm_model):
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
+        # ROC curve
+        from sklearn.metrics import roc_curve, auc
+        fpr, tpr, thresholds = roc_curve(y_true[m], y_pred[m])
+        roc_auc = auc(fpr, tpr)
+        wandb.log({"auc" : roc_auc})
+        wandb.log({"roc" : wandb.plot.roc_curve(y_true[m], y_pred[m], labels=target_names[-n_channels:])})
     else: 
         with open('./results.txt', "a") as f:
             f.write(report)
