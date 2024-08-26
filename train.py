@@ -66,9 +66,10 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         else:
             loss.backward()
 
-    # reduce prediction to healthy/tumor white matter and gray matter classes
-    from utils.multi_loss import reduce_htgm
-    preds, truth = reduce_htgm(preds, truth)
+    if cfg.class_num > 2:
+        # reduce prediction to healthy/tumor white matter and gray matter classes
+        from utils.multi_loss import reduce_htgm
+        preds, truth = reduce_htgm(preds, truth)
 
     # metrics
     mask = torch.any(truth, dim=1)
