@@ -38,13 +38,6 @@ def test_main(cfg, dataset, model, mm_model):
     except ValueError as e:
         print(e)
 
-    # ROC curve
-    from sklearn.metrics import roc_curve, auc
-    class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)]
-    valid_idcs = (class_idcs[0]<y_true[m]) & (y_true[m]<class_idcs[1])
-    fpr, tpr, thresholds = roc_curve(y_true[m][valid_idcs]-int(cfg.bg_opt), y_pred[m][valid_idcs]-int(cfg.bg_opt))
-    roc_auc = auc(fpr, tpr)
-
     if cfg.logging:
         # upload other metrics to wandb
         wandb.log(metrics)
@@ -58,7 +51,7 @@ def test_main(cfg, dataset, model, mm_model):
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
         # ROC curve
-        wandb.log({"auc": roc_auc})
+        class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)]
         wb_t = truth[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).argmax(axis=1).cpu().numpy()
         wb_p = preds[:, class_idcs].cpu().permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).numpy()
         wandb.log({"roc": wandb.plot.roc_curve(wb_t, wb_p, labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
