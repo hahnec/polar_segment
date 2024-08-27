@@ -7,6 +7,7 @@ import wandb
 from pathlib import Path
 from torch.utils.data import DataLoader
 from omegaconf import OmegaConf
+from sklearn.metrics import classification_report, roc_curve, auc
 
 from horao_dataset import HORAO
 from utils.transforms_segment import *
@@ -33,13 +34,21 @@ def test_main(cfg, dataset, model, mm_model):
     target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
 
     try:
-        from sklearn.metrics import classification_report
         report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
     except ValueError as e:
         print(e)
 
+    # ROC curve
+    class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)]
+    wb_t = truth[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
+    wb_p = preds[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
+    vidx = np.any(wb_t, axis=-1) # only labeled samples
+    fpr, tpr, ths = roc_curve(wb_t[vidx].argmax(1), wb_p[vidx].argmax(1))
+    roc_auc = auc(fpr, tpr)
+
     if cfg.logging:
-        # upload other metrics to wandb
+        # upload 
+        # other metrics to wandb
         wandb.log(metrics)
         wandb.log({'accuracy': metrics['acc']})
         table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
@@ -50,12 +59,8 @@ def test_main(cfg, dataset, model, mm_model):
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
-        # ROC curve
-        class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)]
-        wb_t = truth[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
-        wb_p = preds[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
-        vidx = np.any(wb_t, axis=-1) # only labeled samples
         wandb.log({"roc": wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
+        wandb.log({"auc": roc_auc})
     else:
         with open('./results.txt', "a") as f:
             f.write(report)
@@ -66,6 +71,7 @@ def test_main(cfg, dataset, model, mm_model):
                 f.write('%s: %s' % (k, str(v)))
                 print('%s: %s' % (k, str(v)))
             print('\n')
+            print('roc: %s' % str(roc_auc))
 
 
 def flatten_dict_to_rows(d):
