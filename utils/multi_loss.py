@@ -1,20 +1,20 @@
 import torch
 
 
-def reduce_ht(x, y, reduce_fun=torch.mean):
+def reduce_ht(x, y):
 
-    h_pred = reduce_fun(torch.stack([x[:, -3], x[:, -4]], dim=0), dim=0)
-    t_pred = reduce_fun(torch.stack([x[:, -1], x[:, -2]], dim=0), dim=0)
+    h_pred = torch.maximum( [x[:, -3], x[:, -4]])
+    t_pred = torch.maximum([x[:, -1], x[:, -2]])
     h_true = torch.logical_or(y[:, -3], y[:, -4]).float()
     t_true = torch.logical_or(y[:, -1], y[:, -2]).float()
 
     return h_pred, t_pred, h_true, t_true
 
 
-def reduce_wg(x, y, reduce_fun=torch.mean):
+def reduce_wg(x, y):
 
-    w_pred = reduce_fun(torch.stack([x[:, -2], x[:, -4]], dim=0), dim=0)
-    g_pred = reduce_fun(torch.stack([x[:, -1], x[:, -3]], dim=0), dim=0)
+    w_pred = torch.maximum([x[:, -2], x[:, -4]])
+    g_pred = torch.maximum([x[:, -1], x[:, -3]])
     w_true = torch.logical_or(y[:, -2], y[:, -4]).float()
     g_true = torch.logical_or(y[:, -1], y[:, -3]).float()
 
@@ -35,13 +35,14 @@ def multi_loss_aggregation(x, y, loss_fun, w_lambda=None):
 
     return torch.stack([a_loss, t_loss, h_loss, w_loss, g_loss]) @ w_lambda
 
-def reduce_htgm(x, y, reduce_fun=torch.mean):
+def reduce_htgm(x, y):
 
+    # negative indices to account for background class at index 0
     hwm_pred = x[:, -4]
     twm_pred = x[:, -2]
     hwm_true = y[:, -4]
     twm_true = y[:, -2]
-    gm_pred = reduce_fun(torch.stack([x[:, -1], x[:, -3]], dim=0), dim=0)
+    gm_pred = torch.maximum(x[:, -1], x[:, -3])
     gm_true = torch.logical_or(y[:, -1], y[:, -3]).float()
 
     pred = torch.stack([x[:, 0], hwm_pred, twm_pred, gm_pred], dim=1) if x.shape[1] == 5 else torch.stack([hwm_pred, twm_pred, gm_pred], dim=1)
