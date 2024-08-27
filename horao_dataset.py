@@ -259,7 +259,8 @@ if __name__ == '__main__':
         bg_pixels = 0
         twm_pixels = 0
         hwm_pixels = 0
-        gm_pixels = 0
+        hgm_pixels = 0
+        tgm_pixels = 0
         tumor_samples = 0
         healthy_samples = 0
         for batch in loader:
@@ -269,13 +270,11 @@ if __name__ == '__main__':
             imgs = imgs.moveaxis(-1, 1)
             masks = masks.moveaxis(-1, 1)
 
-            from utils.multi_loss import reduce_htgm
-            masks = reduce_htgm(torch.zeros_like(masks), masks, reduce_fun=torch.mean)[1]
-
             bg_pixels += (masks[:, 0]>0).sum().item()
             hwm_pixels += (masks[:, 1]>0).sum().item()
-            twm_pixels += (masks[:, 2]>0).sum().item()
-            gm_pixels += (masks[:, 3]>0).sum().item()
+            twm_pixels += (masks[:, 3]>0).sum().item()
+            hgm_pixels += (masks[:, 2]>0).sum().item()
+            tgm_pixels += (masks[:, 4]>0).sum().item()
             tumor_samples += (img_class==1).sum().item()
             healthy_samples += (img_class==0).sum().item()
 
@@ -284,6 +283,9 @@ if __name__ == '__main__':
                 imgs = mm_model(imgs)
                 t_total = time.perf_counter() -t
                 print('MM processing time: %s' % str(t_total))
+
+            from utils.multi_loss import reduce_htgm
+            masks = reduce_htgm(torch.zeros_like(masks), masks, reduce_fun=torch.mean)[1]
 
             if False:
                 import matplotlib.pyplot as plt
@@ -302,7 +304,8 @@ if __name__ == '__main__':
             'Background': bg_pixels,
             'Healthy white matter': hwm_pixels,
             'Tumor white matter': twm_pixels,
-            'Grey matter': gm_pixels,
+            'Healthy grey matter': hgm_pixels,
+            'Tumor grey matter': tgm_pixels,
                         }
 
         try:
