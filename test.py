@@ -52,9 +52,10 @@ def test_main(cfg, dataset, model, mm_model):
         wandb.log({'report': table_report})
         # ROC curve
         class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)]
-        wb_t = truth[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).argmax(axis=1).cpu().numpy()
-        wb_p = preds[:, class_idcs].cpu().permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).numpy()
-        wandb.log({"roc": wandb.plot.roc_curve(wb_t, wb_p, labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
+        wb_t = truth[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
+        wb_p = preds[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
+        vidx = np.any(wb_t, axis=-1) # only labeled samples
+        wandb.log({"roc": wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
     else:
         with open('./results.txt', "a") as f:
             f.write(report)
@@ -65,7 +66,6 @@ def test_main(cfg, dataset, model, mm_model):
                 f.write('%s: %s' % (k, str(v)))
                 print('%s: %s' % (k, str(v)))
             print('\n')
-            print('roc: %s' % str(roc_auc))
 
 
 def flatten_dict_to_rows(d):
