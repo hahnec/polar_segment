@@ -3,8 +3,8 @@ import torch
 
 def reduce_ht(x, y):
 
-    h_pred = torch.maximum( [x[:, -3], x[:, -4]])
-    t_pred = torch.maximum([x[:, -1], x[:, -2]])
+    h_pred = torch.maximum(x[:, -3], x[:, -4])
+    t_pred = torch.maximum(x[:, -1], x[:, -2])
     h_true = torch.logical_or(y[:, -3], y[:, -4]).float()
     t_true = torch.logical_or(y[:, -1], y[:, -2]).float()
 
@@ -13,8 +13,8 @@ def reduce_ht(x, y):
 
 def reduce_wg(x, y):
 
-    w_pred = torch.maximum([x[:, -2], x[:, -4]])
-    g_pred = torch.maximum([x[:, -1], x[:, -3]])
+    w_pred = torch.maximum(x[:, -2], x[:, -4])
+    g_pred = torch.maximum(x[:, -1], x[:, -3])
     w_true = torch.logical_or(y[:, -2], y[:, -4]).float()
     g_true = torch.logical_or(y[:, -1], y[:, -3]).float()
 
