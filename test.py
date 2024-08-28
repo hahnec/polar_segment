@@ -40,8 +40,8 @@ def test_main(cfg, dataset, model, mm_model):
 
     # ROC curve
     class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)]
-    wb_t = truth[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
-    wb_p = preds[:, class_idcs].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
+    wb_t = truth[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
+    wb_p = preds[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
     vidx = np.any(wb_t, axis=-1) # only labeled samples
     fpr, tpr, ths = roc_curve(wb_t[vidx].argmax(1), wb_p[vidx].argmax(1))
     roc_auc = auc(fpr, tpr)
