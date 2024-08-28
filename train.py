@@ -18,6 +18,7 @@ from utils.transforms_segment import *
 from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
 from polar_augment.augmentations.rotation_raw import RandomPolarRotation
+from polar_augment.augmentations.flip_raw import RandomPolarFlip
 from polar_augment.augmentations.batch_segment_shuffle import BatchSegmentShuffler
 from mm.models import init_mm_model
 
@@ -205,6 +206,9 @@ if __name__ == '__main__':
             ToTensor(), 
             RandomCrop(size=int(cfg.crop)) if cfg.crop > 0 else EmptyTransform(), 
             RandomPolarRotation(degrees=cfg.rotation, p=.5, any=False) if cfg.rotation > 0 else EmptyTransform(),
+            RandomPolarFlip(orientation=0, p=.5/3) if cfg.flips else EmptyTransform(),
+            RandomPolarFlip(orientation=1, p=.5/3) if cfg.flips else EmptyTransform(),
+            RandomPolarFlip(orientation=2, p=.5/3) if cfg.flips else EmptyTransform(),
             #transforms.RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
             #Normalize(mean=0, std=1), 
         ]
