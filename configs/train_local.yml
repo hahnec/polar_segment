@@ -7,7 +7,6 @@ seed: 3008
 model: unet
 model_file: Null
 mm_model_file: Null
-crop: 0
 shallow: 0
 
 # training
@@ -17,7 +16,7 @@ epochs: 100
 weight_decay: 1e-8
 val_fraction: 0.1
 amp: False
-bg_opt: True
+bg_opt: False
 labeled_only: True
 group: Null
 class_num: 4
@@ -46,6 +45,7 @@ wlens:
   - 550
 
 # augmentation settings
-flips: False
-rotation: 0
+crop: 224
+flips: True
+rotation: 45
 shuffle_crop: 0
