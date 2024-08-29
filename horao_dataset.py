@@ -115,7 +115,7 @@ class HORAO(Dataset):
             fnames = self.label_paths[i].parent.glob('BG_*.tif')
             for fname in fnames:
                 labels[0] = labels[0] & (np.array(Image.open(fname)) == 0).astype(bool)
-        bg = np.array(Image.open(self.bglabel_paths[i]), bool)[None]
+        bg = np.array(Image.open(self.bglabel_paths[i]), bool)[..., None]
         if img_class == 1: bg = ~bg
         if self.bg_opt:
             labels = np.concatenate((bg.astype(labels.dtype) * labels.max(), labels), axis=0)
@@ -194,8 +194,10 @@ class HORAO(Dataset):
         for transform in self.transforms_img:
             frames = transform(frames)
 
+        labels = np.concatenate([labels, bg], axis=-1)
         for transform in self.transforms:
             frames, labels = transform(frames, label=labels)
+        labels, bg = labels[:-1], labels[-1][None].bool()
 
         return frames, labels, img_class, bg
 
