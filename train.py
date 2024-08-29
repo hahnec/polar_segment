@@ -206,7 +206,7 @@ if __name__ == '__main__':
     transforms = [
             ToTensor(), 
             RandomCrop(size=int(cfg.crop)) if cfg.crop > 0 else EmptyTransform(), 
-            RandomPolarRotation(degrees=cfg.rotation, p=.5) if cfg.rotation > 0 and raw_opt else EmptyTransform(),
+            RandomPolarRotation(degrees=cfg.rotation, p=.5, fill=[0,0,0,0,1]) if cfg.rotation > 0 and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=0, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=1, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=2, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
