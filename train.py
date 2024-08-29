@@ -17,8 +17,8 @@ from utils.multi_focal_loss import sigmoid_focal_loss_multiclass
 from utils.transforms_segment import *
 from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
-from polar_augment.augmentations.rotation_raw import RandomPolarRotation
 from polar_augment.augmentations.flip_raw import RandomPolarFlip
+from polar_augment.augmentations.rotation_raw import RandomPolarRotation
 from polar_augment.augmentations.batch_segment_shuffle import BatchSegmentShuffler
 from mm.models import init_mm_model
 
@@ -202,13 +202,14 @@ if __name__ == '__main__':
     logging.info(f'Using device {cfg.device}')
 
     # augmentation transforms
+    raw_opt = True if cfg.data_subfolder.__contains__('raw') else False
     transforms = [
             ToTensor(), 
             RandomCrop(size=int(cfg.crop)) if cfg.crop > 0 else EmptyTransform(), 
-            RandomPolarRotation(degrees=cfg.rotation, p=.5, any=False) if cfg.rotation > 0 else EmptyTransform(),
-            RandomPolarFlip(orientation=0, p=.5/3) if cfg.flips else EmptyTransform(),
-            RandomPolarFlip(orientation=1, p=.5/3) if cfg.flips else EmptyTransform(),
-            RandomPolarFlip(orientation=2, p=.5/3) if cfg.flips else EmptyTransform(),
+            RandomPolarRotation(degrees=cfg.rotation, p=.5, any=False) if cfg.rotation > 0 and raw_opt else EmptyTransform(),
+            RandomPolarFlip(orientation=0, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
+            RandomPolarFlip(orientation=1, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
+            RandomPolarFlip(orientation=2, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             #transforms.RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
             #Normalize(mean=0, std=1), 
         ]
