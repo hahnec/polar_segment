@@ -285,7 +285,7 @@ if __name__ == '__main__':
                 print('MM processing time: %s' % str(t_total))
 
             from utils.multi_loss import reduce_htgm
-            masks = reduce_htgm(torch.zeros_like(masks), masks, reduce_fun=torch.mean)[1]
+            masks = reduce_htgm(torch.zeros_like(masks), masks)[1]
 
             if False:
                 import matplotlib.pyplot as plt
