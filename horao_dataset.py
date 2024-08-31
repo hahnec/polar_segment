@@ -28,13 +28,15 @@ class HORAO(Dataset):
         self.wlens = wlens
         self.bg_opt = int(bool(bg_opt))
         self.benign_accumulate = bool(benign_accumulate)
-        self.cases_file = str(cases_file)
+        self.cases_files = list(cases_file)
         
         if self.data_subfolder.__contains__('polarimetry'):
             self.keys = [self.map_string(k) for k in keys]
 
-        with open(self.base_dir / 'cases' / cases_file) as f:
-            self.ids = [line.rstrip('\n') for line in f]
+        self.ids = []
+        for cases_fn in self.cases_files:
+            with open(self.base_dir / 'cases' / cases_fn) as f:
+                self.ids = self.ids + [line.rstrip('\n') for line in f]
 
         self.get_filenames(class_num=class_num)
 
@@ -118,7 +120,7 @@ class HORAO(Dataset):
         bg = np.array(Image.open(self.bglabel_paths[i]), bool)[..., None]
         if img_class == 1: bg = ~bg
         if self.bg_opt:
-            labels = np.concatenate((bg.astype(labels.dtype) * labels.max(), labels), axis=0)
+            labels = np.concatenate((bg.swapaxes(2, 1).swapaxes(1, 0).astype(labels.dtype) * labels.max(), labels), axis=0)
         labels = labels.swapaxes(0, 1).swapaxes(1, 2)
         labels = labels.astype(np.float32)
         if labels.max() > 1: labels /= 255
@@ -160,7 +162,7 @@ class HORAO(Dataset):
                     frame, mask = specular_removal_cv(np.array(intensity, dtype=np.float32), size=4, method='navier')
                     #from utils.specular_removal_torch import specular_removal_t
                     #frame = specular_removal_t(frame, intensity>65530)
-                if self.cases_file.__contains__('train'): labels[mask.astype(bool), :] = 0    # mask clipped areas
+                labels[mask.astype(bool), :] = 0    # mask clipped areas
                 # calibration
                 amat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'A'))
                 wmat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'W'))
@@ -197,7 +199,7 @@ class HORAO(Dataset):
         labels = np.concatenate([labels, bg], axis=-1)
         for transform in self.transforms:
             frames, labels = transform(frames, label=labels)
-        labels, bg = labels[:-1], labels[-1][None].bool()
+        labels, bg = labels[:-1], labels[-1][None]
 
         return frames, labels, img_class, bg
 
@@ -249,9 +251,9 @@ if __name__ == '__main__':
     img_list = []
     for data_type in ['polarimetry', 'raw_data']:
         transforms = [ToTensor(), RandomPolarRotation(180, p=0, any=False), SwapDims()] if data_type.__contains__('raw_data') else []
-        train_set = HORAO(base_dir, 'train2_imbalance.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
-        valid_set = HORAO(base_dir, 'val2.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
-        test_set = HORAO(base_dir, 'test2.txt', bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        train_set = HORAO(base_dir, ['train2_imbalance.txt'], bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        valid_set = HORAO(base_dir, ['val2.txt'], bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        test_set = HORAO(base_dir, ['test2.txt'], bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
         dataset = torch.utils.data.ConcatDataset([train_set, valid_set, test_set])
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         

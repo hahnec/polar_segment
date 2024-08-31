@@ -46,7 +46,7 @@ def save_textable(result, models, methods, categories, filename='./table.tex'):
     mapping_segment = {
         'accuracy': 'Accuracy',
         'dice': 'Dice',
-        'iou': 'IoU',
+        'auc': 'AUC',
         't_s': '$t_s$',
         't_mm': '$t_{mm}$'
     }
@@ -149,7 +149,7 @@ def save_texfigure(paths, labels, filename='fig_segment.tex'):
 
 if __name__ == '__main__':
 
-    group_name = 'htgm_wo_bg_locvar8'
+    group_name = 'htgm_locvar8'
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
         with open(fn, 'r') as f:
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         with open(el, 'r') as f:
             tab = json.load(f)
         metrics.append(tab)
-    save_textable(metrics, models, methods, categories=['accuracy', 'dice', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex')
+    save_textable(metrics, models, methods, categories=['accuracy', 'dice', 'auc', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex')
 
     # image results
     mapping_labels = {
@@ -191,7 +191,7 @@ if __name__ == '__main__':
         method = ['MMFF', 'LC'][el[2]]
         for i in range(4):
             for img_type in ['heatmap', 'img_mask', 'img_pred']:
-                step_num = str(1105+i) if el[1] != 'resnet' else str(2201+i)
+                step_num = str(2205+i) if el[1] != 'resnet' else str(2201+i)
                 tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
                 fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
                 img_path = Path(group_name) / 'downloaded_images' / fn

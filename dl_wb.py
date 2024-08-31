@@ -58,8 +58,8 @@ if __name__ == "__main__":
     wandb.login(key=cfg.wandb_api)
 
     # Define the project and group name
+    group_name = 'htgm_locvar8'
     project_name = 'polar_segment'
-    group_name = 'htgm_imbalance'
     table_key = 'report'
     media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             json.dump(run.config, f, indent=4)
 
         metrics = {}
-        for col in ['accuracy', 'dice', 'iou', 't_mm', 't_s']:
+        for col in ['accuracy', 'dice', 'iou', 'auc', 't_mm', 't_s']:
             metrics[col] = run.summary.get(col)
         with open(os.path.join(group_name, 'metrics_%s.json' % str(run.name)), 'w') as file:
             json.dump(metrics, file, indent=4)

@@ -29,6 +29,7 @@ def batch_preprocess(batch, cfg):
     imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
     frames = frames.to(device=cfg.device, dtype=torch.float32, memory_format=torch.channels_last)
     truth = truth.to(device=cfg.device, dtype=frames.dtype)
+    bg = bg.to(device='cpu', dtype=bool)
 
     if random.random() < cfg.shuffle_crop and frames.shape[0] > 1:
         frames, truth = BatchSegmentShuffler('mask')(frames, truth)
@@ -250,9 +251,13 @@ if __name__ == '__main__':
     model.to(device=cfg.device)
 
     # create dataset
-    dataset = HORAO(cfg.data_dir, 'train2_imbalance.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    kfold_names = ['k1.txt', 'k2.txt', 'k3.txt']
+    splits = [(kfold_names[:i] + kfold_names[i+1:], [kfold_names[i]]) for i in range(len(kfold_names))]
+    train_cases, test_cases = splits[cfg.k_select]
+    dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    test_set = HORAO(cfg.data_dir, test_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     if (Path(cfg.data_dir) / 'cases' / 'val2.txt').exists():
-        val_set = HORAO(cfg.data_dir, 'val2.txt', transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+        val_set = HORAO(cfg.data_dir, ['val2.txt'], transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     else:
         # split into train and validation partitions (if needed)
         n_val = int(len(dataset) * cfg.val_fraction)
@@ -348,6 +353,5 @@ if __name__ == '__main__':
     from horao_dataset import HORAO
 
     # perform test
-    dataset = HORAO(cfg.data_dir, 'test2.txt', transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     from test import test_main
-    test_main(cfg, dataset, best_model, best_mm_model)
+    test_main(cfg, test_set, best_model, best_mm_model)
