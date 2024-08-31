@@ -29,6 +29,7 @@ def batch_preprocess(batch, cfg):
     imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
     frames = frames.to(device=cfg.device, dtype=torch.float32, memory_format=torch.channels_last)
     truth = truth.to(device=cfg.device, dtype=frames.dtype)
+    bg = bg.to(device='cpu', dtype=bool)
 
     if random.random() < cfg.shuffle_crop and frames.shape[0] > 1:
         frames, truth = BatchSegmentShuffler('mask')(frames, truth)

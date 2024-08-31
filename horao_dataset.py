@@ -120,7 +120,7 @@ class HORAO(Dataset):
         bg = np.array(Image.open(self.bglabel_paths[i]), bool)[..., None]
         if img_class == 1: bg = ~bg
         if self.bg_opt:
-            labels = np.concatenate((bg.astype(labels.dtype) * labels.max(), labels), axis=0)
+            labels = np.concatenate((bg.swapaxes(2, 1).swapaxes(1, 0).astype(labels.dtype) * labels.max(), labels), axis=0)
         labels = labels.swapaxes(0, 1).swapaxes(1, 2)
         labels = labels.astype(np.float32)
         if labels.max() > 1: labels /= 255
@@ -199,7 +199,7 @@ class HORAO(Dataset):
         labels = np.concatenate([labels, bg], axis=-1)
         for transform in self.transforms:
             frames, labels = transform(frames, label=labels)
-        labels, bg = labels[:-1], labels[-1][None].bool()
+        labels, bg = labels[:-1], labels[-1][None]
 
         return frames, labels, img_class, bg
 
