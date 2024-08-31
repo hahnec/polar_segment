@@ -46,6 +46,6 @@ wlens:
 
 # augmentation settings
 crop: 0
-flips: False #True
+flips: False
 rotation: 0
 shuffle_crop: 0
