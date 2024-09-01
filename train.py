@@ -349,7 +349,7 @@ if __name__ == '__main__':
 
     # adjust settings for patch-wise ResNet model
     if cfg.model == 'resnet': best_model.testing = True
-    from horao_dataset import HORAO
+    from horao_dataset import HORAO # override patch-wise dataloader for ResNet
 
     # perform test
     from test import test_main
