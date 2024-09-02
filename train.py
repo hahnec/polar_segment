@@ -301,7 +301,7 @@ if __name__ == '__main__':
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = 0, 0
-    best_model, best_mm_model, best_epoch_score = model, mm_model, float('inf')
+    best_model, best_mm_model, best_epoch_score = model, mm_model, 0
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
@@ -311,8 +311,8 @@ if __name__ == '__main__':
             model, mm_model, metrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
 
         # best model selection
-        epoch_score = vloss
-        if best_epoch_score > epoch_score:
+        epoch_score = metrics_dict['dice']
+        if best_epoch_score < epoch_score:
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
             if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
