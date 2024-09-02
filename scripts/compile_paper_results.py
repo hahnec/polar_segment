@@ -27,7 +27,7 @@ def extract_scores(models, categories, score_key):
 
     return result
 
-def save_textable(result, models, methods, categories, filename='./table.tex'):    
+def save_textable(result, models, methods, categories, filename='./table.tex', digits=4):    
 
     import pandas as pd
 
@@ -37,7 +37,7 @@ def save_textable(result, models, methods, categories, filename='./table.tex'):
     # Add an index column for the model number
     mapping_models = {
         'mlp': 'MLP',
-        'resnet': 'Patch-wise ResNet',
+        'resnet': 'ResNet',
         'unet': 'U-Net',
     }
     df.index = [mapping_models[item] for item in models]
@@ -47,8 +47,8 @@ def save_textable(result, models, methods, categories, filename='./table.tex'):
         'accuracy': 'Accuracy',
         'dice': 'Dice',
         'auc': 'AUC',
-        't_s': '$t_s$',
-        't_mm': '$t_{mm}$'
+        't_s': '$t_s~[s]$',
+        't_mm': '$t_{mm}~[s]$'
     }
     mapping_per_class = {
         'bg': 'Background',
@@ -77,7 +77,7 @@ def save_textable(result, models, methods, categories, filename='./table.tex'):
 
     # Add rows to the LaTeX content
     for i, (index, row) in enumerate(df.iterrows()):
-        latex_content += f"    {index} & " + methods[i] + " & " + " & ".join(f"{row[col]:.4f}" if row[col] is not None else "-" for col in categories) + r" \\" + "\n"
+        latex_content += f"     {index} & " + methods[i] + " & " + " & ".join("-" if row[col] is None else f"{row[col]:.{digits}f}" if isinstance(row[col], float) else f"{row[col][0]:.{digits}f} $\pm$ {row[col][1]:.{digits}f}" for col in categories) + r" \\" + "\n"
 
     # Finalize the LaTeX content
     latex_content += r"""
@@ -146,17 +146,47 @@ def save_texfigure(paths, labels, filename='fig_segment.tex'):
     with open(filename, 'w') as f:
         f.write(latex_content)
 
+def merge_kfold_score(result, models, methods):
+
+    new_models = []
+    new_methods = []
+    merge_dict = {k: {} for k in result} if isinstance(result, dict) else {}
+    new_results = {k: [] for k in result} if isinstance(result, dict) else {}
+    for j, c in enumerate(result):
+        if not any(result[c]):
+            merge_dict.pop(c)
+            new_results.pop(c)
+            continue
+        for i, (model, method) in enumerate(zip(models, methods)):
+            if not model+'_'+method in merge_dict[c].keys(): merge_dict[c][model+'_'+method] = []
+            merge_dict[c][model+'_'+method] = list(merge_dict[c][model+'_'+method]) + [result[c][i]]
+        
+        for k in merge_dict[c].keys():
+            data = merge_dict[c][k]
+            mean = sum(data) / len(data)
+            vari = sum((x - mean) ** 2 for x in data) / len(data)
+            std = vari**.5
+            new_results[c].append((mean, std))
+            
+            if j == 1:  # do once only for index one in case background is empty
+                model, method = k.split('_')
+                new_models.append(model)
+                new_methods.append(method)
+
+    return new_results, new_models, new_methods
+
 
 if __name__ == '__main__':
 
-    group_name = 'htgm_locvar8'
+    group_name = 'kfold'
+    kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
         with open(fn, 'r') as f:
             cfg = json.load(f)
             if cfg['data_subfolder'].__contains__('raw') and cfg['levels'] <= 1:
                 run_list.append([fn, cfg['model'], cfg['levels']])
-    sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1]))
+    sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1], int(str(x[0].name).split('-')[-1].split('.')[0])))
     models = [el[1] for el in sorted_runs if el[1]]
     methods = ['MMFF' if el[2] == 0 else 'Lu-Chipman' for el in sorted_runs]
 
@@ -169,7 +199,8 @@ if __name__ == '__main__':
         tables.append(tab)
         score_key = 'f1-score'
     result = extract_scores(tables, categories=['bg', 'hwm', 'twm', 'gm'], score_key=score_key)
-    save_textable(result, models, methods, categories=['bg', 'hwm', 'twm', 'gm'], filename=group_name+'/'+'tab_'+score_key+'_per_class.tex')
+    if kfold_opt: n_result, n_models, n_methods = merge_kfold_score(result, models, methods)
+    save_textable(n_result, n_models, n_methods, categories=list(n_result.keys()), filename=group_name+'/'+'tab_'+score_key+'_per_class.tex')
 
     # table semantic segmentation score
     metrics = []
@@ -178,7 +209,9 @@ if __name__ == '__main__':
         with open(el, 'r') as f:
             tab = json.load(f)
         metrics.append(tab)
-    save_textable(metrics, models, methods, categories=['accuracy', 'dice', 'auc', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex')
+    metrics = {key: [d[key] for d in metrics] for key in metrics[0]}    # 
+    if kfold_opt: n_metrics, n_models, n_methods = merge_kfold_score(metrics, models, methods)
+    save_textable(n_metrics, n_models, n_methods, categories=['accuracy', 'dice', 'auc', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
 
     # image results
     mapping_labels = {
@@ -187,11 +220,11 @@ if __name__ == '__main__':
         'unet': 'U-Net',
     }
     img_paths, labels = [], []
-    for k, el in enumerate(sorted_runs):
+    for k, el in enumerate(sorted_runs[1::3]):
         method = ['MMFF', 'LC'][el[2]]
         for i in range(4):
             for img_type in ['heatmap', 'img_mask', 'img_pred']:
-                step_num = str(2205+i) if el[1] != 'resnet' else str(2201+i)
+                step_num = str(1805+i) if el[1] != 'resnet' else str(1801+i)
                 tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
                 fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
                 img_path = Path(group_name) / 'downloaded_images' / fn
