@@ -6,8 +6,8 @@ class PatchResNet(nn.Module):
     def __init__(self, n_channels=1, n_classes=2, patch_size=50, testing=False):
         super(PatchResNet, self).__init__()
 
-        from monai.networks.nets import resnet34
-        self.model = resnet34(pretrained=False, spatial_dims=2, n_input_channels=n_channels, num_classes=n_classes)
+        from monai.networks.nets import resnet50
+        self.model = resnet50(pretrained=False, spatial_dims=2, n_input_channels=n_channels, num_classes=n_classes)
         self.patch_size = patch_size
         self.step_size = 1
         self.testing = testing
