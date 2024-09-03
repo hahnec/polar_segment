@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import numpy as np
 from pathlib import Path
 from PIL import Image
-
+import pandas as pd
 
 class HORAO(Dataset):
     def __init__(
@@ -39,6 +39,9 @@ class HORAO(Dataset):
                 self.ids = self.ids + [line.rstrip('\n') for line in f]
 
         self.get_filenames(class_num=class_num)
+
+        # read metadata
+        self.df = pd.read_csv('/media/chris/EB62-383C/TumorMeasurementsCalib/batch_processing.csv')
 
     def get_filenames(self, class_num=2):
 
@@ -100,12 +103,23 @@ class HORAO(Dataset):
             return np.concatenate([bg.astype(float), new], axis=-1)
         
         return new
+    
+    def get_metadata(self, seq: int, section: str):
+
+        row = self.df[(self.df['Sample Nr'] == seq) & (self.df['Section'] == section)]
+
+        return row['Histology Tumor']
 
     def __getitem__(self, i):
 
         img_path = self.img_paths[i]
         label_fname = self.label_paths[i]
         img_class = self.img_classes[i]
+
+        # load metadata
+        if img_class: seq, section = int(img_path.parts[-5]), img_path.parts[-4].split('_')[-2]
+        metadata = self.get_metadata(seq, section) if img_class else 'healthy'
+        print(metadata)
 
         # label construction
         labels = np.array(Image.open(label_fname))#, dtype=np.float32)
