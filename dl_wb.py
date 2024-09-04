@@ -112,10 +112,7 @@ if __name__ == "__main__":
                     image_name = f"{run.name}_{i}_{base_name}"
                     save_path = os.path.join(output_dir, image_name)
                     download_image(image_url, save_path)
-
-                    # store captions containing labels
-                    fname = '_'.join(save_path.split('/')[-1].split('_')[1:-1])
-                    captions[fname] = media['caption']
+                    captions[str(i)] = media['caption'] # store captions containing labels
         import yaml
         with open(os.path.join(output_dir, 'captions.yml'), 'w') as f:
             yaml.dump(captions, f)
