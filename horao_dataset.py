@@ -107,8 +107,12 @@ class HORAO(Dataset):
     def get_metadata(self, seq: int, section: str):
 
         row = self.df[(self.df['Sample Nr'] == seq) & (self.df['Section'] == section)]
+        if not row.empty and 'Histology Tumor' in row.columns:
+            str = row['Histology Tumor'].values[0]
+        else:
+            str = 'unlabeled tumor'
 
-        return row['Histology Tumor']
+        return str
 
     def __getitem__(self, i):
 
@@ -119,7 +123,6 @@ class HORAO(Dataset):
         # load metadata
         if img_class: seq, section = int(img_path.parts[-5]), img_path.parts[-4].split('_')[-2]
         metadata = self.get_metadata(seq, section) if img_class else 'healthy'
-        print(metadata)
 
         # label construction
         labels = np.array(Image.open(label_fname))#, dtype=np.float32)
@@ -215,7 +218,7 @@ class HORAO(Dataset):
             frames, labels = transform(frames, label=labels)
         labels, bg = labels[:-1], labels[-1][None]
 
-        return frames, labels, img_class, bg
+        return frames, labels, img_class, bg, metadata
 
     def __len__(self):
         return len(self.ids)
@@ -228,7 +231,7 @@ class PatchHORAO(HORAO):
 
     def __getitem__(self, i):
         # run through conventional dataloader
-        frames, labels, img_class, bg = super().__getitem__(i)
+        frames, labels, img_class, bg, metadata = super().__getitem__(i)
         
         # get arbitrary 2d coordinate pair from a labeled pixel
         binary_map_crop = torch.any(labels, dim=0, keepdim=False)[self.b:-self.b, self.b:-self.b]
@@ -243,7 +246,7 @@ class PatchHORAO(HORAO):
         # select patch based on 2d coordinate
         patch = frames[:, coords[0]-self.b:coords[0]+self.b, coords[1]-self.b:coords[1]+self.b]
         
-        return patch, labels[:, coords[0], coords[1]], img_class, bg[:, coords[0], coords[1]]
+        return patch, labels[:, coords[0], coords[1]], img_class, bg[:, coords[0], coords[1]], metadata
 
 if __name__ == '__main__':
 
@@ -282,7 +285,7 @@ if __name__ == '__main__':
         tumor_samples = 0
         healthy_samples = 0
         for batch in loader:
-            imgs, masks, img_class, bg = batch
+            imgs, masks, img_class, bg, metadata = batch
 
             # move feature dimension for consistency
             imgs = imgs.moveaxis(-1, 1)

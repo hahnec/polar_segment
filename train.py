@@ -25,7 +25,7 @@ from mm.models import init_mm_model
 def batch_preprocess(batch, cfg):
     
     # device
-    frames, truth, img_class, bg = batch
+    frames, truth, img_class, bg, text = batch
     imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
     frames = frames.to(device=cfg.device, dtype=torch.float32, memory_format=torch.channels_last)
     truth = truth.to(device=cfg.device, dtype=frames.dtype)
@@ -34,7 +34,7 @@ def batch_preprocess(batch, cfg):
     if random.random() < cfg.shuffle_crop and frames.shape[0] > 1:
         frames, truth = BatchSegmentShuffler('mask')(frames, truth)
 
-    return frames, truth, imgs, bg
+    return frames, truth, imgs, bg, text
 
 def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
@@ -104,7 +104,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     poor_score, poor_frame_pred, poor_frame_mask = 1, None, None
     with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
         for batch in dataloader:
-            frames, truth, imgs, bg = batch_preprocess(batch, cfg)
+            frames, truth, imgs, bg, text = batch_preprocess(batch, cfg)
             t = time.perf_counter()
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
@@ -153,9 +153,9 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         frame_mask = torch.cat((frame_mask, alpha), dim=0)
                         heatmap = np.concatenate((heatmap, (~bg[bidx]).float().moveaxis(0, -1).cpu().numpy()), axis=-1)
                     wandb.log({
-                        'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=['benign', 'malignant'][int(batch[2][bidx])]),
-                        'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=['benign-GT', 'malignant-GT'][int(batch[2][bidx])]), 
-                        'heatmap_'+branch_type: wandb.Image(heatmap, caption="heatmap " + ['benign', 'malignant'][int(batch[2][bidx])]), 
+                        'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=text),
+                        'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=text), 
+                        'heatmap_'+branch_type: wandb.Image(heatmap, caption=text), 
                         branch_type+'_step': step+bidx
                     })
 
