@@ -254,5 +254,5 @@ if __name__ == '__main__':
     import yaml
     with open(Path(group_name) / 'downloaded_images' / 'captions.yml', 'r') as f:
         captions = list(yaml.safe_load(f).values())
-    captions = [c.split(',')[0] + c.split(';')[-1] if c != 'healthy' else c for c in captions]
+    captions = [c.split(',')[0] + c.split('; CNS')[-1] if c != 'healthy' else c for c in captions]
     save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+'fig_segment.tex', captions=captions)
