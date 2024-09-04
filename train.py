@@ -128,6 +128,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                 bidx = score.argmax()
                 best_score = score[bidx]
                 best_frame_pred, best_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
+                best_frame_text = text[bidx]
                 if not cfg.bg_opt:
                     alpha = (~bg[bidx]).float()*255
                     best_frame_pred = torch.cat((best_frame_pred, alpha), dim=0)
@@ -136,6 +137,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                 bidx = score.argmin()
                 poor_score = score[bidx]
                 poor_frame_pred, poor_frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
+                poor_frame_text = text[bidx]
                 if not cfg.bg_opt:
                     alpha = (~bg[bidx]).float()*255
                     poor_frame_pred = torch.cat((poor_frame_pred, alpha), dim=0)
@@ -155,7 +157,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                     wandb.log({
                         'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=text[bidx]),
                         'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=text[bidx]), 
-                        'heatmap_'+branch_type: wandb.Image(heatmap, caption=text), 
+                        'heatmap_'+branch_type: wandb.Image(heatmap, caption=text[bidx]), 
                         branch_type+'_step': step+bidx
                     })
 
@@ -164,9 +166,9 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                 metrics_dict[k].extend(metrics[k].detach().cpu().numpy())
 
     if cfg.logging and log_img:
-        if best_frame_pred is not None: wandb.log({'best_img_pred_'+branch_type: wandb.Image(best_frame_pred.cpu(), caption="green: healthy; red: tumor; blue: GM;"), 'epoch': epoch})
+        if best_frame_pred is not None: wandb.log({'best_img_pred_'+branch_type: wandb.Image(best_frame_pred.cpu(), caption=best_frame_text), 'epoch': epoch})
         if best_frame_mask is not None: wandb.log({'best_img_mask_'+branch_type: wandb.Image(best_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT; blue: GM;"), 'epoch': epoch})
-        if poor_frame_pred is not None: wandb.log({'poor_img_pred_'+branch_type: wandb.Image(poor_frame_pred.cpu(), caption="green: healthy; red: tumor; blue: GM;"), 'epoch': epoch})
+        if poor_frame_pred is not None: wandb.log({'poor_img_pred_'+branch_type: wandb.Image(poor_frame_pred.cpu(), caption=poor_frame_text), 'epoch': epoch})
         if poor_frame_mask is not None: wandb.log({'poor_img_mask_'+branch_type: wandb.Image(poor_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT; blue: GM;"), 'epoch': epoch})
 
     # consolidate metrics to one scalar value per key
