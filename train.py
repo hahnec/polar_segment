@@ -153,8 +153,8 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         frame_mask = torch.cat((frame_mask, alpha), dim=0)
                         heatmap = np.concatenate((heatmap, (~bg[bidx]).float().moveaxis(0, -1).cpu().numpy()), axis=-1)
                     wandb.log({
-                        'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=text),
-                        'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=text), 
+                        'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=text[bidx]),
+                        'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=text[bidx]), 
                         'heatmap_'+branch_type: wandb.Image(heatmap, caption=text), 
                         branch_type+'_step': step+bidx
                     })
