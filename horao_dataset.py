@@ -41,7 +41,7 @@ class HORAO(Dataset):
         self.get_filenames(class_num=class_num)
 
         # read metadata
-        self.df = pd.read_csv('/media/chris/EB62-383C/TumorMeasurementsCalib/batch_processing.csv')
+        self.df = pd.read_csv(self.base_dir / 'batch_processing.csv')
 
     def get_filenames(self, class_num=2):
 
