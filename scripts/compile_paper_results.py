@@ -91,7 +91,7 @@ def save_textable(result, models, methods, categories, filename='./table.tex', d
     with open(filename, 'w') as f:
         f.write(latex_content)
 
-def save_texfigure(paths, labels, filename='fig_segment.tex'):
+def save_texfigure(paths, labels, filename='fig_segment.tex', captions=None):
     from collections import defaultdict
 
     # Group paths by their figure number prefix
@@ -125,9 +125,6 @@ def save_texfigure(paths, labels, filename='fig_segment.tex'):
 
         # Add images associated with this label
         for images in sorted_groups:
-            # Filter images related to the current label's row
-            #relevant_images = [img for img in images if label in img]
-
             # Create the minipage for each relevant image
             img = images[i]
             latex_content += f"\\begin{{minipage}}[b]{{{image_width}}}\n\\centering\n"
@@ -137,6 +134,16 @@ def save_texfigure(paths, labels, filename='fig_segment.tex'):
         
         # Add a line break between rows to ensure the next label and images are on a new line
         latex_content += "\\\\[1em]\n"
+
+    # image captions at bottom
+    latex_content += f"\\begin{{minipage}}[b]{{{0.1}\\textwidth}}\n\\centering\n"
+    latex_content += f"Class:"
+    latex_content += "\\end{minipage}\n"
+    if captions is None: captions = ["\\textbf{"+str(i)+"}" for i in range(len(sorted_groups))]
+    for c in captions:
+        latex_content += f"\\begin{{minipage}}[b]{{{image_width}}}\n\\centering\n"
+        latex_content += f"{c}\n"
+        latex_content += "\\end{minipage}\n"
 
     latex_content += "\\caption{Generated segmentation results.}\n"
     latex_content += "\\label{fig:segment}\n"
@@ -178,7 +185,7 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'kfold'
+    group_name = 'kfold_rotation'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
@@ -243,5 +250,9 @@ if __name__ == '__main__':
                     copyfile(img_path, dst)
                 else:
                     raise Exception('Could not find image file')
-                
-    save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+'fig_segment.tex')
+    # load image captions/labels
+    import yaml
+    with open(Path(group_name) / 'downloaded_images' / 'captions.yml', 'r') as f:
+        captions = list(yaml.safe_load(f).values())
+    captions = [c.split(',')[0] + c.split(';')[-1] if c != 'healthy' else c for c in captions]
+    save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+'fig_segment.tex', captions=captions)
