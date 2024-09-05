@@ -30,6 +30,7 @@ map_dir: Null
 data_dir: ${loc_dir}
 data_subfolder: raw_data
 k_select: 0
+imbalance: True
 
 # mueller matrix parameters
 levels: 1
