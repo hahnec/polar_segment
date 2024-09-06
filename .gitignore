@@ -163,6 +163,8 @@ cython_debug/
 
 # LaTeX
 *.tex
+*.svg
+*.eps
 
 # VS Code
 .vscode/
