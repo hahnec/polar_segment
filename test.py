@@ -89,7 +89,7 @@ def flatten_dict_to_rows(d):
 if __name__ == '__main__':
 
     # load configuration
-    cfg = OmegaConf.load('./configs/train_local.yml')
+    cfg = OmegaConf.load('./configs/test.yml')
 
     # override loaded configuration with test config
     cfg = OmegaConf.merge(cfg, OmegaConf.load('./configs/test.yml'))
