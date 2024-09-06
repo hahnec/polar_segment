@@ -30,17 +30,17 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18):
     plt.figure(figsize=(15, 15))
     fig, axs = plt.subplots(1, 1)
     x = np.arange(len(curve_means[0]))
-    colors = ['red', 'blue', 'orange'][:len(curve_means)]
+    colors = ['red', 'blue', 'orange', 'green'][:len(curve_means)]
+    styles = ['-', '-.', '--', ':'][:len(curve_means)]
     labels = [str(num) for num in range(len(curve_means))] if labels is None else labels
-    for mean, std, l, c in zip(curve_means, curve_stds, labels, colors):
-        axs.plot(x, mean, label=l, color=c)
+    for mean, std, l, c, s in zip(curve_means, curve_stds, labels, colors, styles):
+        axs.plot(x, mean, label=l, color=c, linestyle=s)
         axs.fill_between(x, mean - std, mean + std, color=c, alpha=0.2)
     
     axs.set_xlabel('Steps [#]', fontsize=fontsize)
     axs.set_ylabel(filename.split('_')[-1].upper(), fontsize=fontsize)
     axs.legend(loc='lower right', fontsize=fontsize)
     plt.tight_layout()
-    plt.savefig(Path(__file__).parent / (filename+'_figure.eps'), format='eps')
     plt.savefig(Path(__file__).parent / (filename+'_figure.svg'), format='svg')
 
 def moving_average(data, window_size):
