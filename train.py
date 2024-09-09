@@ -109,9 +109,9 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             t = time.perf_counter()
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
-            metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             # segmentation
             loss, preds, truth, metrics = batch_it(frames, truth)
+            metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             epoch_loss += loss.item()
             pbar.set_postfix(**{'loss (batch)': loss.item()})
