@@ -25,7 +25,7 @@ class_num: 4
 data_path: TumorMeasurementsCalib/
 ubx_dir: /storage/homefs/ch21z139/01_datasets/${data_path}
 usb_dir: /media/chris/EB62-383C/${data_path}
-loc_dir: /home/chris/Datasets/data/${data_path}
+loc_dir: /home/chris/Datasets/03_HORAO/${data_path}
 map_dir: Null
 data_dir: ${loc_dir}
 data_subfolder: raw_data
