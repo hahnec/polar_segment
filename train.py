@@ -105,11 +105,13 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
         for batch in dataloader:
             frames, truth, imgs, bg, text = batch_preprocess(batch, cfg)
+            ## polarimetry
             t = time.perf_counter()
             if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
             t_mm = time.perf_counter() - t
-            loss, preds, truth, metrics = batch_it(frames, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
+            # segmentation
+            loss, preds, truth, metrics = batch_it(frames, truth)
             step += 1
             epoch_loss += loss.item()
             pbar.set_postfix(**{'loss (batch)': loss.item()})
@@ -122,7 +124,8 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                     branch_type+'_acc ': metrics['acc'].mean().item(),
                     branch_type+'_step': step,
                 })
-
+            
+            # image results
             score = metrics['acc']
             if torch.any(score > best_score) and 'intensity' in cfg.feature_keys and cfg.logging and log_img:
                 bidx = score.argmax()
