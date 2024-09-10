@@ -318,7 +318,7 @@ if __name__ == '__main__':
 
         # best model selection
         epoch_score = vloss
-        if best_epoch_score > epoch_score:
+        if epoch == cfg.epochs: #best_epoch_score > epoch_score:
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
             if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
