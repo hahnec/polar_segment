@@ -229,11 +229,12 @@ if __name__ == '__main__':
         'unet': 'U-Net',
     }
     img_paths, labels = [], []
+    e = 1
     for k, el in enumerate(sorted_runs[1::3]):
         method = ['MMFF', 'LC'][el[2]]
         for i in range(4):
             for img_type in ['heatmap', 'img_mask', 'img_pred']:
-                step_num = str(1805+i) if el[1] != 'resnet' else str(1801+i)
+                step_num = str(900*e+5+i) if el[1] != 'resnet' else str(900*e+1+i)
                 tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
                 fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
                 img_path = Path(group_name) / 'downloaded_images' / fn
