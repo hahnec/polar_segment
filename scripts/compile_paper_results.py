@@ -193,6 +193,8 @@ if __name__ == '__main__':
             cfg = json.load(f)
             if cfg['data_subfolder'].__contains__('raw') and cfg['levels'] <= 1:
                 run_list.append([fn, cfg['model'], cfg['levels']])
+    if len(run_list) == 0:
+        raise Exception('Empty folder')
     sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1], int(str(x[0].name).split('-')[-1].split('.')[0])))
     models = [el[1] for el in sorted_runs if el[1]]
     methods = ['MMFF' if el[2] == 0 else 'Lu-Chipman' for el in sorted_runs]
