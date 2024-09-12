@@ -21,6 +21,8 @@ from polar_augment.augmentations.flip_raw import RandomPolarFlip
 from polar_augment.augmentations.rotation_raw import RandomPolarRotation
 from polar_augment.augmentations.batch_segment_shuffle import BatchSegmentShuffler
 from mm.models import init_mm_model
+from utils.draw_fiber_img import plot_fiber
+
 
 def batch_preprocess(batch, cfg):
     
@@ -107,10 +109,10 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             frames, truth, imgs, bg, text = batch_preprocess(batch, cfg)
             ## polarimetry
             t = time.perf_counter()
-            if cfg.data_subfolder.__contains__('raw'): frames = mm_model(frames)
+            input = mm_model(frames) if cfg.data_subfolder.__contains__('raw') else frames
             t_mm = time.perf_counter() - t
             # segmentation
-            loss, preds, truth, metrics = batch_it(frames, truth)
+            loss, preds, truth, metrics = batch_it(input, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             epoch_loss += loss.item()
@@ -163,6 +165,19 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         'heatmap_'+branch_type: wandb.Image(heatmap, caption=text[bidx]), 
                         branch_type+'_step': step+bidx
                     })
+                    # fiber tracts image
+                    if cfg.data_subfolder.__contains__('raw'):
+                        from mm.models import MuellerMatrixModel
+                        azimuth_model = MuellerMatrixModel(feature_keys=['azimuth', 'linr'])
+                        lc_feats = azimuth_model(frames)
+                        masks = torch.maximum(preds[:, 0], preds[:, 1]) > torch.maximum(preds[:, 0], preds[:, 1]).mean()*1.5
+                        vars = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
+                        mask = ~(vars[1] & ~bg[bidx, 0].numpy())
+                        fiber_img = plot_fiber(raw_azimuth=vars[0][0], linr=vars[0][1], mask=mask, intensity=vars[2])
+                        wandb.log({
+                            'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
+                            #branch_type+'_step': step+bidx
+                        })
 
             # metrics extension
             for k in metrics_dict.keys():
