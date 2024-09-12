@@ -58,8 +58,8 @@ if __name__ == "__main__":
     wandb.login(key=cfg.wandb_api)
 
     # Define the project and group name
-    group_name = 'kfold_100epochs'
-    project_name = 'polar_segment'
+    group_name = 'kfold_200epochs_balance'
+    project_name = 'polar_segment'  
     table_key = 'report'
     media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
 
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                     download_image(image_url, save_path)
                     captions[str(i)] = media['caption'] # store captions containing labels
         import yaml
-        with open(os.path.join(output_dir, 'captions.yml'), 'w') as f:
+        with open(os.path.join(group_name, ('captions_'+run.name+'.yml')), 'w') as f:
             yaml.dump(captions, f)
 
         # download ROC plot data

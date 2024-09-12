@@ -1,7 +1,21 @@
 import json
 from pathlib import Path
 from shutil import copyfile
+import subprocess
+import os
 
+def compile_latex_to_pdf(latex_file):
+    # Extract the file name without the extension
+    output_dir = os.path.dirname(latex_file)
+    file_name = os.path.basename(latex_file)
+    name_without_ext = os.path.splitext(file_name)[0]
+    
+    # Run pdflatex to compile the LaTeX file
+    subprocess.run(["pdflatex", "-output-directory", output_dir, latex_file])
+    
+    # The PDF will be saved in the same directory as the LaTeX file
+    pdf_path = os.path.join(output_dir, name_without_ext + ".pdf")
+    return pdf_path
 
 def extract_scores(models, categories, score_key):
     """
@@ -185,7 +199,7 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'kfold_rotation'
+    group_name = 'kfold_200epochs_balance'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
@@ -229,12 +243,15 @@ if __name__ == '__main__':
         'unet': 'U-Net',
     }
     img_paths, labels = [], []
-    e = 1
-    for k, el in enumerate(sorted_runs[1::3]):
+    e = 2
+    k = 0
+    s = 900
+    iter_num = 5 if group_name.__contains__('imbalance') else 4
+    for j, el in enumerate(sorted_runs[k::3]):
         method = ['MMFF', 'LC'][el[2]]
-        for i in range(4):
+        for i in range(iter_num):
             for img_type in ['heatmap', 'img_mask', 'img_pred']:
-                step_num = str(900*e+5+i) if el[1] != 'resnet' else str(900*e+1+i)
+                step_num = str(s*e+5+i) if el[1] != 'resnet' else str(s*e+1+i)
                 tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
                 fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
                 img_path = Path(group_name) / 'downloaded_images' / fn
@@ -243,7 +260,7 @@ if __name__ == '__main__':
                         dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '.png')
                     elif img_type == 'heatmap':
                         dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
-                    elif img_type == 'img_mask' and k == 0:
+                    elif img_type == 'img_mask' and j == 0:
                         dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-gt.png')
                     else:
                         continue
@@ -255,7 +272,11 @@ if __name__ == '__main__':
                     raise Exception('Could not find image file')
     # load image captions/labels
     import yaml
-    with open(Path(group_name) / 'downloaded_images' / 'captions.yml', 'r') as f:
+    with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
         captions = list(yaml.safe_load(f).values())
     captions = [c.split(',')[0] + c.split('; CNS')[-1] if c != 'healthy' else c for c in captions]
     save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+'fig_segment.tex', captions=captions)
+
+    latex_file = "./figure_env.tex"
+    pdf_output = compile_latex_to_pdf(latex_file)
+    print(f"PDF generated at: {pdf_output}")
