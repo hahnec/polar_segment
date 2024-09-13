@@ -36,6 +36,7 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18):
     for mean, std, l, c, s in zip(curve_means, curve_stds, labels, colors, styles):
         axs.plot(x, mean, label=l, color=c, linestyle=s)
         axs.fill_between(x, mean - std, mean + std, color=c, alpha=0.2)
+        axs.set_ylim(0.5, round(max(mean+std), 1)*1.015)
     
     axs.set_xlabel('Steps [#]', fontsize=fontsize)
     axs.set_ylabel(filename.split('_')[-1].capitalize()+' score [a.u.]', fontsize=fontsize)
