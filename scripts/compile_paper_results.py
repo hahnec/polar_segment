@@ -17,6 +17,23 @@ def compile_latex_to_pdf(latex_file):
     pdf_path = os.path.join(output_dir, name_without_ext + ".pdf")
     return pdf_path
 
+def compile_pdf(group_name, fig_texname, latex_file="./figure_env.tex"):
+    # standalone environment
+    latex_env = "\\documentclass{scrartcl}\n"
+    latex_env += "\\usepackage[margin=0.5in]{geometry}\n"
+    latex_env += "\\usepackage{graphicx}\n"
+    latex_env += "\\usepackage{booktabs}\n"
+    latex_env += "\\graphicspath{{%s/}}\n" % group_name
+    latex_env += "\\begin{document}\n"
+    latex_env += "\\input{%s/%s}\n" % (group_name, fig_texname)
+    latex_env += "\\end{document}\n"
+
+    with open(latex_file, 'w') as f:
+        f.write(latex_env)
+
+    pdf_output = compile_latex_to_pdf(latex_file)
+    print(f"PDF generated at: {pdf_output}")
+
 def extract_scores(models, categories, score_key):
     """
     Extracts a selected score for each category across multiple models.
@@ -130,9 +147,6 @@ def save_texfigure(paths, labels, filename='fig_segment.tex', captions=None):
     for i, label in enumerate(labels):
         # Create the minipage for the label
         latex_content += f"\\begin{{minipage}}[t]{{{label_width}}}\n"
-        #latex_content += f"\\vfill\n"
-        #latex_content += f"\\centering\n\\textbf{{{label}}}\n"
-        #latex_content += f"\\vfill\n"
         latex_content += f"\\raisebox{{2.15\\height}}{{\\parbox{{\\textwidth}}{{\\raggedright \\textbf{{{label}}}}}}}\n"
         latex_content += "\\end{minipage}\n"
         latex_content += "\\hfill\n"
@@ -199,7 +213,7 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'kfold_200epochs_balance'
+    group_name = 'kfold_200epochs_balance_rotation'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
@@ -244,12 +258,11 @@ if __name__ == '__main__':
     }
     img_paths, labels = [], []
     e = 2
-    k = 0
-    s = 900
-    iter_num = 5 if group_name.__contains__('imbalance') else 4
+    k = 2
+    img_columns, s = (5, 1000) if group_name.__contains__('imbalance') else (4, 900)
     for j, el in enumerate(sorted_runs[k::3]):
         method = ['MMFF', 'LC'][el[2]]
-        for i in range(iter_num):
+        for i in range(img_columns):
             for img_type in ['heatmap', 'img_mask', 'img_pred']:
                 step_num = str(s*e+5+i) if el[1] != 'resnet' else str(s*e+1+i)
                 tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
@@ -272,11 +285,11 @@ if __name__ == '__main__':
                     raise Exception('Could not find image file')
     # load image captions/labels
     import yaml
+    fig_texname = 'fig_segment.tex'
     with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
         captions = list(yaml.safe_load(f).values())
     captions = [c.split(',')[0] + c.split('; CNS')[-1] if c != 'healthy' else c for c in captions]
-    save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+'fig_segment.tex', captions=captions)
+    save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
 
-    latex_file = "./figure_env.tex"
-    pdf_output = compile_latex_to_pdf(latex_file)
-    print(f"PDF generated at: {pdf_output}")
+    compile_pdf(group_name, 'tab_semantic_segmentation_scores.tex', latex_file='./table_env.tex')
+    compile_pdf(group_name, fig_texname)
