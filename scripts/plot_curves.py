@@ -38,7 +38,7 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18):
         axs.fill_between(x, mean - std, mean + std, color=c, alpha=0.2)
     
     axs.set_xlabel('Steps [#]', fontsize=fontsize)
-    axs.set_ylabel(filename.split('_')[-1].upper(), fontsize=fontsize)
+    axs.set_ylabel(filename.split('_')[-1].capitalize()+' score [a.u.]', fontsize=fontsize)
     axs.legend(loc='lower right', fontsize=fontsize)
     plt.tight_layout()
     plt.savefig(Path(__file__).parent / (filename+'_figure.svg'), format='svg')
