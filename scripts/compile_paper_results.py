@@ -213,7 +213,7 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'kfold_200epochs_balance_rotation'
+    group_name = 'kfold_200epochs_imbalance_ckpt_rotation'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
@@ -258,38 +258,41 @@ if __name__ == '__main__':
     }
     img_paths, labels = [], []
     e = 2
-    k = 2
     img_columns, s = (5, 1000) if group_name.__contains__('imbalance') else (4, 900)
-    for j, el in enumerate(sorted_runs[k::3]):
-        method = ['MMFF', 'LC'][el[2]]
-        for i in range(img_columns):
-            for img_type in ['heatmap', 'img_mask', 'img_pred']:
-                step_num = str(s*e+5+i) if el[1] != 'resnet' else str(s*e+1+i)
-                tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
-                fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
-                img_path = Path(group_name) / 'downloaded_images' / fn
-                if img_path.exists():
-                    if img_type == 'img_pred':
-                        dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '.png')
-                    elif img_type == 'heatmap':
-                        dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
-                    elif img_type == 'img_mask' and j == 0:
-                        dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-gt.png')
+    for k in range(4):
+        for j, el in enumerate(sorted_runs[k::3]):
+            method = ['MMFF', 'LC'][el[2]]
+            for i in range(img_columns):
+                for img_type in ['heatmap', 'img_mask', 'img_pred']:
+                    step_num = str(s*e+5+i) if el[1] != 'resnet' else str(s*e+1+i)
+                    tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
+                    fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
+                    # automatically find filename with correct step number
+                    img_path = list((Path(group_name) / 'downloaded_images').glob('_'.join(fn.split('_')[:-1])+'_*.png'))[0]
+                    if img_path.exists():
+                        if img_type == 'img_pred':
+                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '.png')
+                        elif img_type == 'heatmap':
+                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
+                        elif img_type == 'img_mask' and j == 0:
+                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-gt.png')
+                        else:
+                            continue
+                        if img_type != 'heatmap' and dst.name not in img_paths: 
+                            img_paths.append(dst.name)
+                            if i==0 and not dst.name.__contains__('gt'): labels.append(mapping_labels[el[1]] + '\\newline ' + method)
+                        copyfile(img_path, dst)
                     else:
-                        continue
-                    if img_type != 'heatmap' and dst.name not in img_paths: 
-                        img_paths.append(dst.name)
-                        if i==0 and not dst.name.__contains__('gt'): labels.append(mapping_labels[el[1]] + '\\newline ' + method)
-                    copyfile(img_path, dst)
-                else:
-                    raise Exception('Could not find image file')
-    # load image captions/labels
-    import yaml
-    fig_texname = 'fig_segment.tex'
-    with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
-        captions = list(yaml.safe_load(f).values())
-    captions = [c.split(',')[0] + c.split('; CNS')[-1] if c != 'healthy' else c for c in captions]
-    save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
+                        raise Exception('Could not find image file')
+        # load image captions/labels
+        import yaml
+        with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
+            captions = list(yaml.safe_load(f).values())
+        captions = [c.split(',')[0] + c.split('; CNS')[-1] if c != 'healthy' else c for c in captions]
+        # save figure tex file
+        fig_texname = 'fig_segment_%s.tex' % str(k)
+        save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
+        compile_pdf(group_name, fig_texname)
 
+    # save table results (k-folds accumulated)
     compile_pdf(group_name, 'tab_semantic_segmentation_scores.tex', latex_file='./table_env.tex')
-    compile_pdf(group_name, fig_texname)
