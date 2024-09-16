@@ -1,3 +1,9 @@
+# general
+model: unet
+levels: 0
+model_file: cerulean-haze-2692_ckpt_epoch200.pt
+logging: true
+
 # augmentation settings
 flips: False
 perspective: 0
@@ -5,6 +11,3 @@ elastic: 0
 rotation: 0
 crop: 0
 shuffle_crop: 0
-
-model: unet
-model_file: cerulean-haze-2692_ckpt_epoch200.pt
