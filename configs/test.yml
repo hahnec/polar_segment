@@ -7,4 +7,4 @@ crop: 0
 shuffle_crop: 0
 
 model: unet
-model_file: divine-sponge-251_ckpt_epoch200.pth
+model_file: cerulean-haze-2692_ckpt_epoch200.pt

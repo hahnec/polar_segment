@@ -362,10 +362,10 @@ if __name__ == '__main__':
         dir_checkpoint = Path('./ckpts/')
         dir_checkpoint.mkdir(parents=True, exist_ok=True)
         state_dict = best_model.state_dict()
-        torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pth'.format(epoch)))))
+        torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pt'.format(epoch)))))
         if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
             state_dict_mm = best_mm_model.state_dict()
-            torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pth'.format(epoch)))))
+            torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pt'.format(epoch)))))
         logging.info(f'Checkpoint {epoch} saved!')
 
     # adjust settings for patch-wise ResNet model
