@@ -65,6 +65,7 @@ class HORAO(Dataset):
                 label_fname = self.base_dir / str(id) / 'annotation' / 'FG.tif'
                 bglabel_fname = self.base_dir / str(id) / 'annotation' / 'ROI.tif'
                 img_class = 1
+                if not label_fname.exists(): label_fname = bglabel_fname
             if class_num > 2:
                 if id.startswith('HT'):
                     matter_fname = self.base_dir / str(id) / 'annotation' / 'merged_no_border.png' #_no_border
