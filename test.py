@@ -151,19 +151,14 @@ if __name__ == '__main__':
         model.load_state_dict(state_dict) if cfg.model != 'resnet' else model.model.load_state_dict(state_dict)
         logging.info(f'Model loaded from {cfg.model_file}')
 
+    # instantiate logging
+    if cfg.logging:
+        wb = wandb.init(project='polar_segment_test', resume='allow', anonymous='must', config=dict(cfg), group='train')
+        wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, val_fraction=cfg.val_fraction, amp=cfg.amp))
+
     for case in ['test_tumor_grade4.txt', 'test_tumor_grade3.txt', 'test_tumor_grade2.txt']:
         # create dataset
         dataset = HORAO(cfg.data_dir, [case], transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
-
-        # instantiate logging
-        if cfg.logging:
-            wb = wandb.init(project='polar_segment_test', resume='allow', anonymous='must', config=dict(cfg), group='train')
-            wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, val_fraction=cfg.val_fraction, amp=cfg.amp))
-
-            logging.info(f'''Starting testing:
-                Batch size:      {cfg.batch_size}
-                Test size:       {len(dataset)}
-                Device:          {cfg.device}
-            ''')
         
+        # run test
         test_main(cfg, dataset, model, mm_model)
