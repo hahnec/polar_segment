@@ -56,7 +56,7 @@ def exponential_moving_average(data, alpha=0.3):
 
 if __name__ == "__main__":
 
-    group_names = ['kfold', 'kfold_rotation']
+    group_names = ['kfold_200epochs_imbalance_ckpt', 'kfold_200epochs_imbalance_ckpt_rotation', 'kfold_200epochs_imbalance_ckpt_rotation_spatial']
     curves_dict = {k: {} for k in group_names}
     for group_name in group_names:
         kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     # merge curves
     run_type = 'LCunet'
     metric_strs = ['train_dice', 'valid_dice']
+    labels = [' '.join(g.split('_')[2:]) for g in group_names]
     for metric_str in metric_strs:
         curve_means, curve_stds = merge_curves(curves_dict, run_type, metric_str)
-        plot_curves(curve_means, curve_stds, labels=group_names, filename=run_type+'_'+metric_str)
+        plot_curves(curve_means, curve_stds, labels=labels, filename=run_type+'_'+metric_str)
