@@ -263,7 +263,7 @@ if __name__ == '__main__':
     batch_size = 1
     patch_size = 4
     bg_opt = 1
-    base_dir = '/media/chris/EB62-383C/TumorMeasurementsCalib/'
+    base_dir = '/home/chris/Datasets/03_HORAO/TumorMeasurementsCalib/'
     feat_keys = ['std', 'mask'] #'azimuth', 'linr', 'totp'] #
 
     img_list = []
