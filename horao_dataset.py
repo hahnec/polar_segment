@@ -254,7 +254,7 @@ if __name__ == '__main__':
     import time
     import random
     from torch.utils.data import DataLoader
-    from polar_augment.augmentations.rotation_raw import RandomPolarRotation
+    from polar_augment.rotation_raw import RandomPolarRotation
     from utils.transforms_segment import *
 
     random.seed(3008)
