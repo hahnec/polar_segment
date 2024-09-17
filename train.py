@@ -17,9 +17,9 @@ from utils.multi_focal_loss import sigmoid_focal_loss_multiclass
 from utils.transforms_segment import *
 from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
-from polar_augment.augmentations.flip_raw import RandomPolarFlip
-from polar_augment.augmentations.rotation_raw import RandomPolarRotation
-from polar_augment.augmentations.batch_segment_shuffle import BatchSegmentShuffler
+from polar_augment.flip_raw import RandomPolarFlip
+from polar_augment.rotation_raw import RandomPolarRotation
+from polar_augment.batch_segment_shuffle import BatchSegmentShuffler
 from mm.models import init_mm_model
 from utils.draw_fiber_img import plot_fiber
 
