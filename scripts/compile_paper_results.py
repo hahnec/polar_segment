@@ -227,8 +227,8 @@ if __name__ == '__main__':
         tables.append(tab)
         score_key = 'f1-score'
     result = extract_scores(tables, categories=['bg', 'hwm', 'twm', 'gm'], score_key=score_key)
-    if kfold_opt: result, models, methods = merge_kfold_score(result, models, methods)
-    save_textable(result, models, methods, categories=list(result.keys()), filename=group_name+'/'+'tab_'+score_key+'_per_class.tex')
+    n_result, n_models, n_methods = merge_kfold_score(result, models, methods) if kfold_opt else (result, models, methods)
+    save_textable(n_result, n_models, n_methods, categories=list(n_result.keys()), filename=group_name+'/'+'tab_'+score_key+'_per_class.tex')
 
     # table semantic segmentation score
     metrics = []
@@ -238,9 +238,8 @@ if __name__ == '__main__':
             tab = json.load(f)
         metrics.append(tab)
     metrics = {key: [d[key] for d in metrics] for key in metrics[0]}
-    if kfold_opt: 
-        metrics, models, methods = merge_kfold_score(metrics, models, methods)
-        save_textable(metrics, models, methods, categories=['accuracy', 'dice', 'auc', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
+    n_metrics, n_models, n_methods = merge_kfold_score(metrics, models, methods) if kfold_opt else (metrics, models, methods)
+    save_textable(n_metrics, n_models, n_methods, categories=['accuracy', 'dice', 'auc', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
 
     # image results
     mapping_labels = {
