@@ -25,6 +25,7 @@ def merge_curves(curves_dict, run_type, curve_type='train_loss', smooth_type=1):
 def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18):
 
     import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
     plt.rcParams['xtick.labelsize'] = fontsize
     plt.rcParams['ytick.labelsize'] = fontsize
     plt.figure(figsize=(15, 15))
@@ -38,7 +39,7 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18):
         axs.fill_between(x, mean - std, mean + std, color=c, alpha=0.2)
         axs.set_ylim(0.5, round(max(mean+std), 1)*1.015)
     
-    axs.set_xlabel('Steps [#]', fontsize=fontsize)
+    axs.set_xlabel('Steps [\\#]', fontsize=fontsize)
     axs.set_ylabel(filename.split('_')[-1].capitalize()+' score [a.u.]', fontsize=fontsize)
     axs.legend(loc='lower right', fontsize=fontsize)
     plt.tight_layout()
@@ -56,7 +57,8 @@ def exponential_moving_average(data, alpha=0.3):
 
 if __name__ == "__main__":
 
-    group_names = ['kfold_200epochs_imbalance_ckpt', 'kfold_200epochs_imbalance_ckpt_rotation', 'kfold_200epochs_imbalance_ckpt_rotation_spatial']
+    group_names = ['kfold_200epochs_imbalance_ckpt', 'kfold_200epochs_imbalance_ckpt_rotation']#, 'kfold_200epochs_imbalance_ckpt_rotation_spatial'
+    label_names = ['w/o augmentation', 'rotation $\\theta=[-\pi, \pi)$']#, 'flips'
     curves_dict = {k: {} for k in group_names}
     for group_name in group_names:
         kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
@@ -84,7 +86,6 @@ if __name__ == "__main__":
     # merge curves
     run_type = 'LCunet'
     metric_strs = ['train_dice', 'valid_dice']
-    labels = [' '.join(g.split('_')[2:]) for g in group_names]
     for metric_str in metric_strs:
         curve_means, curve_stds = merge_curves(curves_dict, run_type, metric_str)
-        plot_curves(curve_means, curve_stds, labels=labels, filename=run_type+'_'+metric_str)
+        plot_curves(curve_means, curve_stds, labels=label_names, filename=run_type+'_'+metric_str)
