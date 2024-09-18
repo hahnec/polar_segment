@@ -31,7 +31,7 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18):
     plt.figure(figsize=(15, 15))
     fig, axs = plt.subplots(1, 1)
     x = np.arange(len(curve_means[0]))
-    colors = ['red', 'blue', 'orange', 'green'][:len(curve_means)]
+    colors = ['#d62728', '#1f77b4', '#8c564b', '#2ca02c', '#9467bd', '#ff7f0e'][:len(curve_means)]
     styles = ['-', '-.', '--', ':'][:len(curve_means)]
     labels = [str(num) for num in range(len(curve_means))] if labels is None else labels
     for mean, std, l, c, s in zip(curve_means, curve_stds, labels, colors, styles):
