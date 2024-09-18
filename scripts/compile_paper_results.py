@@ -28,10 +28,10 @@ def compile_pdf(group_name, fig_texname, latex_file="./figure_env.tex"):
     latex_env += "\\input{%s/%s}\n" % (group_name, fig_texname)
     latex_env += "\\end{document}\n"
 
-    with open(latex_file, 'w') as f:
+    with open(group_name+'/'+latex_file, 'w') as f:
         f.write(latex_env)
 
-    pdf_output = compile_latex_to_pdf(latex_file)
+    pdf_output = compile_latex_to_pdf(group_name+'/'+latex_file)
     print(f"PDF generated at: {pdf_output}")
 
 def extract_scores(models, categories, score_key):
@@ -141,7 +141,7 @@ def save_texfigure(paths, labels, filename='fig_segment.tex', captions=None):
 
     # Determine the width for each minipage
     label_width = "0.1\\textwidth"  # Width for labels
-    image_width = f"{0.86/len(sorted_groups):.2f}\\textwidth"  # Adjust the image width accordingly
+    image_width = f"{0.85/len(sorted_groups):.2f}\\textwidth"  # Adjust the image width accordingly
 
     # Loop over each label with its corresponding group of images
     for i, label in enumerate(labels):
@@ -152,26 +152,17 @@ def save_texfigure(paths, labels, filename='fig_segment.tex', captions=None):
         latex_content += "\\hfill\n"
 
         # Add images associated with this label
-        for images in sorted_groups:
+        for k, images in enumerate(sorted_groups):
             # Create the minipage for each relevant image
             img = images[i]
             latex_content += f"\\begin{{minipage}}[b]{{{image_width}}}\n\\centering\n"
             latex_content += f"\\includegraphics[width=\\textwidth]{{{img}}}\\\\\n"
+            if i+1 == len(labels): latex_content += f"{captions[k]}\n"
             latex_content += "\\end{minipage}\n"
-            latex_content += "\\vspace{-.075cm}\n"
+            #latex_content += "\\vspace{-.075cm}\n"
         
         # Add a line break between rows to ensure the next label and images are on a new line
         latex_content += "\\\\[1em]\n"
-
-    # image captions at bottom
-    latex_content += f"\\begin{{minipage}}[b]{{{0.1}\\textwidth}}\n\\centering\n"
-    latex_content += f"Class:"
-    latex_content += "\\end{minipage}\n"
-    if captions is None: captions = ["\\textbf{"+str(i)+"}" for i in range(len(sorted_groups))]
-    for c in captions:
-        latex_content += f"\\begin{{minipage}}[b]{{{image_width}}}\n\\centering\n"
-        latex_content += f"{c}\n"
-        latex_content += "\\end{minipage}\n"
 
     latex_content += "\\caption{Generated segmentation results.}\n"
     latex_content += "\\label{fig:segment}\n"
@@ -213,7 +204,7 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'kfold_200epochs_imbalance_ckpt_rotation'
+    group_name = 'test_run'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
@@ -236,8 +227,8 @@ if __name__ == '__main__':
         tables.append(tab)
         score_key = 'f1-score'
     result = extract_scores(tables, categories=['bg', 'hwm', 'twm', 'gm'], score_key=score_key)
-    if kfold_opt: n_result, n_models, n_methods = merge_kfold_score(result, models, methods)
-    save_textable(n_result, n_models, n_methods, categories=list(n_result.keys()), filename=group_name+'/'+'tab_'+score_key+'_per_class.tex')
+    if kfold_opt: result, models, methods = merge_kfold_score(result, models, methods)
+    save_textable(result, models, methods, categories=list(result.keys()), filename=group_name+'/'+'tab_'+score_key+'_per_class.tex')
 
     # table semantic segmentation score
     metrics = []
@@ -246,9 +237,10 @@ if __name__ == '__main__':
         with open(el, 'r') as f:
             tab = json.load(f)
         metrics.append(tab)
-    metrics = {key: [d[key] for d in metrics] for key in metrics[0]}    # 
-    if kfold_opt: n_metrics, n_models, n_methods = merge_kfold_score(metrics, models, methods)
-    save_textable(n_metrics, n_models, n_methods, categories=['accuracy', 'dice', 'auc', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
+    metrics = {key: [d[key] for d in metrics] for key in metrics[0]}
+    if kfold_opt: 
+        metrics, models, methods = merge_kfold_score(metrics, models, methods)
+        save_textable(metrics, models, methods, categories=['accuracy', 'dice', 'auc', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
 
     # image results
     mapping_labels = {
@@ -259,7 +251,9 @@ if __name__ == '__main__':
     img_paths, labels = [], []
     e = 2
     img_columns, s = (5, 1000) if group_name.__contains__('imbalance') else (4, 900)
-    for k in range(4):
+    img_columns = 10 if group_name.__contains__('test') else img_columns
+    ks = 3 if kfold_opt else 1
+    for k in range(ks):
         for j, el in enumerate(sorted_runs[k::3]):
             method = ['MMFF', 'LC'][el[2]]
             for i in range(img_columns):
@@ -288,11 +282,11 @@ if __name__ == '__main__':
         import yaml
         with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
             captions = list(yaml.safe_load(f).values())
-        captions = [c.split(',')[0] + c.split('; CNS')[-1] if c != 'healthy' else c for c in captions]
+        captions = [c.split(',')[0].replace('Astrocytoma','A').replace('Oligodendroglioma','O') + c.split('WHO')[-1].replace('grade:','') if c != 'healthy' else c for c in captions]
         # save figure tex file
         fig_texname = 'fig_segment_%s.tex' % str(k)
         save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
-        compile_pdf(group_name, fig_texname)
+        compile_pdf(group_name, fig_texname, latex_file='figure_env_'+str(k)+'.tex')
 
     # save table results (k-folds accumulated)
-    compile_pdf(group_name, 'tab_semantic_segmentation_scores.tex', latex_file='./table_env.tex')
+    compile_pdf(group_name, 'tab_semantic_segmentation_scores.tex', latex_file='/table_env.tex')
