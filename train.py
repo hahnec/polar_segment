@@ -20,6 +20,7 @@ from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
 from polar_augment.flip_raw import RandomPolarFlip
 from polar_augment.rotation_raw import RandomPolarRotation
 from polar_augment.batch_segment_shuffle import BatchSegmentShuffler
+from utils.transforms_segment import RandomResizedCrop
 from mm.models import init_mm_model
 from utils.draw_fiber_img import plot_fiber
 
@@ -227,13 +228,13 @@ if __name__ == '__main__':
     raw_opt = True if cfg.data_subfolder.__contains__('raw') else False
     transforms = [
             ToTensor(), 
-            RandomCrop(size=int(cfg.crop)) if cfg.crop > 0 else EmptyTransform(), 
             RandomPolarRotation(degrees=cfg.rotation, p=.5, fill=[0,0,0,0,1]) if cfg.rotation > 0 and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=0, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=1, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=2, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
+            RandomCrop(size=int(cfg.crop)) if cfg.crop > 0 else EmptyTransform(),
+            RandomResizedCrop(size=256) if cfg.crop > 0 else EmptyTransform(),
             #transforms.RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
-            #Normalize(mean=0, std=1), 
         ]
 
     # mueller matrix model
