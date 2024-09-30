@@ -272,13 +272,13 @@ if __name__ == '__main__':
     model.to(device=cfg.device)
 
     # create dataset
-    kfold_names = ['k1.txt', 'k2.txt', 'k3.txt']
-    if cfg.imbalance: kfold_names = [name.split('.')[0] + '_imbalance.txt' for name in kfold_names]
+    kfold_names = ['k1_b.txt', 'k2_b.txt', 'k3_b.txt']
+    if cfg.imbalance: kfold_names = ['k' + str(i+1) + '_imbalance.txt' for i in range(len(kfold_names))]
     splits = [(kfold_names[:i] + kfold_names[i+1:], [kfold_names[i]]) for i in range(len(kfold_names))]
     train_cases, test_cases = splits[cfg.k_select]
     dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
-    if (Path(cfg.data_dir) / 'cases' / 'val2.txt').exists():
-        val_set = HORAO(cfg.data_dir, ['val2.txt'], transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    if (Path(cfg.data_dir) / 'cases' / 'val2_b.txt').exists():
+        val_set = HORAO(cfg.data_dir, ['val2_b.txt'], transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     else:
         # split into train and validation partitions (if needed)
         n_val = int(len(dataset) * cfg.val_fraction)
