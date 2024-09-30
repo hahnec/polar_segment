@@ -232,7 +232,6 @@ if __name__ == '__main__':
             RandomPolarFlip(orientation=0, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=1, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=2, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
-            RandomCrop(size=int(cfg.crop)) if cfg.crop > 0 else EmptyTransform(),
             RandomResizedCrop(size=256) if cfg.crop > 0 else EmptyTransform(),
             #transforms.RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
         ]
