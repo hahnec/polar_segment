@@ -5,6 +5,7 @@ from pathlib import Path
 from PIL import Image
 import pandas as pd
 
+
 class HORAO(Dataset):
     def __init__(
             self, 
@@ -126,7 +127,7 @@ class HORAO(Dataset):
         metadata = self.get_metadata(seq, section) if img_class else 'healthy'
 
         # label construction
-        labels = np.array(Image.open(label_fname))#, dtype=np.float32)
+        labels = np.array(Image.open(label_fname))
         labels = labels[None].repeat(2, 0)
         labels[~img_class] = 0
         if img_class == 0 and self.benign_accumulate:
@@ -171,16 +172,11 @@ class HORAO(Dataset):
                 intensity = read_cod_data_X3D(img_path, raw_flag=True)
                 bruit = read_cod_data_X3D(str(img_path).replace('_Intensite.cod', '_Bruit.cod'), raw_flag=True)
                 frame = intensity - bruit
-                try:
-                    from libmpMuelMat_dev_1_0.libmpMuelMat import removeReflections3D
-                    frame, mask = removeReflections3D(np.array(frame), maxThr=65530-float(bruit.max()))
-                    mask = ~mask
-                except ImportError:
-                    from utils.specular_removal_cv import specular_removal_cv
-                    frame, mask = specular_removal_cv(np.array(intensity, dtype=np.float32), size=4, method='navier')
-                    #from utils.specular_removal_torch import specular_removal_t
-                    #frame = specular_removal_t(frame, intensity>65530)
-                labels[mask.astype(bool), :] = 0    # mask clipped areas
+                # clipping
+                clip_detect = lambda img, th=65530: np.any(img > th, axis=-1)
+                clip_mask = clip_detect(frame.numpy())
+                bg[clip_mask.astype(bool), :] = 0    # merge clipped areas with background
+                labels[clip_mask.astype(bool), :] = 0    # mask clipped areas
                 # calibration
                 amat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'A'))
                 wmat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'W'))
@@ -286,17 +282,17 @@ if __name__ == '__main__':
         tumor_samples = 0
         healthy_samples = 0
         for batch in loader:
-            imgs, masks, img_class, bg, metadata = batch
+            imgs, labels, img_class, bg, metadata = batch
 
             # move feature dimension for consistency
             imgs = imgs.moveaxis(-1, 1)
-            masks = masks.moveaxis(-1, 1)
+            labels = labels.moveaxis(-1, 1)
 
-            bg_pixels += (masks[:, 0]>0).sum().item()
-            hwm_pixels += (masks[:, 1]>0).sum().item()
-            twm_pixels += (masks[:, 3]>0).sum().item()
-            hgm_pixels += (masks[:, 2]>0).sum().item()
-            tgm_pixels += (masks[:, 4]>0).sum().item()
+            bg_pixels += (labels[:, 0]>0).sum().item()
+            hwm_pixels += (labels[:, 1]>0).sum().item()
+            twm_pixels += (labels[:, 3]>0).sum().item()
+            hgm_pixels += (labels[:, 2]>0).sum().item()
+            tgm_pixels += (labels[:, 4]>0).sum().item()
             tumor_samples += (img_class==1).sum().item()
             healthy_samples += (img_class==0).sum().item()
 
@@ -307,7 +303,7 @@ if __name__ == '__main__':
                 print('MM processing time: %s' % str(t_total))
 
             from utils.multi_loss import reduce_htgm
-            masks = reduce_htgm(torch.zeros_like(masks), masks)[1]
+            labels = reduce_htgm(torch.zeros_like(labels), labels)[1]
 
             if False:
                 import matplotlib.pyplot as plt
