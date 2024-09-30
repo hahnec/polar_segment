@@ -742,12 +742,11 @@ class RandomResizedCrop(object):
             PIL Image: Randomly cropped and resized image.
         """
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
-        if label is None:
-            return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
-        else:
+        if label is not None:
             img = F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
             label = F.resized_crop(label, i, j, h, w, self.size, self.interpolation)
-        return img, label
+            return img, label
+        return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
     def __repr__(self):
         interpolate_str = _pil_interpolation_to_str[self.interpolation]
