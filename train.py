@@ -167,7 +167,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         branch_type+'_step': step+bidx
                     })
                     # fiber tracts image
-                    if cfg.data_subfolder.__contains__('raw'):
+                    if cfg.data_subfolder.__contains__('raw') and False:
                         from mm.models import MuellerMatrixModel
                         azimuth_model = MuellerMatrixModel(feature_keys=['azimuth', 'linr'])
                         lc_feats = azimuth_model(frames)
@@ -175,11 +175,11 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         vars = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
                         mask = ~(vars[1] & ~bg[bidx, 0].numpy())
                         # tbd: adjust fiber plot, which fails after rectification providing correct linear retardance
-                        #fiber_img = plot_fiber(raw_azimuth=vars[0][0], linr=vars[0][1], mask=mask, intensity=vars[2])
-                        #wandb.log({
-                        #    'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
-                        #    #branch_type+'_step': step+bidx
-                        #})
+                        fiber_img = plot_fiber(raw_azimuth=vars[0][0], linr=vars[0][1], mask=mask, intensity=vars[2])
+                        wandb.log({
+                            'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
+                            #branch_type+'_step': step+bidx
+                        })
 
             # metrics extension
             for k in metrics_dict.keys():
