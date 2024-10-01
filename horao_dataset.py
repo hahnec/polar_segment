@@ -173,10 +173,10 @@ class HORAO(Dataset):
                 bruit = read_cod_data_X3D(str(img_path).replace('_Intensite.cod', '_Bruit.cod'), raw_flag=True)
                 frame = intensity - bruit
                 # clipping
-                clip_detect = lambda img, th=65530: np.any(img > th, axis=-1)
+                clip_detect = lambda img, th=65530: np.any(img > th, axis=-1).astype(bool)
                 clip_mask = clip_detect(frame.numpy())
-                bg[clip_mask.astype(bool), :] = True    # merge clipped areas with background
-                labels[clip_mask.astype(bool), :] = 0    # mask clipped areas
+                bg[clip_mask, :] = True    # merge clipped areas with background
+                labels[clip_mask, :] = 0    # mask clipped areas
                 # calibration
                 amat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'A'))
                 wmat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'W'))
