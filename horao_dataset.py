@@ -174,7 +174,7 @@ class HORAO(Dataset):
                 frame = intensity - bruit
                 # clipping
                 clip_detect = lambda img, th=65530: np.any(img > th, axis=-1).astype(bool)
-                clip_mask = clip_detect(frame.numpy())
+                clip_mask = clip_detect(intensity.numpy())
                 bg[clip_mask, :] = True    # merge clipped areas with background
                 labels[clip_mask, :] = 0    # mask clipped areas
                 # calibration

@@ -59,8 +59,8 @@ def test_main(cfg, dataset, model, mm_model):
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
-        wandb.log({"roc": wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
-        wandb.log({"auc": roc_auc})
+        wandb.log({'roc': wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
+        wandb.log({'auc': roc_auc})
     else:
         with open('./results.txt', "a") as f:
             f.write(report)
