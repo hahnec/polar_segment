@@ -249,7 +249,7 @@ if __name__ == '__main__':
     }
     img_paths, labels = [], []
     e = 2
-    img_columns, s = (5, 1000) if group_name.__contains__('imbalance') else (4, 900)
+    img_columns, s = (7, 1000) if group_name.__contains__('imbalance') else (6, 900)
     img_columns = 10 if group_name.__contains__('test') else img_columns
     ks = 3 if kfold_opt else 1
     for k in range(ks):
