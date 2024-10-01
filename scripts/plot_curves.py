@@ -31,12 +31,12 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18):
     plt.figure(figsize=(15, 15))
     fig, axs = plt.subplots(1, 1)
     x = np.arange(len(curve_means[0]))
-    colors = ['#d62728', '#1f77b4', '#8c564b', '#2ca02c', '#9467bd', '#ff7f0e'][:len(curve_means)]
+    colors = ['#d62728', '#1f77b4', '#2ca02c', '#8c564b', '#9467bd', '#ff7f0e'][:len(curve_means)]
     styles = ['-', '-.', '--', ':'][:len(curve_means)]
     labels = [str(num) for num in range(len(curve_means))] if labels is None else labels
     for mean, std, l, c, s in zip(curve_means, curve_stds, labels, colors, styles):
         axs.plot(x, mean, label=l, color=c, linestyle=s)
-        axs.fill_between(x, mean - std, mean + std, color=c, alpha=0.2)
+        axs.fill_between(x, mean - std, mean + std, color=c, alpha=0.15)
         axs.set_ylim(0.5, round(max(mean+std), 1)*1.015)
         axs.set_xlim(0, len(x))
     
