@@ -175,7 +175,7 @@ class HORAO(Dataset):
                 # clipping
                 clip_detect = lambda img, th=65530: np.any(img > th, axis=-1)
                 clip_mask = clip_detect(frame.numpy())
-                bg[clip_mask.astype(bool), :] = 0    # merge clipped areas with background
+                bg[clip_mask.astype(bool), :] = 1    # merge clipped areas with background
                 labels[clip_mask.astype(bool), :] = 0    # mask clipped areas
                 # calibration
                 amat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'A'))
