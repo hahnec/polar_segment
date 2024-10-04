@@ -43,7 +43,8 @@ def test_main(cfg, dataset, model, mm_model):
     wb_t = truth[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
     wb_p = preds[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
     vidx = np.any(wb_t, axis=-1) # only labeled samples
-    fpr, tpr, ths = roc_curve(wb_t[vidx].argmax(1), wb_p[vidx].argmax(1))
+    pos_class_idx = 1 # use tumor as positive class
+    fpr, tpr, ths = roc_curve(wb_t[vidx][:, pos_class_idx], wb_p[vidx][:, pos_class_idx])
     roc_auc = auc(fpr, tpr)
 
     if cfg.logging:
