@@ -89,7 +89,11 @@ if __name__ == "__main__":
         #with open(os.path.join(group_name, 'metrics_%s.md' % str(run.name)), 'w') as f:
         #    f.write(md_metrics)
 
-        table = run.use_artifact(run.logged_artifacts()[1]).get(table_key)
+        try:
+            table = run.use_artifact(run.logged_artifacts()[1]).get(table_key)
+            if table is None: raise ValueError("Table is None")
+        except:
+            table = run.use_artifact(run.logged_artifacts()[2]).get(table_key)
         table_dict = {
             row[0]: {table.columns[i]: row[i] for i in range(1, len(table.columns))}
             for row in table.data
