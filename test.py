@@ -63,13 +63,14 @@ def test_main(cfg, dataset, model, mm_model):
         # ROC plot
         wandb.log({'roc': wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
         wandb.log({'auc': roc_auc})
-        # Custom ROC, FPR and TPR
+        # Downsampled ROC, FPR and TPR
         roc_table = wandb.Table(columns=["FPR", "TPR"])
-        for f, t in zip(fpr, tpr):
+        idcs = np.linspace(0, len(tpr)-1, num=500, dtype=int)
+        for f, t in zip(fpr[idcs], tpr[idcs]):
             roc_table.add_data(f, t)
         roc_plot = wandb.plot.line(roc_table, "FPR", "TPR", title="ROC Curve")
         wandb.log({"ROC_curve": roc_plot})
-        wandb.log({"FPR": fpr.tolist(), "TPR": tpr.tolist(), "Thresholds": ths.tolist()})
+        wandb.log({"FPR": fpr[idcs].tolist(), "TPR": tpr[idcs].tolist(), "Thresholds": ths.tolist()})
     else:
         with open('./results.txt', "a") as f:
             f.write(report)
