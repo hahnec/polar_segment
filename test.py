@@ -48,8 +48,7 @@ def test_main(cfg, dataset, model, mm_model):
     roc_auc = auc(fpr, tpr)
 
     if cfg.logging:
-        # upload 
-        # other metrics to wandb
+        # upload metrics to wandb
         wandb.log(metrics)
         wandb.log({'accuracy': metrics['acc']})
         table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
