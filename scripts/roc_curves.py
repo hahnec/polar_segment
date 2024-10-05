@@ -57,7 +57,7 @@ def exponential_moving_average(data, alpha=0.3):
 
 if __name__ == "__main__":
 
-    group_name = 'kfold_more_healthy_all_b4'
+    group_name = 'kfold_more_healthy_all_roc'
     curves_dict = {}
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     if not Path('./' + group_name).exists():
