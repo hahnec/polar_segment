@@ -79,7 +79,7 @@ if __name__ == "__main__":
             curves = json.load(f)
         print(method+el[1])
         if not method+el[1] in curves_dict.keys(): curves_dict[method+el[1]] = []
-        roc = np.array([[el[1], el[2]] for el in curves['data'] if el[0] == 'hwm'])
+        roc = np.array([[el[1], el[2]] for el in curves['data'] if el[0] == 'twm'])
         curves_dict[method+el[1]].append(roc)
 
     # merge curves
