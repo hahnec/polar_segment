@@ -44,7 +44,7 @@ def test_main(cfg, dataset, model, mm_model):
     wb_p = preds[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
     vidx = np.any(wb_t, axis=-1) # only labeled samples
     pos_class_idx = 1 # use tumor as positive class
-    fpr, tpr, ths = roc_curve(wb_t[vidx][:, pos_class_idx], wb_p[vidx][:, pos_class_idx])
+    fpr, tpr, ths = roc_curve(wb_t[vidx].argmax(1), wb_p[vidx][:, pos_class_idx])
     roc_auc = auc(fpr, tpr)
 
     if cfg.logging:
@@ -60,8 +60,16 @@ def test_main(cfg, dataset, model, mm_model):
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
-        wandb.log({'roc': wandb.plot.roc_curve(wb_t[vidx][:, pos_class_idx], wb_p[vidx][:, pos_class_idx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
+        # ROC plot
+        wandb.log({'roc': wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
         wandb.log({'auc': roc_auc})
+        # Custom ROC, FPR and TPR
+        roc_table = wandb.Table(columns=["FPR", "TPR"])
+        for f, t in zip(fpr, tpr):
+            roc_table.add_data(f, t)
+        roc_plot = wandb.plot.line(roc_table, "FPR", "TPR", title="ROC Curve")
+        wandb.log({"ROC_curve": roc_plot})
+        wandb.log({"FPR": fpr.tolist(), "TPR": tpr.tolist(), "Thresholds": ths.tolist()})
     else:
         with open('./results.txt', "a") as f:
             f.write(report)
@@ -111,7 +119,7 @@ if __name__ == '__main__':
 
     # mueller matrix model
     if cfg.data_subfolder.__contains__('raw'):
-        mm_model = init_mm_model(cfg, train_opt=False)
+        mm_model = init_mm_model(cfg, train_opt=False, ochs=10)
         if cfg.kernel_size > 0:
             ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.mm_model_file.split('_')[0])]
             state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)['state_dict']
