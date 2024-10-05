@@ -70,7 +70,7 @@ def test_main(cfg, dataset, model, mm_model):
             roc_table.add_data(f, t)
         roc_plot = wandb.plot.line(roc_table, "FPR", "TPR", title="ROC Curve")
         wandb.log({"ROC_curve": roc_plot})
-        wandb.log({"FPR": fpr[idcs].tolist(), "TPR": tpr[idcs].tolist(), "Thresholds": ths.tolist()})
+        wandb.log({"FPR": fpr[idcs].tolist(), "TPR": tpr[idcs].tolist(), "Thresholds": ths[idcs].tolist()})
     else:
         with open('./results.txt', "a") as f:
             f.write(report)
