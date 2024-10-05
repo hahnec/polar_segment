@@ -51,6 +51,7 @@ def test_main(cfg, dataset, model, mm_model):
         # upload metrics to wandb
         wandb.log(metrics)
         wandb.log({'accuracy': metrics['acc']})
+        wandb.log({'auc': roc_auc})
         table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
         wandb.log({'metrics': table_metrics})
         # convert report to wandb table
@@ -60,16 +61,18 @@ def test_main(cfg, dataset, model, mm_model):
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
         # ROC plot
-        wandb.log({'roc': wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
-        wandb.log({'auc': roc_auc})
-        # Downsampled ROC, FPR and TPR
-        roc_table = wandb.Table(columns=["FPR", "TPR"])
-        idcs = np.linspace(0, len(tpr)-1, num=500, dtype=int)
-        for f, t in zip(fpr[idcs], tpr[idcs]):
-            roc_table.add_data(f, t)
-        roc_plot = wandb.plot.line(roc_table, "FPR", "TPR", title="ROC Curve")
-        wandb.log({"ROC_curve": roc_plot})
-        wandb.log({"FPR": fpr[idcs].tolist(), "TPR": tpr[idcs].tolist(), "Thresholds": ths[idcs].tolist()})
+        if False:
+            wandb.log({'roc_wandb': wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
+        else:
+            # Downsampled ROC, FPR and TPR
+            roc_table = wandb.Table(columns=["FPR", "TPR"])
+            idcs = np.linspace(0, len(tpr)-1, num=500, dtype=int)
+            for f, t in zip(fpr[idcs], tpr[idcs]):
+                roc_table.add_data(f, t)
+            wandb.log({"roc_table": roc_table})
+            roc_plot = wandb.plot.line(roc_table, "False positive rate", "True positive rate", title="ROC curve")
+            wandb.log({"roc_curve": roc_plot})
+            #wandb.log({"FPR": fpr[idcs].tolist(), "TPR": tpr[idcs].tolist(), "Thresholds": ths[idcs].tolist()})
     else:
         with open('./results.txt', "a") as f:
             f.write(report)
