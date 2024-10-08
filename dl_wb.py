@@ -93,7 +93,10 @@ if __name__ == "__main__":
             table = run.use_artifact(run.logged_artifacts()[1]).get(table_key)
             if table is None: raise ValueError("Table is None")
         except:
-            table = run.use_artifact(run.logged_artifacts()[2]).get(table_key)
+            for i in [0, 2]:
+                table = run.use_artifact(run.logged_artifacts()[i]).get(table_key)
+                if table is not None:
+                    break
         table_dict = {
             row[0]: {table.columns[i]: row[i] for i in range(1, len(table.columns))}
             for row in table.data
