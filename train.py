@@ -273,7 +273,7 @@ if __name__ == '__main__':
 
     # create dataset
     kfold_names = ['k1_b.txt', 'k2_b.txt', 'k3_b.txt']
-    if cfg.imbalance: kfold_names = ['k' + str(i+1) + '_imbalance.txt' for i in range(len(kfold_names))]
+    if cfg.imbalance: kfold_names = [fname.split('.txt')[0] + '_imbalance.txt' for fname in kfold_names]
     splits = [(kfold_names[:i] + kfold_names[i+1:], [kfold_names[i]]) for i in range(len(kfold_names))]
     train_cases, test_cases = splits[cfg.k_select]
     dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
