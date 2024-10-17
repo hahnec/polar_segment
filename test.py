@@ -150,6 +150,9 @@ if __name__ == '__main__':
         from segment_models.uctransnet.UCTransNet import UCTransNet
         from segment_models.uctransnet.Config import get_CTranS_config
         model = UCTransNet(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
+    elif cfg.model is None:
+        model = torch.nn.Module()
+        model.forward = lambda x: x
     else:
         raise Exception('Model %s not recognized' % cfg.model)
 
@@ -168,7 +171,7 @@ if __name__ == '__main__':
         wb = wandb.init(project='polar_segment_test', resume='allow', anonymous='must', config=dict(cfg), group='train')
         wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, val_fraction=cfg.val_fraction, amp=cfg.amp))
 
-    for case in ['test_tumor_grade4.txt', 'test_tumor_grade3.txt', 'test_tumor_grade2.txt']:
+    for case in cfg.cases:
         # create dataset
         dataset = HORAO(cfg.data_dir, [case], transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
         

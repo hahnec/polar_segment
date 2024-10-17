@@ -1,8 +1,8 @@
 # general
-model: unet
+model: Null
 levels: 0
-model_file: cerulean-haze-2692_ckpt_epoch200.pt
-logging: true
+model_file: Null
+logging: 0
 
 # augmentation settings
 flips: False
@@ -11,6 +11,15 @@ elastic: 0
 rotation: 0
 crop: 0
 shuffle_crop: 0
+
+# mueller matrix parameters
+kernel_size: 0
+activation: Null
+method: pooling
+feature_keys:
+  - linr
+wlens:
+  - 550
 
 # dataset
 cases: ['test_tumor_grade4.txt', 'test_tumor_grade3.txt', 'test_tumor_grade2.txt']
