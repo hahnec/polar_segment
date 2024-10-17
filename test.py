@@ -37,6 +37,7 @@ def test_main(cfg, dataset, model, mm_model):
         report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
     except ValueError as e:
         print(e)
+        return False
 
     # ROC curve
     class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)]
