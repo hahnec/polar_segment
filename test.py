@@ -178,3 +178,5 @@ if __name__ == '__main__':
         
         # run test
         test_main(cfg, dataset, model, mm_model)
+    
+    if cfg.logging: wandb.finish()
