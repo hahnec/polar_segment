@@ -174,7 +174,7 @@ if __name__ == '__main__':
 
     for case in cfg.cases:
         # create dataset
-        dataset = HORAO(cfg.data_dir, [case], transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+        dataset = HORAO(cfg.data_dir, [case], transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, class_num=cfg.class_num)
         
         # run test
         test_main(cfg, dataset, model, mm_model)
