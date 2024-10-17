@@ -151,9 +151,9 @@ if __name__ == '__main__':
         from segment_models.uctransnet.UCTransNet import UCTransNet
         from segment_models.uctransnet.Config import get_CTranS_config
         model = UCTransNet(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
-    elif cfg.model is None:
+    elif cfg.model == 'linr':
         model = torch.nn.Module()
-        model.forward = lambda x: x
+        model.forward = lambda x: torch.stack([x[:, 1], 180-x[:, 1]], axis=1)
     else:
         raise Exception('Model %s not recognized' % cfg.model)
 

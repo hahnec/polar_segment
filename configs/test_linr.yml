@@ -1,8 +1,9 @@
 # general
-model: Null
-levels: 0
+logging: 1
+model: linr
+levels: 1
 model_file: Null
-logging: 0
+batch_size: 1
 
 # augmentation settings
 flips: False
@@ -12,6 +13,11 @@ rotation: 0
 crop: 0
 shuffle_crop: 0
 
+# dataset
+cases: ['k1_c_imbalance.txt', 'k2_c_imbalance.txt', 'k3_c_imbalance.txt']
+class_num: 2
+bg_opt: False
+
 # mueller matrix parameters
 kernel_size: 0
 activation: Null
@@ -20,6 +26,3 @@ feature_keys:
   - linr
 wlens:
   - 550
-
-# dataset
-cases: ['test_tumor_grade4.txt', 'test_tumor_grade3.txt', 'test_tumor_grade2.txt']

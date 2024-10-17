@@ -1,8 +1,9 @@
 # general
+logging: 1
 model: unet
 levels: 0
 model_file: cerulean-haze-2692_ckpt_epoch200.pt
-logging: true
+batch_size: 1
 
 # augmentation settings
 flips: False
@@ -14,3 +15,5 @@ shuffle_crop: 0
 
 # dataset
 cases: ['test_tumor_grade4.txt', 'test_tumor_grade3.txt', 'test_tumor_grade2.txt']
+class_num: 2
+bg_opt: False
