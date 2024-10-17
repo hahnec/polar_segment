@@ -272,7 +272,7 @@ if __name__ == '__main__':
     model.to(device=cfg.device)
 
     # create dataset
-    kfold_names = ['k1_b.txt', 'k2_b.txt', 'k3_b.txt']
+    kfold_names = ['k1_c.txt', 'k2_c.txt', 'k3_c.txt']
     if cfg.imbalance: kfold_names = [fname.split('.txt')[0] + '_imbalance.txt' for fname in kfold_names]
     splits = [(kfold_names[:i] + kfold_names[i+1:], [kfold_names[i]]) for i in range(len(kfold_names))]
     train_cases, test_cases = splits[cfg.k_select]
