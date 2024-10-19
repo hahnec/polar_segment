@@ -141,13 +141,13 @@ def save_texfigure(paths, labels, filename='fig_segment.tex', captions=None):
 
     # Determine the width for each minipage
     label_width = "0.1\\textwidth"  # Width for labels
-    image_width = f"{0.85/len(sorted_groups):.2f}\\textwidth"  # Adjust the image width accordingly
+    image_width = f"{0.825/len(sorted_groups):.2f}\\textwidth"  # Adjust the image width accordingly
 
     # Loop over each label with its corresponding group of images
     for i, label in enumerate(labels):
         # Create the minipage for the label
         latex_content += f"\\begin{{minipage}}[t]{{{label_width}}}\n"
-        latex_content += f"\\raisebox{{2.15\\height}}{{\\parbox{{\\textwidth}}{{\\raggedright \\textbf{{{label}}}}}}}\n"
+        latex_content += f"\\raisebox{{1.15\\height}}{{\\parbox{{\\textwidth}}{{\\raggedright \\textbf{{{label}}}}}}}\n"
         latex_content += "\\end{minipage}\n"
         latex_content += "\\hfill\n"
 
