@@ -29,13 +29,16 @@ def batch_preprocess(batch, cfg):
     
     # device
     frames, truth, img_class, bg, text = batch
-    imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
     frames = frames.to(device=cfg.device, dtype=torch.float32, memory_format=torch.channels_last)
     truth = truth.to(device=cfg.device, dtype=frames.dtype)
     bg = bg.to(device='cpu', dtype=bool)
 
+    # perform batch-wise shuffle transform
     if random.random() < cfg.shuffle_crop and frames.shape[0] > 1:
-        frames, truth = BatchSegmentShuffler('mask')(frames, truth)
+        frames, truth = BatchSegmentShuffler('crop')(frames, truth)
+
+    # extract intensity images
+    imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
 
     return frames, truth, imgs, bg, text
 
