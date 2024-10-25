@@ -19,6 +19,7 @@ from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
 from polar_augment.flip_raw import RandomPolarFlip
 from polar_augment.rotation_raw import RandomPolarRotation
+from polar_augment.noise import RandomGaussNoise
 from polar_augment.batch_segment_shuffle import BatchSegmentShuffler
 from utils.transforms_segment import RandomResizedCrop
 from mm.models import init_mm_model
