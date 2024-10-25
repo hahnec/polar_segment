@@ -275,9 +275,8 @@ if __name__ == '__main__':
     model.to(device=cfg.device)
 
     # create dataset
-    kfold_names = ['k1_c.txt', 'k2_c.txt', 'k3_c.txt']
-    if cfg.imbalance: kfold_names = [fname.split('.txt')[0] + '_imbalance.txt' for fname in kfold_names]
-    splits = [(kfold_names[:i] + kfold_names[i+1:], [kfold_names[i]]) for i in range(len(kfold_names))]
+    if cfg.imbalance: cfg.cases = [fname.split('.txt')[0] + '_imbalance.txt' for fname in cfg.cases]
+    splits = [(cfg.cases[:i] + cfg.cases[i+1:], [cfg.cases[i]]) for i in range(len(cfg.cases))]
     train_cases, test_cases = splits[cfg.k_select]
     dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     if (Path(cfg.data_dir) / 'cases' / 'val2_b.txt').exists():

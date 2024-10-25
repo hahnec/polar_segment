@@ -21,7 +21,7 @@ labeled_only: True
 group: Null
 class_num: 4
 
-# dataset paths
+# dataset
 data_path: TumorMeasurementsCalib/
 ubx_dir: /storage/homefs/ch21z139/01_datasets/${data_path}
 usb_dir: /media/chris/EB62-383C/${data_path}
@@ -30,7 +30,8 @@ map_dir: Null
 data_dir: ${loc_dir}
 data_subfolder: raw_data
 k_select: 0
-imbalance: True
+imbalance: False
+cases: ['k1_b.txt', 'k2_b.txt', 'k3_b.txt']
 
 # mueller matrix parameters
 levels: 1
