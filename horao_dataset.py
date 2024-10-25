@@ -232,12 +232,9 @@ class PatchHORAO(HORAO):
         
         # get arbitrary 2d coordinate pair from a labeled pixel
         binary_map_crop = torch.any(labels, dim=0, keepdim=False)[self.b:-self.b, self.b:-self.b]
-        non_zero_indices = torch.nonzero(binary_map_crop, as_tuple=False)
-        try:
-            random_index = torch.randint(0, non_zero_indices.size(0), (1,)).item()
-        except:
-            print(non_zero_indices.shape)
-            random_index = torch.randint(0, binary_map_crop.numel(), (1,)).item()
+        # get coordinate indices (preferably where labels are)
+        non_zero_indices = torch.nonzero(binary_map_crop if binary_map_crop.sum() > 0 else ~binary_map_crop, as_tuple=False)
+        random_index = torch.randint(0, non_zero_indices.size(0), (1,)).item()
         coords = non_zero_indices[random_index] + self.b
 
         # select patch based on 2d coordinate
