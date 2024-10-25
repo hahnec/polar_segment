@@ -1,3 +1,4 @@
 # override config for server
 logging: 1
+batch_size: 4
 data_dir: ${ubx_dir}
