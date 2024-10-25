@@ -237,7 +237,7 @@ if __name__ == '__main__':
             RandomPolarFlip(orientation=1, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=2, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomResizedCrop(size=256) if cfg.crop > 0 else EmptyTransform(),
-            RandomGaussNoise(mean=0.0, std=0.1, p=0.5) if cfg.noise > 0 else EmptyTransform(),
+            RandomGaussNoise(mean=0.0, std=0.05, p=0.5) if cfg.noise > 0 else EmptyTransform(),
         ]
 
     # mueller matrix model
