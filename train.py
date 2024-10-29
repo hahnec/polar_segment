@@ -274,18 +274,13 @@ if __name__ == '__main__':
     model = model.to(memory_format=torch.channels_last)
     model.to(device=cfg.device)
 
-    # create dataset
+    # create datasets
     if cfg.imbalance: cfg.cases = [fname.split('.txt')[0] + '_imbalance.txt' for fname in cfg.cases]
-    splits = [(cfg.cases[:i] + cfg.cases[i+1:], [cfg.cases[i]]) for i in range(len(cfg.cases))]
-    train_cases, test_cases = splits[cfg.k_select]
+    from utils.kfold_splits import get_nested_kfold_splits
+    splits = get_nested_kfold_splits(cfg.cases)
+    train_cases, valid_cases, test_cases = splits[cfg.k_select]
     dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
-    if (Path(cfg.data_dir) / 'cases' / 'val2_b.txt').exists():
-        val_set = HORAO(cfg.data_dir, ['val2_b.txt'], transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
-    else:
-        # split into train and validation partitions (if needed)
-        n_val = int(len(dataset) * cfg.val_fraction)
-        n_train = len(dataset) - n_val
-        dataset, val_set = random_split(dataset, [n_train, n_val], generator=torch.Generator().manual_seed(cfg.seed))
+    val_set = HORAO(cfg.data_dir, valid_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
 
     # create data loaders
     num_workers = min(2, os.cpu_count())
