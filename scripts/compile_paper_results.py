@@ -76,7 +76,7 @@ def save_textable(result, models, methods, categories, filename='./table.tex', d
     # use math mode for strings containing underscore
     mapping_segment = {
         'accuracy': 'Accuracy',
-        'dice': 'Dice',
+        'dice': 'DSC',
         'auc': 'AUC',
         't_s': '$t_s~[s]$',
         't_mm': '$t_{mm}~[s]$'
