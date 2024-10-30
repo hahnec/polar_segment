@@ -30,7 +30,7 @@ if __name__ == "__main__":
         
         # extract image filnames from tex files
         fnames = re.findall(r'fig-\d+-'+combination+'\.png', ' '.join(tex_lines))
-        fnames_gt = re.findall(r'fig-\d+-'+combination.split('-')[0]+'-gt.png', ' '.join(tex_lines))
+        fnames_gt = re.findall(r'fig-\d+-'+combination.replace('MMFF', 'LC').split('-')[0]+'-gt.png', ' '.join(tex_lines))
 
         for i, fname in enumerate(fnames):
             new_fname = group_name + '_' + fname
