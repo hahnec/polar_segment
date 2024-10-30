@@ -20,7 +20,7 @@ bg_opt: False
 labeled_only: True
 group: Null
 class_num: 4
-alpha: 0.75
+alpha: 0.25
 gamma: 2
 
 # dataset
@@ -42,7 +42,7 @@ activation: Null
 method: pooling
 feature_keys:
   - intensity
-#  - azimuth
+  - azimuth
   - std
   - totp
   - linr
