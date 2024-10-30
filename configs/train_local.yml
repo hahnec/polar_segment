@@ -12,7 +12,7 @@ shallow: 0
 # training
 batch_size: 4
 lr: 1e-4
-epochs: 200
+epochs: 100
 weight_decay: 1e-8
 val_fraction: 0.1
 amp: False
