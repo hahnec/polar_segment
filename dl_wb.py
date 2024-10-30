@@ -58,14 +58,14 @@ if __name__ == "__main__":
     wandb.login(key=cfg.wandb_api)
 
     # Define the project and group name
-    group_name = 'kfold_200epochs_balance'
-    project_name = 'polar_segment'  
+    project_name = 'polar_segment'
+    group_name = 'kfold3_absence' if not project_name.__contains__('test') else 'test_run'
     table_key = 'report'
     media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
-
+ 
     api = wandb.Api()
 
-    runs = api.runs(path=f'{wandb.Api().default_entity}/{project_name}', filters={"group": group_name})
+    runs = api.runs(path=f'{wandb.Api().default_entity}/{project_name}', filters=None if project_name.__contains__('test') else {"group": group_name})
 
     output_dir = os.path.join(group_name, 'downloaded_images')
     os.makedirs(output_dir, exist_ok=True)

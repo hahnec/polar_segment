@@ -18,6 +18,9 @@ def compile_latex_to_pdf(latex_file):
     return pdf_path
 
 def compile_pdf(group_name, fig_texname, latex_file="./figure_env.tex"):
+
+    group_name = str(group_name)
+
     # standalone environment
     latex_env = "\\documentclass{scrartcl}\n"
     latex_env += "\\usepackage[margin=0.5in]{geometry}\n"
@@ -122,19 +125,7 @@ def save_textable(result, models, methods, categories, filename='./table.tex', d
     with open(filename, 'w') as f:
         f.write(latex_content)
 
-def save_texfigure(paths, labels, filename='fig_segment.tex', captions=None):
-    from collections import defaultdict
-
-    # Group paths by their figure number prefix
-    grouped_paths = defaultdict(list)
-    for path in paths:
-        prefix = '-'.join(path.split('-')[:2])  # Extract the prefix (e.g., 'fig-0', 'fig-1')
-        grouped_paths[prefix].append(path)
-
-    # Sort the groups and their paths for consistent order
-    sorted_groups = sorted(grouped_paths.items(), key=lambda x: x[0])
-    sorted_groups = [el[1] for el in sorted_groups] # skip prefix
-    sorted_groups = [el[1:]+[el[0]] for el in sorted_groups] # move gt to last entry
+def save_texfigure(sorted_groups, labels, filename='fig_segment.tex', captions=None):
 
     # Start building the LaTeX content
     latex_content = "\\begin{figure}[h!]\n\\centering\n"
@@ -204,7 +195,7 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'test_run'
+    group_name = 'kfold3_absence'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
@@ -249,7 +240,7 @@ if __name__ == '__main__':
     }
     img_paths, labels = [], []
     e = 2
-    img_columns, s = (7, 1000) if group_name.__contains__('imbalance') else (6, 900)
+    img_columns, s = (7, 1000) if cfg['imbalance'] else (6, 900)
     img_columns = 10 if group_name.__contains__('test') else img_columns
     ks = 3 if kfold_opt else 1
     for k in range(ks):
@@ -277,14 +268,28 @@ if __name__ == '__main__':
                         copyfile(img_path, dst)
                     else:
                         raise Exception('Could not find image file')
+
         # load image captions/labels
         import yaml
         with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
             captions = list(yaml.safe_load(f).values())
         captions = [c.split(',')[0].replace('Astrocytoma','A').replace('Oligodendroglioma','O') + c.split('WHO')[-1].replace('grade:','') if c != 'healthy' else c for c in captions]
+
+        # Group paths by their figure number prefix
+        from collections import defaultdict
+        grouped_paths = defaultdict(list)
+        for path in img_paths:
+            prefix = '-'.join(path.split('-')[:2])  # Extract the prefix (e.g., 'fig-0', 'fig-1')
+            grouped_paths[prefix].append(path)
+
+        # Sort the groups and their paths for consistent order
+        sorted_groups = sorted(grouped_paths.items(), key=lambda x: x[0])
+        sorted_groups = [el[1] for el in sorted_groups] # skip prefix
+        sorted_groups = [el[1:]+[el[0]] for el in sorted_groups] # move gt to last entry
+
         # save figure tex file
         fig_texname = 'fig_segment_%s.tex' % str(k)
-        save_texfigure(img_paths, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
+        save_texfigure(sorted_groups, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
         compile_pdf(group_name, fig_texname, latex_file='figure_env_'+str(k)+'.tex')
 
     # save table results (k-folds accumulated)
