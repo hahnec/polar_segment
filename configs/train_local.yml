@@ -20,6 +20,8 @@ bg_opt: False
 labeled_only: True
 group: Null
 class_num: 4
+alpha: 0.75
+gamma: 2
 
 # dataset
 data_path: TumorMeasurementsCalib/
