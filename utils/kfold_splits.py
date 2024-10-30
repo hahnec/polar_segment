@@ -52,9 +52,9 @@ if __name__ == '__main__':
     nested_splits_skl = get_nested_kfold_sklearn(cases)
 
     for i, split in enumerate(nested_splits):
-        train_set, valid_set, test_set = split
+        train_set, test_set, valid_set = split
         print(f"Split {i+1}: Train: {train_set}, Validation: {valid_set}, Test: {test_set}")
 
     for i, split in enumerate(nested_splits_skl):
-        train_set, valid_set, test_set = split
+        train_set, test_set, valid_set = split
         print(f"Split {i+1}: Train: {train_set}, Validation: {valid_set}, Test: {test_set}")
