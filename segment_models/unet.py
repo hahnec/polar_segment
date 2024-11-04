@@ -121,6 +121,7 @@ class UNet(nn.Module):
         self.initialize_weights()
 
     def initialize_weights(self):
+        import torch.nn.init as init
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
