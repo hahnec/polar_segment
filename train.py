@@ -322,7 +322,7 @@ if __name__ == '__main__':
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = 0, 0
-    best_model, best_mm_model, best_epoch_score = model, mm_model, 0
+    best_model, best_mm_model, best_epoch_score, best_epoch = model, mm_model, 0, -1
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
@@ -336,6 +336,7 @@ if __name__ == '__main__':
         if best_epoch_score < epoch_score:
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
+            best_epoch = epoch
             if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
                 best_mm_model = copy.deepcopy(mm_model).eval()
 
@@ -362,11 +363,12 @@ if __name__ == '__main__':
         dir_checkpoint = Path('./ckpts/')
         dir_checkpoint.mkdir(parents=True, exist_ok=True)
         state_dict = best_model.state_dict()
-        torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pt'.format(epoch)))))
+        torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pt'.format(best_epoch)))))
         if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
             state_dict_mm = best_mm_model.state_dict()
-            torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pt'.format(epoch)))))
-        logging.info(f'Checkpoint {epoch} saved!')
+            torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pt'.format(best_epoch)))))
+        logging.info(f'Checkpoint {best_epoch} saved!')
+        wb.log({'best_epoch': epoch})
 
     # adjust settings for patch-wise ResNet model
     if cfg.model == 'resnet': best_model.testing = True
