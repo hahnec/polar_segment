@@ -332,8 +332,8 @@ if __name__ == '__main__':
             model, mm_model, metrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
 
         # best model selection
-        epoch_score = vloss
-        if best_epoch_score > epoch_score:
+        epoch_score = metrics_dict['dice']
+        if best_epoch_score < epoch_score:
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
             if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
