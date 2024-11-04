@@ -322,17 +322,17 @@ if __name__ == '__main__':
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = 0, 0
-    best_model, best_mm_model, best_epoch_score, best_epoch = model, mm_model, 0, -1
+    best_model, best_mm_model, best_epoch_score, best_epoch = None, None, 0, -1
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
-            model, mm_model, metrics_dict, train_step, tloss = epoch_iter(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
+            model, mm_model, lmetrics_dict, train_step, tloss = epoch_iter(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
         # validation
         with torch.no_grad():
-            model, mm_model, metrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
+            model, mm_model, vmetrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
 
         # best model selection
-        epoch_score = metrics_dict['dice']
+        epoch_score = vmetrics_dict['dice']
         if best_epoch_score < epoch_score:
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
@@ -368,7 +368,7 @@ if __name__ == '__main__':
             state_dict_mm = best_mm_model.state_dict()
             torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pt'.format(best_epoch)))))
         logging.info(f'Checkpoint {best_epoch} saved!')
-        wb.log({'best_epoch': epoch})
+        wb.log({'best_epoch': best_epoch})
 
     # adjust settings for patch-wise ResNet model
     if cfg.model == 'resnet': best_model.testing = True
