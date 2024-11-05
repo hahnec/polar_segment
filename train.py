@@ -332,7 +332,7 @@ if __name__ == '__main__':
             model, mm_model, vmetrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
 
         # best model selection
-        epoch_score = vmetrics_dict['dice']
+        epoch_score = vmetrics_dict['dice'].item()
         if best_epoch_score < epoch_score:
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
@@ -353,6 +353,7 @@ if __name__ == '__main__':
             wb.log({
                 **histograms,
                 'lr': optimizer.param_groups[0]['lr'],
+                'epoch_score': epoch_score,
                 'epoch': epoch,
             })
 
