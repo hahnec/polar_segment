@@ -322,7 +322,7 @@ if __name__ == '__main__':
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = 0, 0
-    best_model, best_mm_model, best_epoch_score, best_epoch = None, None, 0, -1
+    best_model, best_mm_model, best_epoch_score, best_epoch = model, mm_model, 0, -1
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
