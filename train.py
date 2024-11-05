@@ -285,7 +285,7 @@ if __name__ == '__main__':
     val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
 
     # create data loaders
-    num_workers = min(2, os.cpu_count())
+    num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
     loader_args = dict(batch_size=cfg.batch_size, num_workers=num_workers, pin_memory=True)
     train_loader = DataLoader(dataset, shuffle=True, drop_last=False, **loader_args)
     valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, **loader_args)
@@ -322,7 +322,7 @@ if __name__ == '__main__':
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = 0, 0
-    best_model, best_mm_model, best_epoch_score, best_epoch = model, mm_model, 0, -1
+    best_model, best_mm_model, best_epoch_score, best_epoch = model, mm_model, float('-inf'), -1
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
@@ -332,7 +332,7 @@ if __name__ == '__main__':
             model, mm_model, vmetrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
 
         # best model selection
-        epoch_score = vmetrics_dict['dice'].item()
+        epoch_score = vloss.item()*-1
         if best_epoch_score < epoch_score:
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
