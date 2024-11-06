@@ -197,6 +197,7 @@ if __name__ == '__main__':
 
     group_name = 'kfold3_absence'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
+    kfold_num = int(group_name.lower().translate(str.maketrans('', '', '-_ ')).split('kfold')[-1][0])
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
         with open(fn, 'r') as f:
@@ -242,7 +243,7 @@ if __name__ == '__main__':
     e = 2
     img_columns, s = (7, 1000) if cfg['imbalance'] else (6, 900)
     img_columns = 10 if group_name.__contains__('test') else img_columns
-    ks = 3 if kfold_opt else 1
+    ks = kfold_num if kfold_opt else 1
     for k in range(ks):
         for j, el in enumerate(sorted_runs[k::ks]):
             method = ['MMFF', 'LC'][el[2]]
