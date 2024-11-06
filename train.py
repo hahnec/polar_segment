@@ -321,8 +321,9 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
     grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
-    train_step, valid_step = 0, 0
-    best_model, best_mm_model, best_epoch_score, best_epoch = model, mm_model, float('-inf'), -1
+    train_step, valid_step = (0, 0)
+    best_model, best_mm_model = (model, mm_model)
+    best_epoch_score, best_epoch = (float('-inf'), -1)
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
