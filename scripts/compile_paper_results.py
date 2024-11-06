@@ -244,7 +244,7 @@ if __name__ == '__main__':
     img_columns = 10 if group_name.__contains__('test') else img_columns
     ks = 3 if kfold_opt else 1
     for k in range(ks):
-        for j, el in enumerate(sorted_runs[k::3]):
+        for j, el in enumerate(sorted_runs[k::ks]):
             method = ['MMFF', 'LC'][el[2]]
             for i in range(img_columns):
                 for img_type in ['heatmap', 'img_mask', 'img_pred']:
