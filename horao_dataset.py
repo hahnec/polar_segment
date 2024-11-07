@@ -19,6 +19,7 @@ class HORAO(Dataset):
             data_subfolder='polarimetry',
             keys=['azimuth', 'std'],
             class_num=4,
+            use_no_border = True,
         ):
 
         self.base_dir = Path(path)
@@ -30,6 +31,7 @@ class HORAO(Dataset):
         self.bg_opt = int(bool(bg_opt))
         self.benign_accumulate = bool(benign_accumulate)
         self.cases_files = list(cases_file)
+        self.use_no_border = use_no_border
         
         if self.data_subfolder.__contains__('polarimetry'):
             self.keys = [self.map_string(k) for k in keys]
@@ -59,7 +61,7 @@ class HORAO(Dataset):
             assert img_fname.exists(), f'No image found for the ID {id}: {img_fname}'
 
             if id.startswith('HT'):
-                label_fname = self.base_dir / str(id) / 'annotation' / 'merged_no_border.png'
+                label_fname = self.base_dir / str(id) / 'annotation' / ('merged_no_border.png' if self.use_no_border else 'merged.png')
                 bglabel_fname = self.base_dir / str(id) / 'annotation' / 'BG_merged.png'
                 img_class = 0
             else:
@@ -69,9 +71,10 @@ class HORAO(Dataset):
                 if not label_fname.exists(): label_fname = bglabel_fname
             if class_num > 2:
                 if id.startswith('HT'):
-                    matter_fname = self.base_dir / str(id) / 'annotation' / 'merged_no_border.png' #_no_border
+                    matter_fname = self.base_dir / str(id) / 'annotation' / ('merged_no_border.png' if self.use_no_border else 'merged.png')
                 else: 
-                    matter_fname = self.base_dir / str(id) / 'histology' / 'labels_augmented_GM_WM_masked_FG_no_border.png' #_no_border
+                    matter_fname = self.base_dir / str(id) / 'histology' / ('labels_augmented_GM_WM_masked_FG_no_border.png' if self.use_no_border else 'labels_augmented_GM_WM_masked_FG.png')
+                
                 self.matter_paths.append(matter_fname)
 
             self.label_paths.append(label_fname)
