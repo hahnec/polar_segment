@@ -31,8 +31,8 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18, 
     plt.figure(figsize=(15, 15))
     fig, axs = plt.subplots(1, 1)
     x = np.arange(len(curve_means[0]))
-    colors = ['#d62728', '#1f77b4', '#2ca02c', '#8c564b', '#9467bd', '#ff7f0e'][:len(curve_means)]
-    styles = ['-', '-.', '--', ':', (0, (3, 5, 1, 5, 1, 5)), (5, (10, 3)), (0, (3, 1, 1, 1, 1, 1))][:len(curve_means)]
+    colors = ['#d62728', '#8c564b', '#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd'][:len(curve_means)]
+    styles = ['-', '-.', (0, (3, 1, 1, 1, 1, 1)), (5, (10, 3)), '--', ':', (0, (3, 5, 1, 5, 1, 5))][:len(curve_means)]
     labels = [str(num) for num in range(len(curve_means))] if labels is None else labels
     for mean, std, l, c, s in zip(curve_means, curve_stds, labels, colors, styles):
         axs.semilogy(x, mean, label=l, color=c, linestyle=s) if semilog_opt else axs.plot(x, mean, label=l, color=c, linestyle=s)
@@ -84,8 +84,8 @@ def exponential_moving_average(data, alpha=0.3):
 if __name__ == "__main__":
 
     run_type = 'MMFFunet'#'LCunet' #
-    group_names = ['kfold_more_healthy_wo_aug', 'kfold_more_healthy_rota', 'kfold_more_healthy_flip', 'kfold_more_healthy_all', 'kfold_more_healthy_rota_false'] #, 'kfold_200epochs_imbalance_ckpt_rotation_flip'#, 'kfold_200epochs_imbalance_ckpt_rotation_spatial'
-    label_names = ['w/o augmentation', 'rotations $\\theta=[-\pi, \pi)$', 'flips $\mathbf{H}_p$', 'rotations + flips', 'rotation (false)']    #, 'Rotation + Flip'
+    group_names = ['kfold4bdice_200_absence', 'kfold4bdice_200_false_flip', 'kfold4bdice_200_flip', 'kfold4bdice_200_false_rota', 'kfold4bdice_200_rota']
+    label_names = ['No augmentation', 'spatial-only flips', 'polar-aware flips', 'spatial-only rotations', 'polar-aware rotations']
     curves_dict = {k: {} for k in group_names}
     for group_name in group_names:
         kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
