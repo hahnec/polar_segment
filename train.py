@@ -377,6 +377,7 @@ if __name__ == '__main__':
     from horao_dataset import HORAO # override patch-wise dataloader for ResNet
 
     # perform test
+    test_cases = test_cases + ['test_tumor_grade4.txt', 'test_tumor_grade3.txt', 'test_tumor_grade2.txt']
     from test import test_main
     test_set = HORAO(
         cfg.data_dir, 
