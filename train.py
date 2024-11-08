@@ -282,7 +282,7 @@ if __name__ == '__main__':
     splits = get_nested_kfold_splits(cfg.cases)
     train_cases, test_cases, valid_cases = splits[cfg.k_select]
     dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
-    val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
+    val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, use_no_border=False)
 
     # create data loaders
     num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
