@@ -20,7 +20,7 @@ def test_main(cfg, dataset, model, mm_model):
 
     # create data loaders
     num_workers = min(2, os.cpu_count())
-    loader_args = dict(batch_size=len(dataset), num_workers=num_workers, pin_memory=True)
+    loader_args = dict(batch_size=min(len(dataset), 64), num_workers=num_workers, pin_memory=True)
     dataloader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
 
     with torch.no_grad():
