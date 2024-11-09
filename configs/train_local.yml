@@ -12,15 +12,13 @@ shallow: 0
 # training
 batch_size: 2
 lr: 1e-4
-epochs: 200
+epochs: 150
 weight_decay: 1e-8
 amp: False
 bg_opt: False
 labeled_only: True
 group: Null
 class_num: 4
-alpha: -1
-gamma: 1
 num_workers: 0
 
 # dataset
@@ -36,8 +34,8 @@ imbalance: False
 cases: ['k4_b.txt', 'k1_b.txt', 'k2_b.txt', 'k3_b.txt']
 
 # mueller matrix parameters
-norm_opt: 0
-levels: 1
+norm_opt: 1
+levels: 0
 kernel_size: 0
 activation: Null
 method: pooling
