@@ -14,7 +14,6 @@ batch_size: 2
 lr: 1e-4
 epochs: 200
 weight_decay: 1e-8
-val_fraction: 0.1
 amp: False
 bg_opt: False
 labeled_only: True
