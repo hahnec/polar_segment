@@ -32,8 +32,8 @@ map_dir: Null
 data_dir: ${loc_dir}
 data_subfolder: raw_data
 k_select: 0
-imbalance: True
-cases: ['k4_c.txt', 'k1_c.txt', 'k2_c.txt', 'k3_c.txt']
+imbalance: False
+cases: ['k4_b.txt', 'k1_b.txt', 'k2_b.txt', 'k3_b.txt']
 
 # mueller matrix parameters
 norm_opt: 0
