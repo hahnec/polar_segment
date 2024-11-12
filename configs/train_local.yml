@@ -49,8 +49,8 @@ wlens:
   - 550
 
 # augmentation settings
-crop: 0
 flips: False
 rotation: 0
 shuffle_crop: 0
 noise: 0
+gamma: 0

@@ -20,6 +20,7 @@ from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
 from polar_augment.flip_raw import RandomPolarFlip
 from polar_augment.rotation_raw import RandomPolarRotation
 from polar_augment.noise import RandomGaussNoise
+from polar_augment.gamma import GammaAugmentation
 from polar_augment.batch_segment_shuffle import BatchSegmentShuffler
 from utils.transforms_segment import RandomResizedCrop
 from mm.models import init_mm_model
@@ -237,7 +238,7 @@ if __name__ == '__main__':
             RandomPolarFlip(orientation=0, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=1, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
             RandomPolarFlip(orientation=2, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
-            RandomResizedCrop(size=256) if cfg.crop > 0 else EmptyTransform(),
+            GammaAugmentation(gamma_range=(0.5, 2.0)) if cfg.gamma else EmptyTransform(),
             RandomGaussNoise(mean=0.0, std=0.05, p=0.5) if cfg.noise > 0 else EmptyTransform(),
         ]
 
