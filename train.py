@@ -287,9 +287,9 @@ if __name__ == '__main__':
 
     # create data loaders
     num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
-    loader_args = dict(batch_size=cfg.batch_size, num_workers=num_workers, pin_memory=True)
-    train_loader = DataLoader(dataset, shuffle=True, drop_last=False, **loader_args)
-    valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, **loader_args)
+    loader_args = dict(num_workers=num_workers, pin_memory=True)
+    train_loader = DataLoader(dataset, shuffle=True, drop_last=False, batch_size=cfg.batch_size, **loader_args)
+    valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, batch_size=1, **loader_args)
 
     if cfg.model_file is not None:
         ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.model_file.split('_')[0])]

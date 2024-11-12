@@ -10,7 +10,7 @@ mm_model_file: Null
 shallow: 0
 
 # training
-batch_size: 2
+batch_size: 4
 lr: 1e-4
 epochs: 200
 weight_decay: 1e-8
