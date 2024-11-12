@@ -118,7 +118,7 @@ class UNet(nn.Module):
         else:
             self.last_activation = None #nn.Softmax(dim=1)
 
-        self.initialize_weights()
+        #self.initialize_weights()
 
     def initialize_weights(self):
         import torch.nn.init as init
@@ -136,7 +136,6 @@ class UNet(nn.Module):
                     init.constant_(m.bias, 0)
 
     def forward(self, x):
-        
         x1 = self.inc(x)
         x2 = self.down1(x1)
         if self.shallow <= 2:
