@@ -280,7 +280,7 @@ if __name__ == '__main__':
     # create datasets
     if cfg.imbalance: cfg.cases = [fname.split('.txt')[0] + '_imbalance.txt' for fname in cfg.cases]
     from utils.kfold_splits import get_nested_kfold_splits
-    splits = get_nested_kfold_splits(cfg.cases)
+    splits = get_nested_kfold_splits(cfg.cases)[::4]  # vary the test and validation set
     train_cases, test_cases, valid_cases = splits[cfg.k_select]
     dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens)
     val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, use_no_border=False)
