@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
     # instantiate logging
     if cfg.logging:
-        wb = wandb.init(project='polar_segment_test', resume='allow', anonymous='must', config=dict(cfg), group='train')
+        wb = wandb.init(project='polar_segment_test', resume='allow', anonymous='must', config=dict(cfg), group='train', entity='horao_project')
         wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, amp=cfg.amp))
 
     for case in cfg.cases:
