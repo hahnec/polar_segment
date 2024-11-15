@@ -334,13 +334,6 @@ if __name__ == '__main__':
             model, mm_model, vmetrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
 
         if cfg.logging:
-            # logging of histograms
-            wb.log({
-                **histograms,
-                'lr': optimizer.param_groups[0]['lr'],
-                'epoch_score': epoch_score,
-                'epoch': epoch,
-            })
             # logging of weights
             histograms = {}
             for tag, value in model.named_parameters():
@@ -350,6 +343,13 @@ if __name__ == '__main__':
                 if value.grad is not None:
                     if not torch.isinf(value.grad).any() and not torch.isnan(value.grad).any():
                         histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
+            # logging of histograms
+            wb.log({
+                **histograms,
+                'lr': optimizer.param_groups[0]['lr'],
+                'epoch_score': epoch_score,
+                'epoch': epoch,
+            })
         scheduler.step()
 
         # best model selection
