@@ -45,6 +45,9 @@ class HORAO(Dataset):
 
         # read metadata
         self.df = pd.read_csv(self.base_dir / 'batch_processing.csv')
+        self.df = self.df.drop('Unnamed: 7', axis=1)
+        self.df = self.df.drop('Number of measurements kept', axis=1)
+        self.df = self.df.drop('Clinical diagnosis', axis=1) # redundant as it exists in another column
 
     def get_filenames(self, class_num=2):
 
@@ -113,11 +116,11 @@ class HORAO(Dataset):
 
         row = self.df[(self.df['Sample Nr'] == seq) & (self.df['Section'] == section)]
         if not row.empty and 'Histology Tumor' in row.columns:
-            str = row['Histology Tumor'].values[0]
+            row_str = '| '.join([str(el) for el in row.values[0].tolist()])
         else:
-            str = 'unlabeled tumor'
+            row_str = 'unlabeled tumor'
 
-        return str
+        return row_str
 
     def __getitem__(self, i):
 
