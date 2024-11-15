@@ -20,6 +20,7 @@ labeled_only: True
 group: Null
 class_num: 4
 num_workers: 0
+patience: 10
 
 # dataset
 data_path: TumorMeasurementsCalib/

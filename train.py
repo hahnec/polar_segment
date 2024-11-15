@@ -324,7 +324,7 @@ if __name__ == '__main__':
 
     train_step, valid_step = (0, 0)
     best_model, best_mm_model = (model, mm_model)
-    best_epoch_score, best_epoch = (float('-inf'), -1)
+    best_epoch_score, best_epoch, epochs_decline = (float('-inf'), -1, 0)
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
@@ -332,6 +332,25 @@ if __name__ == '__main__':
         # validation
         with torch.no_grad():
             model, mm_model, vmetrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
+
+        if cfg.logging:
+            # logging of histograms
+            wb.log({
+                **histograms,
+                'lr': optimizer.param_groups[0]['lr'],
+                'epoch_score': epoch_score,
+                'epoch': epoch,
+            })
+            # logging of weights
+            histograms = {}
+            for tag, value in model.named_parameters():
+                tag = tag.replace('/', '.')
+                if not torch.isinf(value).any() and not torch.isnan(value).any():
+                    histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
+                if value.grad is not None:
+                    if not torch.isinf(value.grad).any() and not torch.isnan(value.grad).any():
+                        histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
+        scheduler.step()
 
         # best model selection
         epoch_score = vmetrics_dict['dice']
@@ -341,25 +360,11 @@ if __name__ == '__main__':
             best_epoch = epoch
             if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
                 best_mm_model = copy.deepcopy(mm_model).eval()
-
-        if cfg.logging:
-            histograms = {}
-            for tag, value in model.named_parameters():
-                tag = tag.replace('/', '.')
-                if not torch.isinf(value).any() and not torch.isnan(value).any():
-                    histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
-                if value.grad is not None:
-                    if not torch.isinf(value.grad).any() and not torch.isnan(value.grad).any():
-                        histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
-        if cfg.logging:
-            wb.log({
-                **histograms,
-                'lr': optimizer.param_groups[0]['lr'],
-                'epoch_score': epoch_score,
-                'epoch': epoch,
-            })
-
-        scheduler.step()
+            epochs_decline = 0
+        else:
+            epochs_decline += 1
+            if epochs_decline >= cfg.patience:
+                break
 
     # save weights
     if cfg.logging:
