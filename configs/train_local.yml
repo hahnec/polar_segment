@@ -36,6 +36,7 @@ cases: ['k1_b.txt', 'k2_b.txt', 'k3_b.txt', 'k4_b.txt']
 # mueller matrix parameters
 norm_opt: 1
 levels: 0
+ochs: 16
 kernel_size: 0
 activation: Null
 method: pooling
