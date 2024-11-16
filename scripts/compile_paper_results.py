@@ -81,6 +81,8 @@ def save_textable(result, models, methods, categories, filename='./table.tex', d
         'accuracy': 'Accuracy',
         'dice': 'DSC',
         'auc': 'AUC',
+        'iou': 'IoU',
+        'test_loss': 'Loss',
         't_s': '$t_s~[s]$',
         't_mm': '$t_{mm}~[s]$'
     }
@@ -195,7 +197,7 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'kfold3_absence'
+    group_name = 'kfold4bdice_200_false_varysets1_flip'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     kfold_num = int(group_name.lower().translate(str.maketrans('', '', '-_ ')).split('kfold')[-1][0])
     run_list = []
@@ -231,7 +233,7 @@ if __name__ == '__main__':
         metrics.append(tab)
     metrics = {key: [d[key] for d in metrics] for key in metrics[0]}
     n_metrics, n_models, n_methods = merge_kfold_score(metrics, models, methods) if kfold_opt else (metrics, models, methods)
-    save_textable(n_metrics, n_models, n_methods, categories=['accuracy', 'dice', 'auc', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
+    save_textable(n_metrics, n_models, n_methods, categories=['accuracy', 'dice', 'auc', 'iou', 'test_loss', 't_s', 't_mm'], filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
 
     # image results
     mapping_labels = {
@@ -239,36 +241,35 @@ if __name__ == '__main__':
         'resnet': 'ResNet',
         'unet': 'U-Net',
     }
-    img_paths, labels = [], []
     e = 2
-    img_columns, s = (7, 1000) if cfg['imbalance'] else (6, 900)
+    img_columns, s = (8, 1000) if cfg['imbalance'] else (6, 900)
     img_columns = 10 if group_name.__contains__('test') else img_columns
     ks = kfold_num if kfold_opt else 1
-    for k in range(ks):
-        for j, el in enumerate(sorted_runs[k::ks]):
-            method = ['MMFF', 'LC'][el[2]]
-            for i in range(img_columns):
-                for img_type in ['heatmap', 'img_mask', 'img_pred']:
-                    step_num = str(s*e+5+i) if el[1] != 'resnet' else str(s*e+1+i)
-                    tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
-                    fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
-                    # automatically find filename with correct step number
-                    img_path = list((Path(group_name) / 'downloaded_images').glob('_'.join(fn.split('_')[:-1])+'_*.png'))[0]
-                    if img_path.exists():
-                        if img_type == 'img_pred':
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '.png')
-                        elif img_type == 'heatmap':
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
-                        elif img_type == 'img_mask' and j == 0:
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-gt.png')
-                        else:
-                            continue
-                        if img_type != 'heatmap' and dst.name not in img_paths: 
-                            img_paths.append(dst.name)
-                            if i==0 and not dst.name.__contains__('gt'): labels.append(mapping_labels[el[1]] + '\\newline ' + method)
-                        copyfile(img_path, dst)
+    for k, el in enumerate(sorted_runs):
+        img_paths, labels = [], []
+        method = ['MMFF', 'LC'][el[2]]
+        for i in range(img_columns):
+            for img_type in ['heatmap', 'img_mask', 'img_pred']:
+                step_num = str(s*e+5+i) if el[1] != 'resnet' else str(s*e+1+i)
+                tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
+                fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
+                # automatically find filename with correct step number
+                img_path = list((Path(group_name) / 'downloaded_images').glob('_'.join(fn.split('_')[:-1])+'_*.png'))[0]
+                if img_path.exists():
+                    if img_type == 'img_pred':
+                        dst = Path(group_name) / ('fig-k' + str(k) + '-' + str(i) + '-' + method + '-' + el[1] + '.png')
+                    elif img_type == 'heatmap':
+                        dst = Path(group_name) / ('fig-k' + str(k) + '-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
+                    elif img_type == 'img_mask':
+                        dst = Path(group_name) / ('fig-k' + str(k) + '-' + str(i) + '-' + method + '-gt.png')
                     else:
-                        raise Exception('Could not find image file')
+                        continue
+                    if img_type != 'heatmap' and dst.name not in img_paths: 
+                        img_paths.append(dst.name)
+                        if i==0 and not dst.name.__contains__('gt'): labels.append(mapping_labels[el[1]] + '\\newline ' + method)
+                    copyfile(img_path, dst)
+                else:
+                    raise Exception('Could not find image file')
 
         # load image captions/labels
         import yaml
@@ -280,7 +281,7 @@ if __name__ == '__main__':
         from collections import defaultdict
         grouped_paths = defaultdict(list)
         for path in img_paths:
-            prefix = '-'.join(path.split('-')[:2])  # Extract the prefix (e.g., 'fig-0', 'fig-1')
+            prefix = '-'.join(path.split('-')[:3])  # Extract the prefix (e.g., 'fig-0', 'fig-1')
             grouped_paths[prefix].append(path)
 
         # Sort the groups and their paths for consistent order
