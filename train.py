@@ -365,7 +365,7 @@ if __name__ == '__main__':
             epochs_decline = 0
         else:
             epochs_decline += 1
-            if epochs_decline >= cfg.patience:
+            if cfg.patience is not None and epochs_decline >= cfg.patience:
                 break
 
     # save weights
