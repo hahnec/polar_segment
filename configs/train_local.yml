@@ -20,7 +20,7 @@ labeled_only: True
 group: Null
 class_num: 4
 num_workers: 0
-patience: Null
+patience: 20
 
 # dataset
 data_path: TumorMeasurementsCalib/
@@ -32,7 +32,7 @@ data_dir: ${loc_dir}
 data_subfolder: raw_data
 k_select: 0
 imbalance: False
-cases: ['k1_b.txt', 'k2_b.txt', 'k3_b.txt', 'k4_b.txt']
+cases: ['val2_b.txt', 'k1_b.txt', 'k2_b.txt', 'k3_b.txt']
 
 # mueller matrix parameters
 norm_opt: 1
