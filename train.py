@@ -25,6 +25,7 @@ from polar_augment.batch_segment_shuffle import BatchSegmentShuffler
 from utils.transforms_segment import RandomResizedCrop
 from mm.models import init_mm_model
 from utils.draw_fiber_img import plot_fiber
+from utils.duplicate_checks import check_duplicate_rows
 
 
 def batch_preprocess(batch, cfg):
@@ -279,6 +280,7 @@ if __name__ == '__main__':
 
     # create datasets
     if cfg.imbalance: cfg.cases = [fname.split('.txt')[0] + '_imbalance.txt' for fname in cfg.cases]
+    check_duplicate_rows(Path(cfg.data_dir) / 'cases', cfg.cases)
     from utils.kfold_splits import get_nested_kfold_splits
     splits = get_nested_kfold_splits(cfg.cases)[1::4]  # vary the test and validation set
     train_cases, test_cases, valid_cases = splits[cfg.k_select]
