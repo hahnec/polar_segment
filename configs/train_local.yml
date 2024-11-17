@@ -20,7 +20,7 @@ labeled_only: True
 group: Null
 class_num: 4
 num_workers: 0
-patience: 20
+patience: Null
 
 # dataset
 data_path: TumorMeasurementsCalib/
@@ -37,7 +37,7 @@ cases: ['val2_b.txt', 'k1_b.txt', 'k2_b.txt', 'k3_b.txt']
 # mueller matrix parameters
 norm_opt: 1
 levels: 0
-ochs: 16
+ochs: 10
 kernel_size: 0
 activation: Null
 method: pooling
