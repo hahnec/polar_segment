@@ -251,6 +251,9 @@ if __name__ == '__main__':
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt)
+        from horao_dataset import PatchHORAO as HORAO
+        from segment_models.mlp import PatchMLP
+        model = PatchMLP(n_channels=n_channels, patch_size=50, n_classes=cfg.class_num+cfg.bg_opt)
     elif cfg.model == 'resnet':
         from horao_dataset import PatchHORAO as HORAO
         from segment_models.resnet import PatchResNet
@@ -380,8 +383,8 @@ if __name__ == '__main__':
         logging.info(f'Checkpoint {best_epoch} saved!')
         wb.log({'best_epoch': best_epoch})
 
-    # adjust settings for patch-wise ResNet model
-    if cfg.model == 'resnet': best_model.testing = True
+    # adjust settings for patch-wise models
+    if cfg.model in ('resnet', 'mlp'): best_model.testing = True
     from horao_dataset import HORAO # override patch-wise dataloader for ResNet
 
     # perform test
