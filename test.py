@@ -153,7 +153,7 @@ if __name__ == '__main__':
         model = UCTransNet(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt, in_channels=64, img_size=cfg.crop, config=get_CTranS_config())
     elif cfg.model == 'linr':
         model = torch.nn.Module()
-        model.forward = lambda x: torch.stack([x[:, 1], 180-x[:, 1]], axis=1)
+        model.forward = lambda x: torch.stack([x[:, 1], 180-x[:, 1]], axis=1) / 180
     else:
         raise Exception('Model %s not recognized' % cfg.model)
 

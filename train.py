@@ -336,7 +336,7 @@ if __name__ == '__main__':
             model, mm_model, lmetrics_dict, train_step, tloss = epoch_iter(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
         # validation
         with torch.no_grad():
-            model, mm_model, vmetrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model!='resnet' and epoch==cfg.epochs, epoch=epoch)
+            model, mm_model, vmetrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model not in ('resnet', 'mlp') and epoch==cfg.epochs, epoch=epoch)
         epoch_score = vmetrics_dict['dice']
 
         if cfg.logging:
