@@ -59,13 +59,14 @@ if __name__ == "__main__":
 
     # Define the project and group name
     project_name = 'polar_segment'
-    group_name = 'kfold3_absence' if not project_name.__contains__('test') else 'test_run'
+    project_entity = 'horao_project' if False else 'hahnec'
+    group_name = 'box3_boundary' if not project_name.__contains__('test') else 'test_run'
     table_key = 'report'
     media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
  
     api = wandb.Api()
 
-    runs = api.runs(path=f'{wandb.Api().default_entity}/{project_name}', filters=None if project_name.__contains__('test') else {"group": group_name})
+    runs = api.runs(path=f'{project_entity}/{project_name}', filters=None if project_name.__contains__('test') else {"group": group_name})
 
     output_dir = os.path.join(group_name, 'downloaded_images')
     os.makedirs(output_dir, exist_ok=True)
@@ -81,7 +82,7 @@ if __name__ == "__main__":
             json.dump(run.config, f, indent=4)
 
         metrics = {}
-        for col in ['accuracy', 'dice', 'iou', 'auc', 't_mm', 't_s']:
+        for col in ['accuracy', 'dice', 'iou', 'auc', 'test_loss', 't_mm', 't_s']:
             metrics[col] = run.summary.get(col)
         with open(os.path.join(group_name, 'metrics_%s.json' % str(run.name)), 'w') as f:
             json.dump(metrics, f, indent=4)
@@ -97,10 +98,7 @@ if __name__ == "__main__":
                 table = run.use_artifact(run.logged_artifacts()[i]).get(table_key)
                 if table is not None:
                     break
-        table_dict = {
-            row[0]: {table.columns[i]: row[i] for i in range(1, len(table.columns))}
-            for row in table.data
-        }
+        table_dict = {row[0]: {table.columns[i]: row[i] for i in range(1, len(table.columns))} for row in table.data}
         with open(os.path.join(group_name, 'table_%s.json' % str(run.name)), 'w') as f:
             json.dump(table_dict, f, indent=4)
         md_table = convert_to_markdown(table)
@@ -109,7 +107,7 @@ if __name__ == "__main__":
 
         # images
         captions = {}
-        base_url = 'https://api.wandb.ai/files/hahnec/' + project_name + '/' + run.url.split('runs/')[-1] + '/'
+        base_url = 'https://api.wandb.ai/files/' + project_entity + '/' + project_name + '/' + run.url.split('runs/')[-1] + '/'
         for media_key in media_keys:
             media_files = run.history(keys=[media_key]).get(media_key, [])
             for i, media in enumerate(media_files):
