@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
     # mueller matrix model
     if cfg.data_subfolder.__contains__('raw'):
-        mm_model = init_mm_model(cfg, train_opt=False, ochs=10)
+        mm_model = init_mm_model(cfg, train_opt=False)
         if cfg.kernel_size > 0:
             ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.mm_model_file.split('_')[0])]
             state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)['state_dict']
