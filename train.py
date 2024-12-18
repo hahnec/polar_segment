@@ -174,7 +174,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         branch_type+'_step': step+bidx
                     })
                     # fiber tracts image
-                    if cfg.data_subfolder.__contains__('raw') and False:
+                    if cfg.data_subfolder.__contains__('raw'):
                         from mm.models import MuellerMatrixModel
                         azimuth_model = MuellerMatrixModel(feature_keys=['azimuth', 'linr'])
                         lc_feats = azimuth_model(frames)
@@ -309,7 +309,7 @@ if __name__ == '__main__':
 
     # instantiate logging
     if cfg.logging:
-        wb = wandb.init(project='polar_segment', resume='allow', anonymous='must', config=dict(cfg), group=cfg.group, entity='hahnec')
+        wb = wandb.init(project='polar_segment_opex', resume='allow', anonymous='must', config=dict(cfg), group=cfg.group, entity='hahnec')
         wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, amp=cfg.amp))
 
         logging.info(f'''Starting training:
