@@ -281,7 +281,7 @@ if __name__ == '__main__':
     model.to(device=cfg.device)
 
     # create datasets
-    if cfg.imbalance: cfg.cases = [fname.split('.txt')[0] + '_imbalance.txt' for fname in cfg.cases]
+    if cfg.imbalance: cfg.cases = [fname.split('.txt')[0] + '_imbalance.txt' if not fname.startswith('val') else fname for fname in cfg.cases]
     check_duplicate_rows(Path(cfg.data_dir) / 'cases', cfg.cases)
     from utils.kfold_splits import get_nested_kfold_splits
     splits = get_nested_kfold_splits(cfg.cases)
