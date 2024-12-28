@@ -21,6 +21,7 @@ group: Null
 class_num: 4
 num_workers: 0
 patience: Null
+alpha: 0.25
 
 # dataset
 data_path: TumorMeasurementsCalib/
