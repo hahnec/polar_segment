@@ -57,7 +57,7 @@ def exponential_moving_average(data, alpha=0.3):
 
 if __name__ == "__main__":
 
-    group_name = 'kfold_more_healthy_all_imbalance'
+    group_name = 'kfold3_10ochs_imb_aug_bs4'
     curves_dict = {}
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     if not Path('./' + group_name).exists():
@@ -74,13 +74,16 @@ if __name__ == "__main__":
 
     for el in sorted_runs:
         method = ['MMFF', 'LC'][el[2]]
+        if el[1] != 'unet':
+            continue
         # create curves
         with open(Path(group_name) / el[0].name.replace('config', 'roc'), 'r') as f:
             curves = json.load(f)
-        print(method+el[1])
-        if not method+el[1] in curves_dict.keys(): curves_dict[method+el[1]] = []
+        key = method+' '+el[1]
+        print(key)
+        if not key in curves_dict.keys(): curves_dict[key] = []
         roc = np.array([[el[0], el[1]] for el in curves['data']])
-        curves_dict[method+el[1]].append(roc)
+        curves_dict[key].append(roc)
 
     # merge curves
     for run_type in curves_dict.keys():

@@ -80,7 +80,7 @@ def save_textable(result, models, methods, categories, filename='./table.tex', d
     mapping_segment = {
         'accuracy': 'Accuracy',
         'dice': 'DSC',
-        'auc': 'AUC',
+        'auc': 'H/T AUC',
         'iou': 'IoU',
         'test_loss': 'Loss',
         't_s': '$t_s~[s]$',
