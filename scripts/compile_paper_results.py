@@ -277,6 +277,7 @@ if __name__ == '__main__':
         import yaml
         with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
             captions = list(yaml.safe_load(f).values())
+        captions = [c.split('|')[1] if c.__contains__('|') else c for c in captions] # filter sequence number etc.
         captions = [c.split(',')[0].replace('Astrocytoma','A').replace('Oligodendroglioma','O') + c.split('WHO')[-1].replace('grade:','') if c != 'healthy' else c for c in captions]
 
         # Group paths by their figure number prefix
