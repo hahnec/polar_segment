@@ -76,6 +76,8 @@ if __name__ == "__main__":
         method = ['MMFF', 'LC'][el[2]]
         if el[1] != 'unet':
             continue
+        else:
+            el[1] = 'U-Net'
         # create curves
         with open(Path(group_name) / el[0].name.replace('config', 'roc'), 'r') as f:
             curves = json.load(f)
