@@ -233,7 +233,7 @@ if __name__ == '__main__':
         metrics.append(tab)
     metrics = {key: [d[key] for d in metrics] for key in metrics[0]}
     n_metrics, n_models, n_methods = merge_kfold_score(metrics, models, methods) if kfold_opt else (metrics, models, methods)
-    categories = ['accuracy', 'dice', 'auc', 't_s', 't_mm'] # 'iou', 'accuracy', 'test_loss'
+    categories = ['dice', 'auc', 't_s', 't_mm'] # 'iou', 'accuracy', 'test_loss'
     save_textable(n_metrics, n_models, n_methods, categories=categories, filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
 
     # image results
