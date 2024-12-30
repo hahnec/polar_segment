@@ -268,9 +268,9 @@ if __name__ == '__main__':
     img_list = []
     for data_type in ['polarimetry', 'raw_data']:
         transforms = [ToTensor(), RandomPolarRotation(180, p=0, any=False), SwapDims()] if data_type.__contains__('raw_data') else []
-        train_set = HORAO(base_dir, ['k1_b.txt', 'k2_b.txt'], bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        train_set = HORAO(base_dir, ['k1_b_imbalance.txt', 'k2_b_imbalance.txt'], bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
         valid_set = HORAO(base_dir, ['val2_b.txt'], bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
-        test_set = HORAO(base_dir, ['k3_b.txt'], bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
+        test_set = HORAO(base_dir, ['k3_b_imbalance.txt'], bg_opt=bg_opt, class_num=4, data_subfolder=data_type, keys=feat_keys, wlens=[550], transforms=transforms)
         dataset = torch.utils.data.ConcatDataset([train_set, valid_set, test_set])
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
