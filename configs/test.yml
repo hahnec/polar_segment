@@ -2,18 +2,17 @@
 logging: 1
 model: unet
 levels: 0
-model_file: cerulean-haze-2692_ckpt_epoch200.pt
+model_file: usual-snowflake-4240_ckpt_epoch118.pt
 batch_size: 1
 
 # augmentation settings
 flips: False
-perspective: 0
-elastic: 0
 rotation: 0
-crop: 0
 shuffle_crop: 0
+noise: 0
+gamma: 0
 
 # dataset
 cases: ['test_tumor_grade4.txt', 'test_tumor_grade3.txt', 'test_tumor_grade2.txt']
-class_num: 2
+class_num: 4
 bg_opt: False
