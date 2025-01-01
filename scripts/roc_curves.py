@@ -26,8 +26,7 @@ def plot_curves(curve_dict, labels=None, filename='', fontsize=18):
     plt.rcParams['text.usetex'] = True
     plt.rcParams['xtick.labelsize'] = fontsize
     plt.rcParams['ytick.labelsize'] = fontsize
-    plt.figure(figsize=(15, 15))
-    fig, axs = plt.subplots(1, 1)
+    fig, axs = plt.subplots(1, 1, figsize=(10, 5))
     num = len(curve_dict.keys())
     x = np.linspace(0, 1, 200)
     colors = ['#d62728', '#1f77b4', '#2ca02c', '#8c564b', '#9467bd', '#ff7f0e'][:num]
