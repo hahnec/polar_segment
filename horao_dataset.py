@@ -19,7 +19,7 @@ class HORAO(Dataset):
             data_subfolder='polarimetry',
             keys=['azimuth', 'std'],
             class_num=4,
-            use_no_border = True,
+            use_no_border = False,
         ):
 
         self.base_dir = Path(path)
