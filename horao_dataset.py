@@ -186,6 +186,14 @@ class HORAO(Dataset):
                 # calibration
                 amat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'A'))
                 wmat = read_cod_data_X3D(str(img_path).replace('raw_data', 'calibration').replace('Intensite', 'W'))
+                #reliazability mask
+                from mm.functions.mm import compute_mm
+                mm = compute_mm(amat, wmat, frame)
+                from mm.functions.mm_filter import charpoly
+                valid_mask = charpoly(mm)
+                bg[~clip_mask, :] = True    # merge infeasible areas with background
+                labels[~valid_mask, :] = 0    # mask infeasible areas
+
                 frame = np.concatenate([frame, amat, wmat], axis=-1)
                 #if frame.max() > 2**8-1: frame /= (2**16-1)
                 #if frame.max() > 1: frame /= 255
