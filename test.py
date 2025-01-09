@@ -26,9 +26,9 @@ def test_main(cfg, dataset, model, mm_model):
     with torch.no_grad():
         preds, truth, metrics = epoch_iter(cfg, dataloader, model, mm_model, branch_type='test')
 
-    # pixel-wise assessment
+    # pixel-wise assessment (all classes)
     n_channels = int(preds.shape[1])
-    m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
+    m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.bg_opt and cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
     y_true = truth.argmax(1).flatten().cpu().numpy()
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
@@ -39,14 +39,18 @@ def test_main(cfg, dataset, model, mm_model):
         print(e)
         return False
 
-    # ROC curve
-    class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)]
+    # ROC curve (dual class: healthy vs tumor)
+    class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)] # assuming GM is last
     wb_t = truth[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
     wb_p = preds[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
     vidx = np.any(wb_t, axis=-1) # only labeled samples
     pos_class_idx = 1 # use tumor as positive class
     fpr, tpr, ths = roc_curve(wb_t[vidx].argmax(1), wb_p[vidx][:, pos_class_idx])
     roc_auc = auc(fpr, tpr)
+
+    if cfg.batch_size == 1:
+        import warnings
+        warning.warn('ROC curve for two-class at batch size 1 gives no ROC curve.')
 
     if cfg.logging:
         # upload metrics to wandb
