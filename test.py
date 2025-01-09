@@ -76,8 +76,8 @@ def test_main(cfg, dataset, model, mm_model):
             for f, t in zip(fpr[idcs], tpr[idcs]):
                 roc_table.add_data(float(f), float(t))
             wandb.log({"roc_table": roc_table})
-            roc_plot = wandb.plot.line(roc_table, roc_axes[0], roc_axes[1], title="ROC curve")
-            wandb.log({"roc_curve": roc_plot})
+            roc_plot = wandb.plot.line(roc_table, roc_axes[0], roc_axes[1], title="ROC plot")
+            wandb.log({"roc_plot": roc_plot})
             #wandb.log({"FPR": fpr[idcs].tolist(), "TPR": tpr[idcs].tolist(), "Thresholds": ths[idcs].tolist()})
     else:
         with open('./results.txt', "a") as f:
