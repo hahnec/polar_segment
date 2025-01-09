@@ -50,7 +50,7 @@ def test_main(cfg, dataset, model, mm_model):
 
     if cfg.batch_size == 1:
         import warnings
-        warning.warn('ROC curve for two-class at batch size 1 gives no ROC curve.')
+        warnings.warn('ROC curve for two-class at batch size 1 gives no ROC curve.')
 
     if cfg.logging:
         # upload metrics to wandb
