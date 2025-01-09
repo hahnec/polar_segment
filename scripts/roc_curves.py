@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 import numpy as np
 from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
+from sklearn.metrics import auc
 
 def merge_curves(curves_dict, run_type):
 
@@ -22,7 +24,6 @@ def merge_curves(curves_dict, run_type):
 
 def plot_curves(curve_dict, labels=None, filename='', fontsize=18):
 
-    import matplotlib.pyplot as plt
     plt.rcParams['text.usetex'] = True
     plt.rcParams['xtick.labelsize'] = fontsize
     plt.rcParams['ytick.labelsize'] = fontsize
@@ -56,7 +57,9 @@ def exponential_moving_average(data, alpha=0.3):
 
 if __name__ == "__main__":
 
-    group_name = 'kfold3_10ochs_imb_aug_bs4'
+    group_name = 'kfold3_10ochs_imb_aug_bs4_extnorm'
+    plt_opt = False
+    if plt_opt: plt.figure()
     curves_dict = {}
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     if not Path('./' + group_name).exists():
@@ -71,7 +74,7 @@ if __name__ == "__main__":
                 run_list.append([fn, cfg['model'], cfg['levels']])
     sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1], int(str(x[0].name).split('-')[-1].split('.')[0])))
 
-    for el in sorted_runs:
+    for i, el in enumerate(sorted_runs):
         method = ['MMFF', 'LC'][el[2]]
         if el[1] != 'unet':
             continue
@@ -84,7 +87,9 @@ if __name__ == "__main__":
         print(key)
         if not key in curves_dict.keys(): curves_dict[key] = []
         roc = np.array([[el[0], el[1]] for el in curves['data']])
+        if plt_opt: plt.plot(roc[:, 0], roc[:, 1], label=key+' '+str(i)+' auc:'+str(round(auc(roc[:, 0], roc[:, 1]), 3)))
         curves_dict[key].append(roc)
+    if plt_opt: plt.legend(); plt.show()
 
     # merge curves
     for run_type in curves_dict.keys():
