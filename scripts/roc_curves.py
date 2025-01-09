@@ -12,8 +12,7 @@ def merge_curves(curves_dict, run_type):
     x = np.linspace(0, 1, 200)
     for k in curves_dict[run_type]:
         # interpolate values for consistent arrays
-        k_x = np.linspace(0, 1, k.shape[0])
-        interpolator = interp1d(k_x, k[:, 1], kind='quadratic' if len(k_x)>2 else 'linear')
+        interpolator = interp1d(k[:, 0], k[:, 1]) #, kind='quadratic' if len(k_x)>2 else 'linear')
         new_k = interpolator(x)
         data_list.append(new_k)
     data_arr = np.array(data_list)
@@ -89,7 +88,7 @@ if __name__ == "__main__":
         roc = np.array([[el[0], el[1]] for el in curves['data']])
         if plt_opt: plt.plot(roc[:, 0], roc[:, 1], label=key+' '+str(i)+' auc:'+str(round(auc(roc[:, 0], roc[:, 1]), 3)))
         curves_dict[key].append(roc)
-    if plt_opt: plt.legend(); plt.show()
+    if plt_opt: plt.legend()
 
     # merge curves
     for run_type in curves_dict.keys():
