@@ -70,12 +70,13 @@ def test_main(cfg, dataset, model, mm_model):
             wandb.log({'roc_wandb': wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
         else:
             # Downsampled ROC, FPR and TPR
-            roc_table = wandb.Table(columns=["False positive rate", "True positive rate"])
+            roc_axes = ["False positive rate", "True positive rate"]
+            roc_table = wandb.Table(columns=roc_axes)
             idcs = np.linspace(0, len(tpr)-1, num=500, dtype=int)
             for f, t in zip(fpr[idcs], tpr[idcs]):
                 roc_table.add_data(float(f), float(t))
             wandb.log({"roc_table": roc_table})
-            roc_plot = wandb.plot.line(roc_table, "False positive rate", "True positive rate", title="ROC curve")
+            roc_plot = wandb.plot.line(roc_table, roc_axes[0], roc_axes[1], title="ROC curve")
             wandb.log({"roc_curve": roc_plot})
             #wandb.log({"FPR": fpr[idcs].tolist(), "TPR": tpr[idcs].tolist(), "Thresholds": ths[idcs].tolist()})
     else:
