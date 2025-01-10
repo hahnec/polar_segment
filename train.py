@@ -62,6 +62,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         start.record()
         preds = model(frames)
         end.record()
+        torch.cuda.synchronize()
         t_s = start.elapsed_time(end) * 1000
         loss = criterion(preds*m, truth*m) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
 
@@ -122,6 +123,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             start.record()
             input = mm_model(frames) if cfg.data_subfolder.__contains__('raw') else frames
             end.record()
+            torch.cuda.synchronize()
             t_mm = start.elapsed_time(end) * 1000
             # segmentation
             loss, preds, truth, metrics = batch_it(input, truth)
