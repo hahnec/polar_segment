@@ -58,9 +58,12 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         m = (m.float() * mask).bool()
 
     with torch.autocast(cfg.device if cfg.device != 'mps' else 'cpu', enabled=cfg.amp):
-        t_s = time.perf_counter()
+        start = torch.cuda.Event(enable_timing=True)
+        end = torch.cuda.Event(enable_timing=True)
+        start.record()
         preds = model(frames)
-        t_s = time.perf_counter() - t_s
+        end.record()
+        t_s = start.elapsed_time(end)
         loss = criterion(preds*m, truth*m) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
 
     if train_opt and not torch.isnan(loss):
@@ -115,9 +118,12 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
         for batch in dataloader:
             frames, truth, imgs, bg, text = batch_preprocess(batch, cfg)
             ## polarimetry
-            t = time.perf_counter()
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
+            start.record()
             input = mm_model(frames) if cfg.data_subfolder.__contains__('raw') else frames
-            t_mm = time.perf_counter() - t
+            end.record()
+            t_mm = start.elapsed_time(end)
             # segmentation
             loss, preds, truth, metrics = batch_it(input, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
