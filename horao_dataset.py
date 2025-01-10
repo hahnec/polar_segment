@@ -259,7 +259,6 @@ class PatchHORAO(HORAO):
 
 if __name__ == '__main__':
 
-    import time
     import random
     from torch.utils.data import DataLoader
     from polar_augment.rotation_raw import RandomPolarRotation
@@ -309,9 +308,13 @@ if __name__ == '__main__':
             healthy_samples += (img_class==0).sum().item()
 
             if train_set.data_subfolder.__contains__('raw'):
-                t = time.perf_counter()
+                start = torch.cuda.Event(enable_timing=True)
+                end = torch.cuda.Event(enable_timing=True)
+                start.record()
                 imgs = mm_model(imgs)
-                t_total = time.perf_counter() -t
+                end.record()
+                torch.cuda.synchronize()
+                t_total = start.elapsed_time(end) * 1000
                 print('MM processing time: %s' % str(t_total))
 
             from utils.multi_loss import reduce_htgm
