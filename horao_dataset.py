@@ -314,7 +314,7 @@ if __name__ == '__main__':
                 imgs = mm_model(imgs)
                 end.record()
                 torch.cuda.synchronize()
-                t_total = start.elapsed_time(end) * 1000
+                t_total = start.elapsed_time(end) / 1000
                 print('MM processing time: %s' % str(t_total))
 
             from utils.multi_loss import reduce_htgm
