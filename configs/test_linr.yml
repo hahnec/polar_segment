@@ -3,7 +3,7 @@ logging: 1
 model: linr
 levels: 1
 model_file: Null
-batch_size: 1
+batch_size: 8
 
 # augmentation settings
 flips: False
@@ -14,7 +14,7 @@ crop: 0
 shuffle_crop: 0
 
 # dataset
-cases: ['k1_c_imbalance.txt', 'k2_c_imbalance.txt', 'k3_c_imbalance.txt']
+cases: ['k1_b_imbalance.txt', 'k2_b_imbalance.txt', 'k3_b_imbalance.txt']
 class_num: 2
 bg_opt: False
 
