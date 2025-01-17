@@ -233,6 +233,18 @@ if __name__ == '__main__':
     torch.cuda.manual_seed_all(cfg.seed)    # multi-GPU
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+    torch.use_deterministic_algorithms(True)
+    torch.utils.deterministic.fill_uninitialized_memory = True
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+
+    # reproducability when using multiple workers
+    def seed_worker(worker_id):
+        worker_seed = torch.initial_seed() % 2**32
+        np.random.seed(worker_seed)
+        random.seed(worker_seed)
+
+    g = torch.Generator()
+    g.manual_seed(cfg.seed)
 
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     logging.info(f'Using device {cfg.device}')
@@ -299,7 +311,7 @@ if __name__ == '__main__':
 
     # create data loaders
     num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
-    loader_args = dict(num_workers=num_workers, pin_memory=True)
+    loader_args = dict(num_workers=num_workers, pin_memory=True, worker_init_fn=seed_worker, generator=g)
     train_loader = DataLoader(dataset, shuffle=True, drop_last=False, batch_size=cfg.batch_size, **loader_args)
     valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, batch_size=len(dataset), **loader_args)
 
