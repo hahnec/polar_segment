@@ -25,6 +25,7 @@ from utils.transforms_segment import RandomResizedCrop
 from mm.models import init_mm_model
 from utils.draw_fiber_img import plot_fiber
 from utils.duplicate_checks import check_duplicate_rows
+from utils.reproducibility import set_seed_and_deterministic
 
 
 def batch_preprocess(batch, cfg):
@@ -225,26 +226,8 @@ if __name__ == '__main__':
     # override loaded configuration with CLI arguments
     cfg = OmegaConf.merge(cfg, OmegaConf.from_cli())
 
-    # for reproducibility
-    random.seed(cfg.seed)
-    np.random.seed(cfg.seed)
-    torch.manual_seed(cfg.seed)
-    torch.cuda.manual_seed(cfg.seed)
-    torch.cuda.manual_seed_all(cfg.seed)    # multi-GPU
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
-    torch.use_deterministic_algorithms(True)
-    torch.utils.deterministic.fill_uninitialized_memory = True
-    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
-
-    # reproducibility when using multiple workers
-    def seed_worker(worker_id):
-        worker_seed = torch.initial_seed() % 2**32
-        np.random.seed(worker_seed)
-        random.seed(worker_seed)
-
-    g = torch.Generator()
-    g.manual_seed(cfg.seed)
+    # reproducibility
+    set_seed_and_deterministic(seed=cfg.seed)
 
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     logging.info(f'Using device {cfg.device}')
@@ -308,6 +291,13 @@ if __name__ == '__main__':
     train_cases, test_cases, valid_cases = splits[cfg.k_select]
     dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, use_no_border=False)
     val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, use_no_border=False)
+
+    # reproducibility when using multiple workers
+    g = torch.Generator().manual_seed(cfg.seed)
+    def seed_worker(worker_id):
+        worker_seed = torch.initial_seed() % 2**32
+        np.random.seed(worker_seed)
+        random.seed(worker_seed)
 
     # create data loaders
     num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
