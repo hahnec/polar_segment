@@ -166,6 +166,9 @@ class HORAO(Dataset):
                 placeholder[matter_labels[..., 1]==153] = 2
                 matter_labels = placeholder
             oh_mat_labels = np.eye(3)[matter_labels.astype(int)]
+            # replace foreground/background mask with inverted GM/WM mask to use full GM/WM area
+            if not self.use_no_border: labels[..., -2:][..., np.any(labels, axis=(0, 1))[-2:]] = 1-oh_mat_labels[..., 0][..., None].astype(labels.dtype)
+            # rearrange H,T,WM,GM to HWM, HGM, TWM, TGM
             labels = self.create_multilabels(labels, oh_mat_labels)
 
         # iterate over wavelengths
