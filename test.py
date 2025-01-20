@@ -28,7 +28,7 @@ def test_main(cfg, dataset, model, mm_model):
 
     # pixel-wise assessment (all classes)
     n_channels = int(preds.shape[1])
-    m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.bg_opt and cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
+    m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
     y_true = truth.argmax(1).flatten().cpu().numpy()
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
