@@ -48,13 +48,15 @@ def batch_preprocess(batch, cfg):
 def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
     
     # initialize label selection
-    m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1) if cfg.labeled_only else torch.ones_like(truth)
+    m = torch.any(truth, dim=1, keepdim=True) if cfg.labeled_only else torch.ones_like(truth)
+    if m.shape != truth[:, 0:1, ...].shape: m = m.repeat(1, 1, 1, 1)
 
     # remove the realizability mask from the features
     if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
         wnum = len(cfg.wlens)
         mask = frames[:, -wnum:]
         frames = frames[:, :-wnum]
+        if len(mask.shape) > len(m.shape): mask = mask.mean(-1).mean(-1)
         m = (m.float() * mask).bool()
 
     with torch.autocast(cfg.device if cfg.device != 'mps' else 'cpu', enabled=cfg.amp):
