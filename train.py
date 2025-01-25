@@ -40,8 +40,9 @@ def batch_preprocess(batch, cfg):
     if random.random() < cfg.shuffle_crop and frames.shape[0] > 1:
         frames, truth = BatchSegmentShuffler('crop')(frames, truth)
 
-    # extract intensity images
+    # extract intensity images for plots
     imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
+    imgs.detach()
 
     return frames, truth, imgs, bg, text
 
