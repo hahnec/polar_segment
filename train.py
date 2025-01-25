@@ -50,7 +50,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     # initialize label selection
     m = torch.any(truth, dim=1, keepdim=True).repeat(1, truth.shape[1], 1, 1) if cfg.labeled_only else torch.ones_like(truth)
 
-    # remove the feasibility mask from the features
+    # remove the realizability mask from the features
     if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
         wnum = len(cfg.wlens)
         mask = frames[:, -wnum:]
