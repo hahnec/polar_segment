@@ -182,8 +182,8 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                     })
                     # fiber tracts image
                     if cfg.data_subfolder.__contains__('raw'):
-                        from mm.models import MuellerMatrixModel
-                        azimuth_model = MuellerMatrixModel(feature_keys=['azimuth', 'linr'])
+                        from mm.models import LuChipmanModel
+                        azimuth_model = LuChipmanModel(feature_keys=['azimuth', 'linr'])
                         lc_feats = azimuth_model(frames)
                         masks = preds.argmax(1) == 0 # predicted healthy white matter mask
                         vars = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
