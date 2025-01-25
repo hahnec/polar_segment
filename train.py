@@ -70,7 +70,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         t_s = start.elapsed_time(end) / 1000
         loss = criterion(preds*m, truth*m) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
 
-    if train_opt and not torch.isnan(loss):
+    if train_opt and not torch.isnan(loss) and m.sum() > 0:
         if True:
             optimizer.zero_grad(set_to_none=True)
             scale = grad_scaler.get_scale()
