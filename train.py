@@ -46,7 +46,7 @@ def batch_preprocess(batch, cfg):
 
     return frames, truth, imgs, bg, text
 
-def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, gradient_clipping=1.0):
+def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, grad_clip=1.0):
     
     # initialize label selection
     m = torch.any(truth, dim=1, keepdim=True) if cfg.labeled_only else torch.ones_like(truth)
@@ -60,32 +60,27 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
         if len(mask.shape) > len(m.shape): mask = mask.mean(-1).mean(-1)
         m = (m.float() * mask).bool()
 
-    with torch.autocast(cfg.device if cfg.device != 'mps' else 'cpu', enabled=cfg.amp):
+    # inference
+    if not train_opt:
         start = torch.cuda.Event(enable_timing=True)
         end = torch.cuda.Event(enable_timing=True)
         start.record()
-        preds = model(frames)
+    preds = model(frames)
+    if not train_opt:
         end.record()
         torch.cuda.synchronize()
-        t_s = start.elapsed_time(end) / 1000
-        loss = criterion(preds*m, truth*m) if criterion and len(preds) > 0 else torch.tensor(float('nan'))
+    t_s = start.elapsed_time(end) / 1000 if not train_opt else torch.tensor([float('NaN')])
 
-    if train_opt and not torch.isnan(loss) and m.sum() > 0:
-        if True:
-            optimizer.zero_grad(set_to_none=True)
-            scale = grad_scaler.get_scale()
-            grad_scaler.update()
-            skip_lr_schedule = scale > grad_scaler.get_scale()
+    # loss and back-propagation
+    loss = criterion(preds*m, truth*m) / m.sum().clamp(min=1) if criterion and preds.numel() > 0 else None
+    if train_opt and loss is not None and torch.isfinite(m).all() and m.any(): 
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+        optimizer.step()
 
-            if not skip_lr_schedule:
-                grad_scaler.scale(loss).backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), gradient_clipping)
-                grad_scaler.step(optimizer)
-        else:
-            loss.backward()
-
+    # reduce prediction to healthy/tumor white matter and gray matter classes
     if cfg.class_num > 2:
-        # reduce prediction to healthy/tumor white matter and gray matter classes
         from utils.multi_loss import reduce_htgm
         preds, truth = reduce_htgm(preds, truth)
 
@@ -306,7 +301,7 @@ if __name__ == '__main__':
     num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
     loader_args = dict(num_workers=num_workers, pin_memory=True, worker_init_fn=seed_worker, generator=g)
     train_loader = DataLoader(dataset, shuffle=True, drop_last=False, batch_size=cfg.batch_size, **loader_args)
-    valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, batch_size=len(dataset), **loader_args)
+    valid_loader = DataLoader(val_set, shuffle=False, drop_last=False, batch_size=cfg.batch_size, **loader_args)
 
     if cfg.model_file is not None:
         ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.model_file.split('_')[0])]
