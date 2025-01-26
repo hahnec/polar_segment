@@ -75,8 +75,8 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     # loss and back-propagation
     loss = None
     if criterion and preds.numel() > 0:
-        loss = criterion(preds, truth)
-        loss = loss * m.squeeze(1)
+        loss = criterion(preds*m, truth*m)
+        #loss = loss * m.squeeze(1)
         loss = loss.sum() #/ (m.sum() + 1e-8)
     if train_opt and loss is not None and torch.isfinite(m).all() and m.any(): 
         optimizer.zero_grad(set_to_none=True)
