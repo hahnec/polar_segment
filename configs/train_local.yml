@@ -44,10 +44,10 @@ method: pooling
 feature_keys:
   - intensity
   - azimuth
-  - std
   - totp
   - linr
   - datt
+  - mask
 wlens:
   - 550
 
