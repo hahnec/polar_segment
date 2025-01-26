@@ -46,7 +46,7 @@ def batch_preprocess(batch, cfg):
 
     return frames, truth, imgs, bg, text
 
-def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_scaler=None, grad_clip=1.0):
+def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_clip=1.0):
     
     # initialize label selection
     m = torch.any(truth, dim=1, keepdim=True) if cfg.labeled_only else torch.ones_like(truth)
@@ -75,9 +75,9 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     # loss and back-propagation
     loss = None
     if criterion and preds.numel() > 0:
-        loss = criterion(preds*m, truth*m).sum()
-        #loss = loss * m.squeeze(1)
-        #loss = loss.sum() / (m.sum() + 1e-8)
+        loss = criterion(preds, truth)
+        loss = loss * m.squeeze(1)
+        loss = loss.sum() #/ (m.sum() + 1e-8)
     if train_opt and loss is not None and torch.isfinite(m).all() and m.any(): 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
@@ -102,7 +102,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 
     return loss, preds, truth, metrics
 
-def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, log_img=False, epoch=None, optimizer=None, grad_scaler=None):
+def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, log_img=False, epoch=None, optimizer=None):
 
     criterion = torch.nn.CrossEntropyLoss() if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma).mean())
     if cfg.class_num > 3 and branch_type != 'test':
@@ -110,7 +110,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
         criterion = torch.nn.CrossEntropyLoss(reduction='none') if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma, reduction='none').mean())
     train_opt = 0 if optimizer is None else 1
     model.train() if train_opt else model.eval()
-    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
+    batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, criterion=criterion, optimizer=optimizer)
     desc = f'Steps {len(dataloader.dataset)}' if epoch is None else f'Epoch {epoch}/{cfg.epochs}'
 
     step = 0 if step is None else step
@@ -322,7 +322,7 @@ if __name__ == '__main__':
     # instantiate logging
     if cfg.logging:
         wb = wandb.init(project='polar_segment_opex', resume='allow', anonymous='must', config=dict(cfg), group=cfg.group, entity='hahnec')
-        wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, amp=cfg.amp))
+        wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr))
 
         logging.info(f'''Starting training:
             cfg.epochs:      {cfg.epochs}
@@ -331,13 +331,11 @@ if __name__ == '__main__':
             Training size:   {len(dataset)}
             Validation size: {len(val_set)}
             Device:          {cfg.device}
-            Mixed Precision: {cfg.amp}
         ''')
 
     # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
-    grad_scaler = torch.cuda.amp.GradScaler(enabled=cfg.amp)
 
     train_step, valid_step = (0, 0)
     best_model, best_mm_model = (model, mm_model)
@@ -345,7 +343,7 @@ if __name__ == '__main__':
     for epoch in range(1, cfg.epochs+1):
         # training
         with torch.enable_grad():
-            model, mm_model, lmetrics_dict, train_step, tloss = epoch_iter(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer, grad_scaler=grad_scaler)
+            model, mm_model, lmetrics_dict, train_step, tloss = epoch_iter(cfg, train_loader, model, mm_model, branch_type='train', step=train_step, log_img=0, epoch=epoch, optimizer=optimizer)
         # validation
         with torch.no_grad():
             model, mm_model, vmetrics_dict, valid_step, vloss = epoch_iter(cfg, valid_loader, model, mm_model, branch_type='valid', step=valid_step, log_img=cfg.model not in ('resnet', 'mlp') and epoch==cfg.epochs, epoch=epoch)
