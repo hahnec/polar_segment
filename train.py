@@ -75,13 +75,13 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     # loss and back-propagation
     loss = None
     if criterion and preds.numel() > 0:
-        loss = criterion(preds, truth).sum()
+        loss = criterion(preds*m, truth*m).sum()
         #loss = loss * m.squeeze(1)
         #loss = loss.sum() / (m.sum() + 1e-8)
     if train_opt and loss is not None and torch.isfinite(m).all() and m.any(): 
-        optimizer.zero_grad()#set_to_none=True)
+        optimizer.zero_grad(set_to_none=True)
         loss.backward()
-        #torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
         optimizer.step()
 
     # reduce prediction to healthy/tumor white matter and gray matter classes
@@ -107,7 +107,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     criterion = torch.nn.CrossEntropyLoss() if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma).mean())
     if cfg.class_num > 3 and branch_type != 'test':
         from utils.multi_loss import multi_loss_aggregation
-        criterion = torch.nn.CrossEntropyLoss(reduction='none')  #if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma, reduction='none').mean())
+        criterion = torch.nn.CrossEntropyLoss(reduction='none') if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma, reduction='none').mean())
     train_opt = 0 if optimizer is None else 1
     model.train() if train_opt else model.eval()
     batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, criterion=criterion, optimizer=optimizer, grad_scaler=grad_scaler)
