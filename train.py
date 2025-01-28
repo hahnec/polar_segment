@@ -108,7 +108,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     criterion = torch.nn.CrossEntropyLoss() #if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma).mean())
     if cfg.class_num > 3 and branch_type != 'test':
         from utils.multi_loss import multi_loss_aggregation
-        criterion = torch.nn.CrossEntropyLoss(reduction='none') if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma, reduction='none').mean())
+        criterion = torch.nn.CrossEntropyLoss(reduction='none') #if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma, reduction='none').mean())
     train_opt = 0 if optimizer is None else 1
     model.train() if train_opt else model.eval()
     batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, criterion=criterion, optimizer=optimizer)
