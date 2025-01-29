@@ -8,6 +8,7 @@ def draw_segmentation_imgs(imgs, preds, truth, bidx=0, bg_opt=False, alpha=0.3):
     colors = ['yellow', 'green', 'red', 'blue'] if n_channels-int(bg_opt) > 2 else ['yellow', 'green', 'red'] 
     preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=truth.shape[1]).permute(0, 3, 1, 2).bool()
     combined_masks = torch.stack((preds_b[bidx], truth[bidx]>0)).cpu()
+    combined_masks[0][:, combined_masks[1]==0] = 0  # remove predictions for areas where there is no GT
     img = (imgs[bidx][None].repeat(3, 1, 1)/imgs[bidx].max()*255).cpu().to(torch.uint8)
     frame_pred = draw_segmentation_masks(img, masks=combined_masks[0], alpha=alpha, colors=colors[-n_channels:])
     frame_mask = draw_segmentation_masks(img, masks=combined_masks[1], alpha=alpha, colors=colors[-n_channels:])
