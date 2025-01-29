@@ -287,7 +287,7 @@ if __name__ == '__main__':
         dataset = torch.utils.data.ConcatDataset([train_set, valid_set, test_set])
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
         
-        from mm.models import MuellerMatrixPyramid as MMM
+        from mm.models import LuChipmanPyramid as MMM
         mm_model = MMM(feature_keys=feat_keys, perc=.95, levels=1, kernel_size=0, method='averaging', wnum=len(train_set.wlens), filter_opt=False)
 
         bg_pixels = 0
