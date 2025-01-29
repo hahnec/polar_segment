@@ -370,7 +370,7 @@ if __name__ == '__main__':
         scheduler.step()
 
         # best model selection
-        if best_epoch_score < epoch_score:
+        if best_epoch_score < epoch_score and epoch > cfg.epochs//2:
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
             best_epoch = epoch
