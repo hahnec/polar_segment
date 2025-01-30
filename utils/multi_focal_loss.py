@@ -43,7 +43,6 @@ def sigmoid_focal_loss_multiclass(
 
     # Stack the losses for each class
     loss = torch.stack(losses, dim=1)
-    #loss = loss.sum(dim=1)
 
     # Apply the specified reduction
     if reduction == "mean":
