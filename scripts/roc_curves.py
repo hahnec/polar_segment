@@ -30,8 +30,9 @@ def plot_curves(curve_dict, labels=None, filename='', fontsize=18):
     num = len(curve_dict.keys())
     x = np.linspace(0, 1, 200)
     colors = ['#d62728', '#1f77b4', '#2ca02c', '#8c564b', '#9467bd', '#ff7f0e'][:num]
-    styles = ['-', '-.', '--', ':', (0, (5, 10)), (0, (1, 1))][:num]
+    styles = ['-', '-.', ':', (0, (5, 10)), (0, (1, 1))][:num]
     labels = curve_dict.keys() if labels is None else labels
+    axs.plot(x, x, color='#000000', linestyle='--', label=None)     # black dashed reference line
     for k, l, c, s in zip(curve_dict.keys(), labels, colors, styles):
         axs.plot(x, curve_dict[k][0], label=l, color=c, linestyle=s)
         axs.fill_between(x, curve_dict[k][0] - curve_dict[k][1], curve_dict[k][0] + curve_dict[k][1], color=c, alpha=0.15)
