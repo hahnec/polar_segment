@@ -16,7 +16,7 @@ class HORAO(Dataset):
             bg_opt=0, 
             wlens=[550], 
             class_num=4,
-            use_no_border = False,
+            blood_opt = False,
         ):
 
         self.base_dir = Path(path)
@@ -26,7 +26,7 @@ class HORAO(Dataset):
         self.wlens = wlens
         self.bg_opt = int(bool(bg_opt))
         self.cases_files = list(cases_file)
-        self.use_no_border = use_no_border
+        self.blood_opt = blood_opt
 
         self.ids = []
         for cases_fn in self.cases_files:
@@ -127,6 +127,13 @@ class HORAO(Dataset):
             oh_mat_labels = np.eye(3)[matter_labels.astype(int)]
             # rearrange H,T,WM,GM to HWM, HGM, TWM, TGM
             labels = self.create_multilabels(labels, oh_mat_labels)
+
+        # consider blood labels
+        if self.blood_opt:
+            blood_label_path = Path(img_path.parent.parent / 'annotation' / 'blood.tif')
+            blood_label = np.array(Image.open(blood_label_path), dtype=bool)
+            labels[blood_label, ...] = 0
+            bg[blood_label, :] = True
 
         # iterate over wavelengths
         frames = []
