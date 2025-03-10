@@ -222,7 +222,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
 if __name__ == '__main__':
 
     # load configuration
-    cfg = OmegaConf.load('./configs/train_local_npp.yml')
+    cfg = OmegaConf.load('./configs/train_local.yml')
 
     # override loaded configuration with server settings
     if Path(cfg.ubx_dir).exists(): cfg = OmegaConf.merge(cfg, OmegaConf.load('./configs/train_server.yml'))
