@@ -114,8 +114,7 @@ class HORAO(Dataset):
         labels = labels.astype(np.float32)
         if labels.max() > 1: labels /= 255
         # add background class (optional)
-        bg = (np.array(Image.open(matter_fname)).sum(-1) > 0)[..., None]
-        if img_class == 1: bg = ~bg
+        bg = (np.array(Image.open(matter_fname)).sum(-1) == 0)[..., None]
         if self.bg_opt:
             labels = np.concatenate((bg.astype(labels.dtype), labels), axis=-1)
 
