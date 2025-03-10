@@ -222,7 +222,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
 if __name__ == '__main__':
 
     # load configuration
-    cfg = OmegaConf.load('./configs/train_local.yml')
+    cfg = OmegaConf.load('./configs/train_local_npp.yml')
 
     # override loaded configuration with server settings
     if Path(cfg.ubx_dir).exists(): cfg = OmegaConf.merge(cfg, OmegaConf.load('./configs/train_server.yml'))
@@ -289,12 +289,12 @@ if __name__ == '__main__':
 
     # create datasets
     if cfg.imbalance: cfg.cases = [fname.split('.txt')[0] + '_imbalance.txt' if not fname.startswith('val') else fname for fname in cfg.cases]
-    check_duplicate_rows(Path(cfg.data_dir) / 'cases', cfg.cases)
+    check_duplicate_rows(Path('.') / 'cases', cfg.cases)
     from utils.kfold_splits import get_nested_kfold_splits
     splits = get_nested_kfold_splits(cfg.cases)
     train_cases, test_cases, valid_cases = splits[cfg.k_select]
-    dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, use_no_border=False)
-    val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, use_no_border=False)
+    dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, wlens=cfg.wlens)
+    val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, wlens=cfg.wlens)
 
     # reproducibility when using multiple workers
     g = torch.Generator().manual_seed(cfg.seed)
