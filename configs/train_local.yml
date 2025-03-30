@@ -1,6 +1,6 @@
 # general
 device: cuda
-logging: 0
+logging: 1
 seed: 3008
 
 # model
@@ -24,9 +24,9 @@ alpha: 0.25
 
 # dataset
 data_path: NPP/
-ubx_dir: /storage/homefs/ch21z139/01_datasets/${data_path}
+ubx_dir: /storage/homefs/db09h030/masterthesis/polarimetric/data/${data_path}
 usb_dir: /media/chris/EB62-383C/${data_path}
-loc_dir: /home/chris/Datasets/03_HORAO/${data_path}
+loc_dir: /Users/dave/MScAI/Masterthesis/Data/${data_path}
 map_dir: Null
 data_dir: ${loc_dir}
 data_subfolder: raw_data
