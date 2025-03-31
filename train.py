@@ -323,7 +323,7 @@ if __name__ == '__main__':
     # instantiate logging
     if cfg.logging:
         wb = wandb.init(project='Polarimetrics', resume='allow', anonymous='must', config=dict(cfg), group=cfg.group, entity='davidbaier-student')
-        wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr))
+        wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr, wlens=cfg.wlens))
 
         logging.info(f'''Starting training:
             cfg.epochs:      {cfg.epochs}
@@ -331,6 +331,7 @@ if __name__ == '__main__':
             Learning rate:   {cfg.lr}
             Training size:   {len(dataset)}
             Validation size: {len(val_set)}
+            WLens:           {cfg.wlens}
             Device:          {cfg.device}
         ''')
 
