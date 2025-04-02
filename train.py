@@ -189,7 +189,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         from mm.models import LuChipmanModel
                         azimuth_model = LuChipmanModel(feature_keys=['linr', 'azimuth'], norm_opt=0)
                         lc_feats = azimuth_model(frames)
-                        masks = preds.argmax(1) == 0 # predicted healthy white matter mask
+                        masks = (preds.argmax(1) == 0) | (preds.argmax(1) == 1) # predicted healthy and tumor white matter mask
                         vars = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
                         mask = vars[1] & ~bg[bidx, 0].numpy()
                         # fiber plot
