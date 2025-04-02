@@ -18,7 +18,7 @@ def draw_segmentation_imgs(imgs, preds, truth, bidx=0, bg_opt=False, alpha=0.3):
 
 def draw_heatmap(pred, img=None, mask=None, alpha=0.3, colormap='jet'):
 
-    if isinstance(pred, torch.Tensor): pred = pred.cpu().numpy()
+    if isinstance(pred, torch.Tensor): pred = pred.detach().cpu().numpy()
     norm = (pred - pred.min()) / (pred.max() - pred.min())
 
     import matplotlib.pyplot as plt
