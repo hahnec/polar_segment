@@ -191,7 +191,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         lc_feats = azimuth_model(frames)
                         masks = (preds.argmax(1) == 0) | (preds.argmax(1) == 1) # predicted healthy and tumor white matter mask
                         vars = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
-                        mask = vars[1] & ~bg[bidx, 0].numpy()
+                        mask = ~(vars[1] & ~bg[bidx, 0].numpy())
                         # fiber plot
                         fiber_img = plot_fiber(raw_azimuth=vars[0][1], linr=vars[0][0], mask=mask, intensity=vars[2])
                         wandb.log({
