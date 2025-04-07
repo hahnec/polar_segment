@@ -30,7 +30,7 @@ class HORAO(Dataset):
 
         self.ids = []
         for cases_fn in self.cases_files:
-            with open(Path('.') / 'cases' / cases_fn) as f:
+            with open(Path(__file__).parent / 'cases' / cases_fn) as f:
                 self.ids = self.ids + [line.rstrip('\n') for line in f if line.strip()]
 
         self.get_filenames(class_num=class_num)
