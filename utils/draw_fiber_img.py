@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.ndimage as ndimage
 
-def plot_fiber(raw_azimuth, linr, intensity=None, mask=None, n=10, option='quiver'):
+def plot_fiber(raw_azimuth, linr, intensity=None, mask=None, window=5, n=10, option='quiver'):
 
 	azimuth = np.pi*raw_azimuth/180
 	X, Y = np.meshgrid(np.arange(azimuth.shape[1]), np.arange(azimuth.shape[0]))
@@ -12,7 +12,6 @@ def plot_fiber(raw_azimuth, linr, intensity=None, mask=None, n=10, option='quive
 	orientation_cos = np.cos(azimuth_unwrapped)
 	orientation_sin = np.sin(azimuth_unwrapped)
 
-	window = 5
 	cos_mean = ndimage.uniform_filter(orientation_cos, (window, window))/window**2
 	sin_mean = ndimage.uniform_filter(orientation_sin, (window, window))/window**2
 	magnitude = (cos_mean**2 + sin_mean**2)**.5
