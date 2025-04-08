@@ -127,18 +127,15 @@ if __name__ == '__main__':
     logging.info(f'Using device {cfg.device}')
 
     # mueller matrix model
-    if cfg.data_subfolder.__contains__('raw'):
-        mm_model = init_mm_model(cfg, train_opt=False)
-        if cfg.kernel_size > 0:
-            ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.mm_model_file.split('_')[0])]
-            state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)['state_dict']
-            mm_model.load_state_dict(state_dict)
-            logging.info(f'MM Model loaded from {cfg.mm_model_file}')
-    else:
-        mm_model = None
+    mm_model = init_mm_model(cfg, train_opt=False)
+    if cfg.kernel_size > 0:
+        ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.mm_model_file.split('_')[0])]
+        state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)['state_dict']
+        mm_model.load_state_dict(state_dict)
+        logging.info(f'MM Model loaded from {cfg.mm_model_file}')
 
     # model selection
-    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len(cfg.feature_keys)
+    n_channels = mm_model.ochs
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt)

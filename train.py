@@ -41,8 +41,7 @@ def batch_preprocess(batch, cfg):
         frames, truth = BatchSegmentShuffler('crop')(frames, truth)
 
     # extract intensity images for plots
-    imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
-    imgs.detach()
+    imgs = frames[:, :16].clone().mean(1).detach()
 
     return frames, truth, imgs, bg, text
 
@@ -54,7 +53,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     m = m.repeat_interleave(cfg.class_num, 1)
 
     # remove the realizability mask from the features
-    if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
+    if 'mask' in cfg.feature_keys:
         wnum = len(cfg.wlens)
         mask = frames[:, -wnum:]
         frames = frames[:, :-wnum]
@@ -126,7 +125,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             start = torch.cuda.Event(enable_timing=True)
             end = torch.cuda.Event(enable_timing=True)
             start.record()
-            mm_frame = mm_model(frames) if cfg.data_subfolder.__contains__('raw') else frames
+            mm_frame = mm_model(frames)
             end.record()
             torch.cuda.synchronize()
             t_mm = start.elapsed_time(end) / 1000
@@ -185,19 +184,17 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                         branch_type+'_step': step+bidx
                     })
                     # fiber tracts image
-                    if cfg.data_subfolder.__contains__('raw'):
-                        from mm.models import LuChipmanModel
-                        azimuth_model = LuChipmanModel(feature_keys=['linr', 'azimuth'], norm_opt=0)
-                        lc_feats = azimuth_model(frames)
-                        masks = (preds.argmax(1) == 0) | (preds.argmax(1) == 1) # predicted healthy and tumor white matter mask
-                        feats = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
-                        mask = ~(feats[1] & ~bg[bidx, 0].numpy())
-                        # fiber plot
-                        fiber_img = plot_fiber(raw_azimuth=feats[0][1], linr=feats[0][0], intensity=feats[2], mask=mask)
-                        wandb.log({
-                            'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
-                            #branch_type+'_step': step+bidx
-                        })
+                    from mm.models import LuChipmanModel
+                    azimuth_model = LuChipmanModel(feature_keys=['linr', 'azimuth'], norm_opt=0)
+                    lc_feats = azimuth_model(frames)
+                    masks = (preds.argmax(1) == 0) | (preds.argmax(1) == 1) # predicted healthy and tumor white matter mask
+                    feats = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
+                    mask = ~(feats[1] & ~bg[bidx, 0].numpy())
+                    # fiber plot
+                    fiber_img = plot_fiber(raw_azimuth=feats[0][1], linr=feats[0][0], intensity=feats[2], mask=mask)
+                    wandb.log({
+                        'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
+                    })
 
             # metrics extension
             for k in metrics_dict.keys():
@@ -237,22 +234,21 @@ if __name__ == '__main__':
     logging.info(f'Using device {cfg.device}')
 
     # augmentation transforms
-    raw_opt = True if cfg.data_subfolder.__contains__('raw') else False
     transforms = [
             ToTensor(), 
-            RandomPolarRotation(degrees=cfg.rotation, p=.5, fill=[0]*int(cfg.class_num)+[1]) if cfg.rotation > 0 and raw_opt else EmptyTransform(),
-            RandomPolarFlip(orientation=0, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
-            RandomPolarFlip(orientation=1, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
-            RandomPolarFlip(orientation=2, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
+            RandomPolarRotation(degrees=cfg.rotation, p=.5, fill=[0]*int(cfg.class_num)+[1]) if cfg.rotation > 0 else EmptyTransform(),
+            RandomPolarFlip(orientation=0, p=.5) if cfg.flips else EmptyTransform(),
+            RandomPolarFlip(orientation=1, p=.5) if cfg.flips else EmptyTransform(),
+            RandomPolarFlip(orientation=2, p=.5) if cfg.flips else EmptyTransform(),
             GammaAugmentation(gamma_range=(0.5, 2.0)) if cfg.gamma else EmptyTransform(),
             RandomGaussNoise(mean=0.0, std=0.05, p=0.5) if cfg.noise > 0 else EmptyTransform(),
         ]
 
     # mueller matrix model
-    mm_model = init_mm_model(cfg, filter_opt=False) if cfg.data_subfolder.__contains__('raw') else None
+    mm_model = init_mm_model(cfg, filter_opt=False)
 
     # model selection
-    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len(cfg.feature_keys)
+    n_channels = mm_model.ochs
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt)
@@ -374,7 +370,7 @@ if __name__ == '__main__':
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
             best_epoch = epoch
-            if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
+            if cfg.kernel_size > 0:
                 best_mm_model = copy.deepcopy(mm_model).eval()
             epochs_decline = 0
         else:
@@ -388,7 +384,7 @@ if __name__ == '__main__':
         dir_checkpoint.mkdir(parents=True, exist_ok=True)
         state_dict = best_model.state_dict()
         torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pt'.format(best_epoch)))))
-        if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
+        if cfg.kernel_size > 0:
             state_dict_mm = best_mm_model.state_dict()
             torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pt'.format(best_epoch)))))
         logging.info(f'Checkpoint {best_epoch} saved!')
