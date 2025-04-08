@@ -171,11 +171,11 @@ if __name__ == '__main__':
 
     # instantiate logging
     if cfg.logging:
-        wb = wandb.init(project='polar_segment_test', resume='allow', anonymous='must', config=dict(cfg), group='train') #, entity='horao_project'
+        wb = wandb.init(project='Polarimetrics', resume='allow', anonymous='must', config=dict(cfg), group="wavelength_test", entity='davidbaier-student') #, entity='horao_project'
         wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr))
 
     for case in cfg.cases:
-        # create dataset
+        # create datas
         dataset = HORAO(cfg.data_dir, [case], transforms=[ToTensor()], bg_opt=cfg.bg_opt, wlens=cfg.wlens, class_num=cfg.class_num)
         
         # run test
