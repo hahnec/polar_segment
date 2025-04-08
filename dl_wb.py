@@ -58,9 +58,9 @@ if __name__ == "__main__":
     wandb.login(key=cfg.wandb_api)
 
     # Define the project and group name
-    project_name = 'polar_segment_npp'
-    project_entity = 'horao_project' if False else 'hahnec'
-    group_name = 'tpi_rev1' if not project_name.__contains__('test') else 'test_run'
+    project_name = 'Polarimetrics'
+    project_entity = 'horao_project' if False else 'davidbaier-student'
+    group_name = 'reproduce_paper' if not project_name.__contains__('test') else 'test_run'
     table_key = 'report'
     media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
 

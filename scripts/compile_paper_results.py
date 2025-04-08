@@ -19,7 +19,7 @@ def compile_latex_to_pdf(latex_file):
 
 def compile_pdf(group_name, fig_texname, latex_file="./figure_env.tex"):
 
-    group_name = str(group_name)
+    group_name = str("../"+group_name)
 
     # standalone environment
     latex_env = "\\documentclass{scrartcl}\n"
@@ -124,7 +124,7 @@ def save_textable(result, models, methods, categories, filename='./table.tex', d
         """
 
     # Save to a .tex file
-    with open(filename, 'w') as f:
+    with open(f"../"+filename, 'w') as f:
         f.write(latex_content)
 
 def save_texfigure(sorted_groups, labels, filename='fig_segment.tex', captions=None):
@@ -197,18 +197,20 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'kfold3_9ochs_bal_aug_bs2'
+    group_name = 'reproduce_paper'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
-    kfold_num = int(group_name.lower().translate(str.maketrans('', '', '-_ ')).split('kfold')[1][0])
+    #kfold_num = int(group_name.lower().translate(str.maketrans('', '', '-_ ')).split('kfold')[-1][0])
+    kfold_num = 0
     run_list = []
-    for fn in Path('./' + group_name).glob('config_*.json'):
+    for fn in Path('../' + group_name).glob('config_*.json'):
         with open(fn, 'r') as f:
             cfg = json.load(f)
             if cfg['data_subfolder'].__contains__('raw') and cfg['levels'] <= 1:
                 run_list.append([fn, cfg['model'], cfg['levels']])
     if len(run_list) == 0:
         raise Exception('Empty folder')
-    sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1], int(str(x[0].name).split('-')[-1].split('.')[0])))
+    #sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1], int(str(x[0].name).split('-')[-1].split('.')[0])))
+    sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1]))
     models = [el[1] for el in sorted_runs if el[1]]
     methods = ['MMFF' if el[2] == 0 else 'LC' for el in sorted_runs]
 
@@ -256,14 +258,14 @@ if __name__ == '__main__':
                     tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
                     fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
                     # automatically find filename with correct step number
-                    img_path = list((Path(group_name) / 'downloaded_images').glob('_'.join(fn.split('_')[:-1])+'_*.png'))[0]
+                    img_path = list((Path("../"+group_name) / 'downloaded_images').glob('_'.join(fn.split('_')[:-1])+'_*.png'))[0]
                     if img_path.exists():
                         if img_type == 'img_pred':
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '.png')
+                            dst = Path("../"+group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '.png')
                         elif img_type == 'heatmap':
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
+                            dst = Path("../"+group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
                         elif img_type == 'img_mask' and j == 0:
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-gt.png')
+                            dst = Path("../"+group_name) / ('fig-' + str(i) + '-' + method + '-gt.png')
                         else:
                             continue
                         if img_type != 'heatmap' and dst.name not in img_paths: 
@@ -275,7 +277,8 @@ if __name__ == '__main__':
 
         # load image captions/labels
         import yaml
-        with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
+        #with open(Path("../"+group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
+        with open(Path("../"+group_name) / (el[0].name.replace('json', 'yml').replace("config", "captions")), 'r') as f:
             captions = list(yaml.safe_load(f).values())
         captions = [c.split('|')[1] if c.__contains__('|') else c for c in captions] # filter sequence number etc.
         captions = [c.split(',')[0].replace('Astrocytoma','A').replace('Oligodendroglioma','O') + c.split('WHO')[-1].replace('grade:','') if c != 'healthy' else c for c in captions]
@@ -294,8 +297,8 @@ if __name__ == '__main__':
 
         # save figure tex file
         fig_texname = 'fig_segment_%s.tex' % str(k)
-        save_texfigure(sorted_groups, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
+        save_texfigure(sorted_groups, labels+['GT\\newline'], filename="../"+group_name+'/'+fig_texname, captions=captions)
         compile_pdf(group_name, fig_texname, latex_file='figure_env_'+str(k)+'.tex')
 
     # save table results (k-folds accumulated)
-    compile_pdf(group_name, 'tab_semantic_segmentation_scores.tex', latex_file='/table_env.tex')
+    compile_pdf("../"+group_name, 'tab_semantic_segmentation_scores.tex', latex_file='/table_env.tex')
