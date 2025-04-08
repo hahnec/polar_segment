@@ -122,16 +122,16 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
         for batch in dataloader:
             frames, truth, imgs, bg, text = batch_preprocess(batch, cfg)
-            ## polarimetry
+            # polarimetry
             start = torch.cuda.Event(enable_timing=True)
             end = torch.cuda.Event(enable_timing=True)
             start.record()
-            input = mm_model(frames) if cfg.data_subfolder.__contains__('raw') else frames
+            mm_frame = mm_model(frames) if cfg.data_subfolder.__contains__('raw') else frames
             end.record()
             torch.cuda.synchronize()
             t_mm = start.elapsed_time(end) / 1000
             # segmentation
-            loss, preds, truth, metrics = batch_it(input, truth)
+            loss, preds, truth, metrics = batch_it(mm_frame, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             epoch_loss += loss.item()
