@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.ndimage as ndimage
 
-def plot_fiber(raw_azimuth, linr, mask=None, intensity=None, n=10, option='quiver'):
+def plot_fiber(raw_azimuth, linr, intensity=None, mask=None, n=10, option='quiver'):
 
 	azimuth = np.pi*raw_azimuth/180
 	X, Y = np.meshgrid(np.arange(azimuth.shape[1]), np.arange(azimuth.shape[0]))
@@ -17,13 +17,14 @@ def plot_fiber(raw_azimuth, linr, mask=None, intensity=None, n=10, option='quive
 	sin_mean = ndimage.uniform_filter(orientation_sin, (window, window))/window**2
 	magnitude = (cos_mean**2 + sin_mean**2)**.5
 
-	cos_mean_masked = np.ma.array(orientation_cos, mask=mask)
-	sin_mean_masked = np.ma.array(orientation_sin, mask=mask)
-	u = magnitude*linr*cos_mean_masked
-	v = magnitude*linr*sin_mean_masked
+	if mask is not None: orientation_cos = np.ma.array(orientation_cos, mask=mask)
+	if mask is not None: orientation_sin = np.ma.array(orientation_sin, mask=mask)
+	u = magnitude*linr*orientation_cos
+	v = magnitude*linr*orientation_sin
 
-	if mask is not None: u[mask] = 0
-	if mask is not None: v[mask] = 0
+	if mask is not None: u = np.ma.masked_where(mask, u)
+	if mask is not None: v = np.ma.masked_where(mask, v)
+	if mask is not None: raw_azimuth = np.ma.masked_where(mask, raw_azimuth)
 
 	fig, ax = plt.subplots()
 	if intensity is not None: ax.imshow(intensity, cmap = 'gray')
