@@ -23,7 +23,7 @@ from polar_augment.gamma import GammaAugmentation
 from polar_augment.batch_segment_shuffle import BatchSegmentShuffler
 from utils.transforms_segment import RandomResizedCrop
 from mm.models import init_mm_model
-from utils.draw_fiber_img import plot_fiber
+from mm.utils.draw_fiber_img import plot_fiber
 from utils.duplicate_checks import check_duplicate_rows
 from utils.reproducibility import set_seed_and_deterministic
 
