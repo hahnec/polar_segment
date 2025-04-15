@@ -32,7 +32,8 @@ class HORAO(Dataset):
         for cases_fn in self.cases_files:
             with open(Path(__file__).parent / 'cases' / cases_fn) as f:
                 self.ids = self.ids + [line.rstrip('\n') for line in f if line.strip()]
-
+        
+        self.class_num = class_num
         self.get_filenames(class_num=class_num)
 
         # read metadata
@@ -171,7 +172,11 @@ class HORAO(Dataset):
         labels = np.concatenate([labels, bg], axis=-1)
         for transform in self.transforms:
             frames, labels = transform(frames, label=labels)
-        labels, bg = labels[:-1], labels[-1][None]
+
+        # split background from labels considering varying dimension order due to transforms
+        if isinstance(labels, np.ndarray): labels = torch.tensor(labels)
+        split_dim = [i for i, s in enumerate(labels.shape) if s == self.class_num+1][0]
+        labels, bg = torch.split(labels, [self.class_num, 1], dim=split_dim)
 
         return frames, labels, img_class, bg, metadata
 
