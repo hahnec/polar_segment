@@ -150,6 +150,28 @@ class HORAO(Dataset):
                 # clipping
                 clip_detect = lambda img, th=65530: np.any(img > th, axis=-1).astype(bool)
                 clip_mask = clip_detect(frame.numpy())
+                # Remove 0.0 pixel values in 600nm images
+                if wlen == 600:
+                    empty_mask = frame[:,:,0] == 0.0
+                    #frame[empty_mask] = torch.eye(4, dtype=torch.float64).flatten() 
+                    C = 30  # Border width
+                    C_Top = 50
+                    # Replace top border with mirrored values from below
+                    for i in range(C_Top):
+                        #Repair top border
+                        frame[i, :, :] = frame[ C_Top - 1 - i,:, :]
+                        empty_mask[i,:] = 1.0
+
+                    for i in range(C):
+                        #repair left border
+                        frame[:, i, :] = frame[:, C - 1 - i, :]
+                        empty_mask[:,i] = 1.0
+                        #repair right border
+                        frame[:,  -1 - i, :] = frame[:, -1 - C + i, :]
+                        empty_mask[:,-1-i] = 1.0
+                    # Merge clip mask with empty mask to add empty fields to bg and lables
+                    clip_mask = clip_mask | empty_mask.numpy()
+                    
                 bg[clip_mask, :] = True    # merge clipped areas with background
                 labels[clip_mask, :] = 0   # mask clipped areas in labels
                 # calibration data
