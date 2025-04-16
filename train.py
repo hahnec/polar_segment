@@ -211,7 +211,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
 
     # consolidate metrics to one scalar value per key
     for k in metrics_dict.keys():
-        metrics_dict[k] = float(np.array(metrics_dict[k]).mean())
+        metrics_dict[k] = float(np.mean(metrics_dict[k]))
 
     if branch_type == 'test':
         return torch.cat(preds_list, dim=0), torch.cat(truth_list, dim=0), metrics_dict
