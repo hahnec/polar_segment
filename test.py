@@ -8,6 +8,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from omegaconf import OmegaConf
 from sklearn.metrics import classification_report, roc_curve, auc
+import warnings
 
 from horao_dataset import HORAO
 from utils.transforms_segment import *
@@ -26,6 +27,13 @@ def test_main(cfg, dataset, model, mm_model):
     with torch.no_grad():
         preds, truth, metrics = epoch_iter(cfg, dataloader, model, mm_model, branch_type='test')
 
+    if cfg.logging:
+        # upload metrics to wandb
+        wandb.log(metrics)
+        wandb.log({'accuracy': metrics['acc']})
+        table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
+        wandb.log({'metrics': table_metrics})
+
     # pixel-wise multi-class assessment
     n_channels = int(preds.shape[1])
     m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
@@ -33,12 +41,13 @@ def test_main(cfg, dataset, model, mm_model):
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
 
-    try:
-        report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
-    except ValueError as e:
-        print(e)
+    if len(np.unique(y_true[m])) < len(target_names):
+        warnings.warn('Fewer number of labels than target names. Skipping ROC analysis.')
         return False
-
+    
+    # sklearn report
+    report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
+    
     # ROC curve (binary classification: healthy vs tumor)
     class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)] # assuming GM is last
     wb_t = truth[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
@@ -49,19 +58,14 @@ def test_main(cfg, dataset, model, mm_model):
     roc_auc = auc(fpr, tpr)
 
     if cfg.logging:
-        # upload metrics to wandb
-        wandb.log(metrics)
-        wandb.log({'accuracy': metrics['acc']})
-        wandb.log({'auc': roc_auc})
-        table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
-        wandb.log({'metrics': table_metrics})
         # convert report to wandb table
         flat_report = flatten_dict_to_rows(report)
         table_report = wandb.Table(columns=['category', 'precision', 'recall', 'f1-score', 'support', 'accuracy'])
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
-        # ROC plot
+        # ROC logging
+        wandb.log({'auc': roc_auc})
         if False:
             wandb.log({'roc_wandb': wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
         else:
