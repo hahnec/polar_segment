@@ -26,7 +26,7 @@ def test_main(cfg, dataset, model, mm_model):
     with torch.no_grad():
         preds, truth, metrics = epoch_iter(cfg, dataloader, model, mm_model, branch_type='test')
 
-    # pixel-wise assessment (all classes)
+    # pixel-wise multi-class assessment
     n_channels = int(preds.shape[1])
     m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
     y_true = truth.argmax(1).flatten().cpu().numpy()
@@ -39,7 +39,7 @@ def test_main(cfg, dataset, model, mm_model):
         print(e)
         return False
 
-    # ROC curve (dual class: healthy vs tumor)
+    # ROC curve (binary classification: healthy vs tumor)
     class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)] # assuming GM is last
     wb_t = truth[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
     wb_p = preds[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
