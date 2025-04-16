@@ -9,6 +9,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 from omegaconf import OmegaConf
+from collections import defaultdict
 from monai import transforms
 
 from horao_dataset import HORAO
@@ -116,6 +117,7 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     metrics_dict = {'dice': [], 'iou': [], 'acc': [], 't_mm': [], 't_s': []}
     best_score, best_frame_pred, best_frame_mask = 0, None, None
     poor_score, poor_frame_pred, poor_frame_mask = 1, None, None
+    if branch_type == 'test': preds_list, truth_list, metrics_list = [], [], []
     with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
         for batch in dataloader:
             frames, truth, imgs, bg, text = batch_preprocess(batch, cfg)
@@ -198,6 +200,11 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             for k in metrics_dict.keys():
                 metrics_dict[k].extend(metrics[k].detach().cpu().numpy())
 
+            if branch_type == 'test':
+                preds_list.append(preds.cpu())
+                truth_list.append(truth.cpu())
+                metrics_list.append(metrics_dict)
+
     if cfg.logging and log_img:
         if best_frame_pred is not None: wandb.log({'best_img_pred_'+branch_type: wandb.Image(best_frame_pred.cpu(), caption=best_frame_text), 'epoch': epoch})
         if best_frame_mask is not None: wandb.log({'best_img_mask_'+branch_type: wandb.Image(best_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT; blue: GM;"), 'epoch': epoch})
@@ -209,7 +216,14 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
         metrics_dict[k] = float(np.array(metrics_dict[k]).mean())
 
     if branch_type == 'test':
-        return preds, truth, metrics_dict
+
+        metrics_agg = defaultdict(list)
+        for m in metrics_list:
+            for k, v in m.items():
+                metrics_agg[k].append(v)
+
+        metrics_agg = {k: sum(v)/len(v) for k, v in metrics_agg.items()}
+        return torch.cat(preds_list, dim=0), torch.cat(truth_list, dim=0), metrics_agg
     else:
         return model, mm_model, metrics_dict, step, epoch_loss
 

@@ -20,7 +20,7 @@ def test_main(cfg, dataset, model, mm_model):
 
     # create data loaders
     num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
-    loader_args = dict(batch_size=len(dataset), num_workers=num_workers, pin_memory=True) # large batch size to include tumor and healthy for NaN-safe AUC
+    loader_args = dict(batch_size=1, num_workers=num_workers, pin_memory=True) # large batch size to include tumor and healthy for NaN-safe AUC
     dataloader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
 
     with torch.no_grad():
@@ -47,10 +47,6 @@ def test_main(cfg, dataset, model, mm_model):
     pos_class_idx = 1 # use tumor as positive class
     fpr, tpr, ths = roc_curve(wb_t[vidx].argmax(1), wb_p[vidx][:, pos_class_idx])
     roc_auc = auc(fpr, tpr)
-
-    if cfg.batch_size == 1:
-        import warnings
-        warnings.warn('ROC curve for two-class at batch size 1 gives no ROC curve.')
 
     if cfg.logging:
         # upload metrics to wandb
