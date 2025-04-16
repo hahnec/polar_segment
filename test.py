@@ -42,7 +42,7 @@ def test_main(cfg, dataset, model, mm_model):
     target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
 
     if len(np.unique(y_true[m])) < len(target_names):
-        warnings.warn('Fewer number of labels than target names. Skipping ROC analysis.')
+        warnings.warn('Fewer number of labels than target names. This can be a result of tumor-only samples. Skipping ROC analysis.')
         return False
     
     # sklearn report
