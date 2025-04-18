@@ -171,7 +171,11 @@ if __name__ == '__main__':
 
     # instantiate logging
     if cfg.logging:
-        wb = wandb.init(project='Polarimetrics', resume='allow', anonymous='must', config=dict(cfg), group="wavelength_test", entity='davidbaier-student') #, entity='horao_project'
+        group = "wavelength_test"
+        if cfg.group:
+            group = cfg.group
+
+        wb = wandb.init(project='Polarimetrics', resume='allow', anonymous='must', config=dict(cfg), group=group, entity='davidbaier-student') #, entity='horao_project'
         wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr))
 
     for case in cfg.cases:
