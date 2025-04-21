@@ -41,9 +41,9 @@ def test_main(cfg, dataset, model, mm_model):
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
 
-    if len(np.unique(y_true[m])) < len(target_names):
+    '''if len(np.unique(y_true[m])) < len(target_names):
         warnings.warn('Fewer number of labels than target names. This can be a result of tumor-only samples. Skipping ROC analysis.')
-        return False
+        return False'''
     
     # sklearn report
     report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
