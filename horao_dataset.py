@@ -190,11 +190,36 @@ class HORAO(Dataset):
         frames = frames.astype(np.float32)
 
         for transform in self.transforms_img:
-            frames = transform(frames)
+            # Quick Hack to run an experiment for 550 and 600 wlens stacked together.
+            step_size = 48
+            new_frames = torch.Tensor()
+            from utils.transforms_segment import ToTensor 
+            for i in range(len(self.wlens)):
+                frame = frames[i*step_size:(i+1)*step_size,:,:]
+                if isinstance(transform, ToTensor):
+                    frame = frames[:,:,i*step_size:(i+1)*step_size]
+                frame = transform(frame, label=labels)
+                new_frames = torch.concatenate([new_frames, frame], axis=0)
+            frames = new_frames
+
+            #frames = transform(frames)
 
         labels = np.concatenate([labels, bg], axis=-1)
         for transform in self.transforms:
-            frames, labels = transform(frames, label=labels)
+            # Quick Hack to run an experiment for 550 and 600 wlens stacked together.
+            step_size = 48
+            new_frames = torch.Tensor()
+            new_labels = labels
+            from utils.transforms_segment import ToTensor 
+            for i in range(len(self.wlens)):
+                frame = frames[i*step_size:(i+1)*step_size,:,:]
+                if isinstance(transform, ToTensor):
+                    frame = frames[:,:,i*step_size:(i+1)*step_size]
+                frame, new_labels = transform(frame, label=labels)
+                new_frames = torch.concatenate([new_frames, frame], axis=0)
+            frames = new_frames
+            labels = new_labels
+            #frames, labels = transform(frames, label=labels)
 
         # split background from labels considering varying dimension order due to transforms
         if isinstance(labels, np.ndarray): labels = torch.tensor(labels)
