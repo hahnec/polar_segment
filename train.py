@@ -48,17 +48,32 @@ def batch_preprocess(batch, cfg):
 def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer=None, grad_clip=1.0):
     
     # initialize label selection
+    wnum = len(cfg.wlens)
     m = torch.any(truth, dim=1, keepdim=True) if cfg.labeled_only else torch.ones_like(truth)
     if m.shape != truth[:, 0:1, ...].shape: m = m.repeat(1, 1, 1, 1)
-    m = m.repeat_interleave(cfg.class_num, 1)
+    m = m.repeat_interleave(cfg.class_num*wnum, 1)
 
     # remove the realizability mask from the features
     if 'mask' in cfg.feature_keys:
-        wnum = len(cfg.wlens)
-        mask = frames[:, -wnum:]
-        frames = frames[:, :-wnum]
+        mask_idxs = {(1,0):[frames.shape[1]-1], (2,0):[10,21], (1,1):[frames.shape[1]-1], (2,1):[10,11]}
+        range_dict = {(1,0): 11, (2,0): 22, (1,1):6, (2,1): 12}
+        mask_idx = torch.tensor(mask_idxs[wnum, cfg.levels])
+        non_mask_idx = torch.tensor([idx for idx in range(range_dict[wnum, cfg.levels]) if idx not in mask_idx])
+        #mask_idx = torch.tensor([10,21]if wnum == 2 else [10])
+        #non_mask_idx = torch.tensor([idx for idx in range(22) if idx not in mask_idx])
+        mask = frames[:, mask_idx]
+        frames = frames[:, non_mask_idx]
+        #mask = frames[:, -wnum:]
+        #frames = frames[:, :-wnum]
+
         if len(mask.shape) > len(m.shape): mask = mask.mean(-1).mean(-1)
-        m = (m.float() * mask).bool()
+        for i in range(wnum):
+            m[:,cfg.class_num*i:cfg.class_num*(i+1),...] = (m[:,cfg.class_num*i:cfg.class_num*(i+1),...].float()*mask[:,1*i:1*(i+1),...]).bool()
+        #m = (m.float() * mask).bool()
+        if wnum == 2:
+            #Logically merge the 8 layers (nums_wavelengths*class_num) into size of only class_num
+            m = torch.logical_and(m[:,0:cfg.class_num,...], m[:,cfg.class_num:cfg.class_num*wnum,...])
+
 
     # inference
     t_s = torch.tensor([float('NaN')])
@@ -252,7 +267,7 @@ if __name__ == '__main__':
     mm_model = init_mm_model(cfg, filter_opt=False)
 
     # model selection
-    n_channels = mm_model.ochs
+    n_channels = mm_model.ochs*len(cfg.wlens) if cfg.levels == 0 else mm_model.ochs
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt)
