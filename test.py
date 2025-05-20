@@ -135,7 +135,8 @@ if __name__ == '__main__':
         logging.info(f'MM Model loaded from {cfg.mm_model_file}')
 
     # model selection
-    n_channels = mm_model.ochs
+    #n_channels = mm_model.ochs
+    n_channels = mm_model.ochs*len(cfg.wlens) if cfg.levels == 0 else mm_model.ochs
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt)
