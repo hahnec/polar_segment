@@ -58,12 +58,12 @@ if __name__ == "__main__":
     wandb.login(key=cfg.wandb_api)
 
     # Define the project and group name
-    project_name = 'polar_segment'
+    project_name = 'polar_segment_npp'
     project_entity = 'horao_project' if False else 'hahnec'
-    group_name = 'box3_boundary' if not project_name.__contains__('test') else 'test_run'
+    group_name = 'tpi_rev1' if not project_name.__contains__('test') else 'test_run'
     table_key = 'report'
     media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
- 
+
     api = wandb.Api()
 
     runs = api.runs(path=f'{project_entity}/{project_name}', filters=None if project_name.__contains__('test') else {"group": group_name})

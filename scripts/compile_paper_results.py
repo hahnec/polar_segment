@@ -199,7 +199,7 @@ if __name__ == '__main__':
 
     group_name = 'kfold3_9ochs_bal_aug_bs2'
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
-    kfold_num = int(group_name.lower().translate(str.maketrans('', '', '-_ ')).split('kfold')[-1][0])
+    kfold_num = int(group_name.lower().translate(str.maketrans('', '', '-_ ')).split('kfold')[1][0])
     run_list = []
     for fn in Path('./' + group_name).glob('config_*.json'):
         with open(fn, 'r') as f:

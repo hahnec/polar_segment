@@ -1,6 +1,6 @@
 from pathlib import Path
 
-base_path = '/media/chris/EB62-383C/TumorMeasurementsCalib/'
+base_path = '/home/chris/Datasets/03_HORAO/TumorMeasurementsCalib/'
 fn = 'histology/labels_augmented_GM_WM_masked_FG_no_border.png'
 
 multilabel_tumor_samples = []
