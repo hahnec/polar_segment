@@ -154,7 +154,28 @@ class HORAO(Dataset):
                 if wlen == 600:
                     empty_mask = frame[:,:,0] == 0.0
                     #frame[empty_mask] = torch.eye(4, dtype=torch.float64).flatten() 
-                    C = 30  # Border width
+                    for i in range(frame.shape[1]):
+                        n = int(388-frame[:,i,0].count_nonzero())
+                        if n != 388 and n <= 100:
+                            frame[0:n,i,:] = frame[n:2*n,i,:]
+                            empty_mask[0:n,i] = torch.ones(n)
+
+                    for i in range(frame.shape[0]):
+                        n = int(516-frame[i,:,0].count_nonzero())
+                        #Crosscheck if zeros at beginning and/or end
+                        begin_sum = n - frame[i,0:n,0].count_nonzero().sum()
+                        residual = n - begin_sum
+                        if residual == 0:
+                            frame[i,0:n,:] = frame[i,n:(2*n),:]
+                            empty_mask[i,0:n] = torch.ones(n)
+                        else:
+                            frame[i,0:begin_sum,:] = frame[i,begin_sum:(2*begin_sum),:]
+                            frame[i,-residual:,:] = frame[i,-1-(2*residual):-1-residual,:]
+
+                            empty_mask[i,0:begin_sum] = torch.ones(begin_sum)
+                            empty_mask[i,-residual:] = torch.ones(residual)
+
+                    '''C = 30  # Border width
                     C_Top = 50
                     # Replace top border with mirrored values from below
                     for i in range(C_Top):
@@ -168,7 +189,7 @@ class HORAO(Dataset):
                         empty_mask[:,i] = 1.0
                         #repair right border
                         frame[:,  -1 - i, :] = frame[:, -1 - C + i, :]
-                        empty_mask[:,-1-i] = 1.0
+                        empty_mask[:,-1-i] = 1.0'''
                     # Merge clip mask with empty mask to add empty fields to bg and lables
                     clip_mask = clip_mask | empty_mask.numpy()
                     
