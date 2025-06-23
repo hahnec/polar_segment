@@ -155,7 +155,7 @@ class HORAO(Dataset):
                 raw_flag = True if wlen == 550 else False
                 frame = read_cod_data_X3D(img_path, raw_flag=raw_flag)
                 frame = frame[cropped_width:-cropped_width,cropped_width:-cropped_width,:]
-                
+              
                 # clipping
                 clip_detect = lambda img, th=65530: np.any(img > th, axis=-1).astype(bool)
                 clip_mask = clip_detect(frame.numpy())
