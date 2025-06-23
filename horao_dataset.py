@@ -106,7 +106,9 @@ class HORAO(Dataset):
         # load metadata
         part = img_path.parts[-3]
         metadata = self.get_metadata(part) if img_class else part
-
+        
+        from torchvision.transforms.functional import crop
+        cropped_width = 30
         # tumor/healthy label construction
         labels = np.array(Image.open(label_fname)).sum(-1) > 0
         labels = labels[None].repeat(2, 0)
@@ -118,6 +120,7 @@ class HORAO(Dataset):
         bg = (np.array(Image.open(matter_fname)).sum(-1) == 0)[..., None]
         if self.bg_opt:
             labels = np.concatenate((bg.astype(labels.dtype), labels), axis=-1)
+                
 
         # consider white matter / grey matter
         if matter_fname.exists(): 
@@ -136,6 +139,10 @@ class HORAO(Dataset):
             labels[blood_label, ...] = 0
             bg[blood_label, :] = True
 
+                #Crop Labels and bg
+        labels = labels[cropped_width:-cropped_width,cropped_width:-cropped_width,:]
+        bg = bg[cropped_width:-cropped_width,cropped_width:-cropped_width,:]
+        
         # iterate over wavelengths
         frames = []
         for wlen in self.wlens:
@@ -147,14 +154,16 @@ class HORAO(Dataset):
                 from mm.utils.cod import read_cod_data_X3D
                 raw_flag = True if wlen == 550 else False
                 frame = read_cod_data_X3D(img_path, raw_flag=raw_flag)
+                frame = frame[cropped_width:-cropped_width,cropped_width:-cropped_width,:]
+                
                 # clipping
                 clip_detect = lambda img, th=65530: np.any(img > th, axis=-1).astype(bool)
                 clip_mask = clip_detect(frame.numpy())
                 # Remove 0.0 pixel values in 600nm images
                 if wlen == 600:
-                    empty_mask = frame[:,:,0] == 0.0
+                    #empty_mask = frame[:,:,0] == 0.0
                     #frame[empty_mask] = torch.eye(4, dtype=torch.float64).flatten() 
-                    for i in range(frame.shape[1]):
+                    '''for i in range(frame.shape[1]):
                         n = int(388-frame[:,i,0].count_nonzero())
                         if n != 388 and n <= 100:
                             frame[0:n,i,:] = frame[n:2*n,i,:]
@@ -175,7 +184,7 @@ class HORAO(Dataset):
                             empty_mask[i,0:begin_sum] = torch.ones(begin_sum)
                             empty_mask[i,-residual:] = torch.ones(residual)
 
-                    '''C = 30  # Border width
+                    C = 30  # Border width
                     C_Top = 50
                     # Replace top border with mirrored values from below
                     for i in range(C_Top):
@@ -191,7 +200,7 @@ class HORAO(Dataset):
                         frame[:,  -1 - i, :] = frame[:, -1 - C + i, :]
                         empty_mask[:,-1-i] = 1.0'''
                     # Merge clip mask with empty mask to add empty fields to bg and lables
-                    clip_mask = clip_mask | empty_mask.numpy()
+                    #clip_mask = clip_mask | empty_mask.numpy()
                     
                 bg[clip_mask, :] = True    # merge clipped areas with background
                 labels[clip_mask, :] = 0   # mask clipped areas in labels
@@ -200,6 +209,8 @@ class HORAO(Dataset):
                 c_path = self.base_dir / calib_folder / (str(wlen)+'nm')
                 amat = read_cod_data_X3D(c_path / (str(wlen) + '_A.cod'))
                 wmat = read_cod_data_X3D(c_path / (str(wlen) + '_W.cod'))
+                amat = amat[cropped_width:-cropped_width, cropped_width:-cropped_width,:]
+                wmat = wmat[cropped_width:-cropped_width, cropped_width:-cropped_width,:]
                 frame = np.concatenate([frame, amat, wmat], axis=-1)
             else:
                 raise NotImplementedError('File type not recognized')
