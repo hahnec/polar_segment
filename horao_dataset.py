@@ -61,7 +61,7 @@ class HORAO(Dataset):
             self.img_paths.append(img_fname)
             self.label_paths.append(label_fname)
             self.matter_paths.append(matter_fname)
-            self.img_classes.append(0 if id.__contains__('HT') else 1)
+            self.img_classes.append(0 if id.__contains__('HT') or id.__contains__("/CALF/") else 1)
 
     def create_multilabels(self, labels, matter_labels, rearrange=True):
         if rearrange:
