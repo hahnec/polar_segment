@@ -18,6 +18,7 @@ from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
 from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
 from polar_augment.flip_raw import RandomPolarFlip
 from polar_augment.rotation_raw import RandomPolarRotation
+from polar_augment.padding import mirror_rotate
 from polar_augment.noise import RandomGaussNoise
 from polar_augment.gamma import GammaAugmentation
 from polar_augment.batch_segment_shuffle import BatchSegmentShuffler
@@ -241,7 +242,7 @@ if __name__ == '__main__':
     # augmentation transforms
     transforms = [
             ToTensor(), 
-            RandomPolarRotation(degrees=cfg.rotation, p=.5, fill=[0]*int(cfg.class_num)+[1]) if cfg.rotation > 0 else EmptyTransform(),
+            RandomPolarRotation(degrees=cfg.rotation, p=.5, pad_rotate=mirror_rotate, fill=[0]*int(cfg.class_num)+[1]) if cfg.rotation > 0 else EmptyTransform(),
             RandomPolarFlip(orientation=0, p=.5) if cfg.flips else EmptyTransform(),
             RandomPolarFlip(orientation=1, p=.5) if cfg.flips else EmptyTransform(),
             RandomPolarFlip(orientation=2, p=.5) if cfg.flips else EmptyTransform(),
