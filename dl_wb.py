@@ -62,7 +62,7 @@ if __name__ == "__main__":
     project_entity = 'horao_project' if False else 'hahnec'
     group_name = 'tpi_rev1' if not project_name.__contains__('test') else 'test_run'
     table_key = 'report'
-    media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test']
+    media_keys = ['heatmap_test', 'img_pred_test', 'img_mask_test', 'img_fiber_test']
 
     api = wandb.Api()
 
@@ -122,15 +122,16 @@ if __name__ == "__main__":
         with open(os.path.join(group_name, ('captions_'+run.name+'.yml')), 'w') as f:
             yaml.dump(captions, f)
 
-        # download ROC plot data
-        artifact_dict = run.history(keys=['roc_table']).get('roc_table', [])[0]
-        roc_url = base_url + artifact_dict['path']
-        response = requests.get(roc_url)
-        if response.status_code == 200:
-            content_str = response.content.decode('utf-8')
-            roc_dict = json.loads(content_str)
-            with open(os.path.join(group_name, 'roc_%s.json' % str(run.name)), 'w') as f:
-                json.dump(roc_dict, f)
+        roc_artifact_list = run.history(keys=['roc_table']).get('roc_table', [])
+        if len(roc_artifact_list) > 0:
+            # download ROC plot data
+            roc_url = base_url + artifact_dict[0]['path']
+            response = requests.get(roc_url)
+            if response.status_code == 200:
+                content_str = response.content.decode('utf-8')
+                roc_dict = json.loads(content_str)
+                with open(os.path.join(group_name, 'roc_%s.json' % str(run.name)), 'w') as f:
+                    json.dump(roc_dict, f)
 
         # download training and validation curves
         curves_dict = {
@@ -142,5 +143,20 @@ if __name__ == "__main__":
             curves_dict[k] = [r[k] for _, r in run.history(keys=[k]).iterrows()]
         with open(os.path.join(group_name, 'curves_%s.json' % str(run.name)), 'w') as f:
             json.dump(curves_dict, f)
+
+        # table
+        table = run.use_artifact(run.logged_artifacts()[1]).get(table_key)
+        if table is None:
+            for i in [0]:
+                table = run.use_artifact(run.logged_artifacts()[i]).get(table_key)
+                if table is not None:
+                    break
+        if table is not None:
+            table_dict = {row[0]: {table.columns[i]: row[i] for i in range(1, len(table.columns))} for row in table.data}
+            with open(os.path.join(group_name, 'table_%s.json' % str(run.name)), 'w') as f:
+                json.dump(table_dict, f, indent=4)
+            md_table = convert_to_markdown(table)
+            with open(os.path.join(group_name, 'table_%s.md' % str(run.name)), 'w') as f:
+                f.write(md_table)
 
     print("Done.")
