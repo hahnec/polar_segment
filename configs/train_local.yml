@@ -53,7 +53,7 @@ wlens:
 
 # augmentation settings
 flips: True
-rotation: 180
+rotation: 45
 shuffle_crop: 0
 noise: 0
 gamma: 0

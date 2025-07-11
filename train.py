@@ -243,9 +243,8 @@ if __name__ == '__main__':
     transforms = [
             ToTensor(), 
             RandomPolarRotation(degrees=cfg.rotation, p=.5, pad_rotate=mirror_rotate, fill=[0]*int(cfg.class_num)+[1]) if cfg.rotation > 0 else EmptyTransform(),
-            RandomPolarFlip(orientation=0, p=.5) if cfg.flips else EmptyTransform(),
-            RandomPolarFlip(orientation=1, p=.5) if cfg.flips else EmptyTransform(),
-            RandomPolarFlip(orientation=2, p=.5) if cfg.flips else EmptyTransform(),
+            RandomPolarFlip(orientation=0, p=.25) if cfg.flips else EmptyTransform(),
+            RandomPolarFlip(orientation=1, p=.25) if cfg.flips else EmptyTransform(),
             GammaAugmentation(gamma_range=(0.5, 2.0)) if cfg.gamma else EmptyTransform(),
             RandomGaussNoise(mean=0.0, std=0.05, p=0.5) if cfg.noise > 0 else EmptyTransform(),
         ]
