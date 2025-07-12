@@ -18,7 +18,7 @@ bg_opt: False
 labeled_only: True
 group: Null
 class_num: 4
-num_workers: 0
+num_workers: 4
 patience: Null
 alpha: 0.25
 
@@ -52,8 +52,8 @@ wlens:
   - 550
 
 # augmentation settings
-flips: False
-rotation: 0
+flips: 1
+rotation: 45
 shuffle_crop: 0
 noise: 0
 gamma: 0
