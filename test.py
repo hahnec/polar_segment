@@ -19,9 +19,10 @@ from train import epoch_iter
 
 def test_main(cfg, dataset, model, mm_model):
 
-    # create data loaders
+    # create data loader
+    batch_size = max(cfg.batch_size, min(16, len(dataset)))
     num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
-    loader_args = dict(batch_size=1, num_workers=num_workers, pin_memory=True)
+    loader_args = dict(batch_size=batch_size, num_workers=num_workers, pin_memory=True)
     dataloader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
 
     with torch.no_grad():
@@ -41,7 +42,7 @@ def test_main(cfg, dataset, model, mm_model):
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
 
-    if len(np.unique(y_true[m])) > 1:
+    if len(np.unique(y_true[m])) < len(target_names[-n_channels:]):
         warnings.warn('Fewer number of labels than target names. This can be a result of tumor-only samples. Skipping ROC analysis.')
         return False
     
