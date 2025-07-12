@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 from omegaconf import OmegaConf
 from monai import transforms
+import matplotlib.pyplot as plt
 
 from horao_dataset import HORAO
 from utils.multi_focal_loss import sigmoid_focal_loss_multiclass
@@ -193,9 +194,15 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                     # fiber plot
                     azi, linr, img = feats[0][1], feats[0][0], feats[2]
                     fiber_img, cbar_img = plot_fiber(raw_azimuth=azi, linr=10, intensity=img, mask=mask)
+                    rgb = plt.cm.twilight_shifted(azi/180)
+                    rgb = ((rgb-rgb.min())/(rgb.max()-rgb.min()) * 255).astype(np.uint8)    # uint8 norm
+                    if not cfg.bg_opt:
+                        fiber_img = np.concatenate((fiber_img, alpha.permute(1,2,0).numpy()), axis=-1)
+                        azi_img = np.concatenate((rgb[..., :3], alpha.permute(1,2,0).numpy()), axis=-1)
                     wandb.log({
-                        'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
                         'cbar_fiber_'+branch_type: wandb.Image(cbar_img, caption=text[bidx]),
+                        'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
+                        'azimuth_'+branch_type: wandb.Image(azi_img, caption=text[bidx]),
                     })
 
             # metrics extension
@@ -335,8 +342,8 @@ if __name__ == '__main__':
             Device:          {cfg.device}
         ''')
 
-    # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
-    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
+    # set up the optimizer and the learning rate scheduler
+    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
 
     train_step, valid_step = (0, 0)
