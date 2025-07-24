@@ -49,13 +49,22 @@ def reduce_htgm(x, y, class_num=4):
     true = torch.stack([y[:, 0], hwm_true, twm_true, gm_true], dim=1) if y.shape[1] == 5 else torch.stack([hwm_true, twm_true, gm_true], dim=1)
 
     if class_num in (6, 7):
-        # negative indices to account for background class at index 0
-        iwm_pred = x[:, -6]
-        iwm_true = y[:, -6]
-        gm_pred = torch.maximum(gm_pred, x[:, -5])
-        gm_true = torch.logical_or(gm_true, y[:, -5]).float()
+        if False:
+            # concatenate infiltration zone channels 
+            iwm_pred = x[:, -6]
+            iwm_true = y[:, -6]
+            gm_pred = torch.maximum(gm_pred, x[:, -5])
+            gm_true = torch.logical_or(gm_true, y[:, -5]).float()
 
-        pred = torch.concat([x[:, 0][:, None], iwm_pred[:, None], pred], dim=1) if x.shape[1] == 7 else torch.concat([iwm_pred[:, None], pred], dim=1)
-        true = torch.concat([y[:, 0][:, None], iwm_true[:, None], true], dim=1) if y.shape[1] == 7 else torch.concat([iwm_true[:, None], true], dim=1)
+            pred = torch.concat([x[:, 0][:, None], iwm_pred[:, None], pred], dim=1) if x.shape[1] == 7 else torch.concat([iwm_pred[:, None], pred], dim=1)
+            true = torch.concat([y[:, 0][:, None], iwm_true[:, None], true], dim=1) if y.shape[1] == 7 else torch.concat([iwm_true[:, None], true], dim=1)
+        else:
+            # merge infiltration zone with tumor class
+            pred[:, -2] = torch.maximum(pred[:, -2], x[:, -6])
+            true[:, -2] = torch.logical_or(true[:, -2].bool(), y[:, -6]).float()
+            pred[:, -1] = torch.maximum(pred[:, -1], x[:, -5])
+            true[:, -1] = torch.logical_or(true[:, -1].bool(), y[:, -5]).float()
+            if x.shape[1] == 7: pred = torch.concat([x[:, 0][:, None], pred], dim=1)
+            if y.shape[1] == 7: true = torch.concat([y[:, 0][:, None], true], dim=1)
 
     return pred, true
