@@ -17,7 +17,7 @@ weight_decay: 1e-8
 bg_opt: False
 labeled_only: True
 group: Null
-class_num: 4
+class_num: 6
 num_workers: 4
 patience: Null
 alpha: 0.25
@@ -32,7 +32,7 @@ data_dir: ${loc_dir}
 data_subfolder: raw_data
 k_select: 0
 imbalance: False
-cases: ['val2_b_npp_new_ht.txt', 'k1_b_npp_new_ht.txt', 'k2_b_npp_new_ht.txt', 'k3_b_npp_new_ht.txt']
+cases: ['val2_b_npp_infiltrate.txt', 'k1_b_npp_infiltrate.txt', 'k2_b_npp_infiltrate.txt', 'k3_b_npp_infiltrate.txt']
 
 # mueller matrix parameters
 norm_opt: 1
