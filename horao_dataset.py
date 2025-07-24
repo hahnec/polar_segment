@@ -17,6 +17,7 @@ class HORAO(Dataset):
             wlens=[550], 
             class_num=4,
             blood_opt = False,
+            iz_opt = False,
         ):
 
         self.base_dir = Path(path)
@@ -27,6 +28,7 @@ class HORAO(Dataset):
         self.bg_opt = int(bool(bg_opt))
         self.cases_files = list(cases_file)
         self.blood_opt = blood_opt
+        self.iz_opt = iz_opt
 
         self.ids = []
         for cases_fn in self.cases_files:
@@ -108,12 +110,20 @@ class HORAO(Dataset):
         metadata = self.get_metadata(part) if img_class else part
 
         # tumor/healthy label construction
-        labels = np.array(Image.open(label_fname)).sum(-1) > 0
-        labels = labels[None].repeat(2, 0)
-        labels[~img_class] = 0
-        labels = labels.swapaxes(0, 1).swapaxes(1, 2)
-        labels = labels.astype(np.float32)
-        if labels.max() > 1: labels /= 255
+        labels = np.array(Image.open(label_fname))
+        if not self.iz_opt:
+            # binary labeling (healthy vs tumor)
+            labels = labels.sum(-1) > 0
+            labels = labels[None].repeat(2, 0)
+            labels[~img_class] = 0
+            labels = labels.swapaxes(0, 1).swapaxes(1, 2)
+            labels = labels.astype(np.float32)
+            if labels.max() > 1: labels /= 255
+        else:
+            # dual tumor class accompanying infiltration zone (iz)
+            labels = labels.astype(np.float32) // 255
+            iz_mask = labels.sum(-1) > 1
+            labels[iz_mask, 1] = 0
         # add background class (optional)
         bg = (np.array(Image.open(matter_fname)).sum(-1) == 0)[..., None]
         if self.bg_opt:
