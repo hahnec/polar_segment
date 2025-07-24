@@ -9,7 +9,6 @@ from pathlib import Path
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 from omegaconf import OmegaConf
-from monai import transforms
 import matplotlib.pyplot as plt
 
 from horao_dataset import HORAO

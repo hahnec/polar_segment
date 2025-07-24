@@ -3,7 +3,6 @@ numpy
 #torchvision
 opencv-python
 scikit-image
-monai>=1.3.2
 tqdm
 omegaconf
 scikit-learn
