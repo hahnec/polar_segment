@@ -113,7 +113,7 @@ class HORAO(Dataset):
             if labels.max() > 1: labels /= 255
         else:
             # dual tumor class accompanying infiltration zone (iz)
-            labels = labels.astype(np.float32) // 255
+            labels = labels.astype(np.float32) / 255
             iz_mask = labels.sum(-1) > 1
             labels[iz_mask, 1] = 0
             labels = labels[..., ::-1]  # assign tumor to last and healthy to second last channel
