@@ -17,7 +17,6 @@ class HORAO(Dataset):
             wlens=[550], 
             class_num=4,
             blood_opt = False,
-            iz_opt = False,
         ):
 
         self.base_dir = Path(path)
@@ -28,7 +27,7 @@ class HORAO(Dataset):
         self.bg_opt = int(bool(bg_opt))
         self.cases_files = list(cases_file)
         self.blood_opt = blood_opt
-        self.iz_opt = iz_opt
+        self.iz_opt = True if class_num > 4 else False
 
         self.ids = []
         for cases_fn in self.cases_files:
@@ -64,28 +63,21 @@ class HORAO(Dataset):
             self.matter_paths.append(matter_fname)
             self.img_classes.append(0 if id.__contains__('HT') else 1)
 
-    @staticmethod
-    def map_string(input_string):
-
-        string_map = {
-            'std': 'azimuth_local_var',
-            'mueller': 'M11',
-        }
-        
-        return string_map.get(input_string, input_string)
-
-    @staticmethod
-    def create_multilabels(labels, matter_labels, rearrange=True):
+    def create_multilabels(self, labels, matter_labels, rearrange=True):
         if rearrange:
             hwm = labels[..., -2].astype(bool) & matter_labels[..., -1].astype(bool)
             hgm = labels[..., -2].astype(bool) & matter_labels[..., -2].astype(bool)
             twm = labels[..., -1].astype(bool) & matter_labels[..., -1].astype(bool)
             tgm = labels[..., -1].astype(bool) & matter_labels[..., -2].astype(bool)
             new = np.stack([hwm, hgm, twm, tgm], axis=-1).astype(float)
+            if self.iz_opt:
+                iwm = labels[..., -3].astype(bool) & matter_labels[..., -1].astype(bool)
+                igm = labels[..., -3].astype(bool) & matter_labels[..., -2].astype(bool)
+                new = np.stack([iwm, igm, hwm, hgm, twm, tgm], axis=-1).astype(float)
         else:
             new = np.stack([labels[..., -2], labels[..., -1], matter_labels[..., -2], matter_labels[..., -1]], axis=-1).astype(float)
         
-        if labels.shape[-1] == 3:
+        if labels.shape[-1] == 3 and not self.iz_opt or labels.shape[-1] == 4 and self.iz_opt:
             bg = (labels[..., 0].astype(bool) & matter_labels[..., 0].astype(bool))[..., None] # ~np.any(new, -1)[..., None]
             return np.concatenate([bg.astype(float), new], axis=-1)
         
@@ -124,6 +116,7 @@ class HORAO(Dataset):
             labels = labels.astype(np.float32) // 255
             iz_mask = labels.sum(-1) > 1
             labels[iz_mask, 1] = 0
+            labels = labels[..., ::-1]  # assign tumor to last and healthy to second last channel
         # add background class (optional)
         bg = (np.array(Image.open(matter_fname)).sum(-1) == 0)[..., None]
         if self.bg_opt:
