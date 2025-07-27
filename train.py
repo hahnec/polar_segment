@@ -209,9 +209,6 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
                 preds_list.append(preds.cpu())
                 truth_list.append(truth.cpu())
 
-        # clear cache after processing each batch
-        torch.cuda.empty_cache()
-
     if cfg.logging and log_img:
         if best_frame_pred is not None: wandb.log({'best_img_pred_'+branch_type: wandb.Image(best_frame_pred.cpu(), caption=best_frame_text), 'epoch': epoch})
         if best_frame_mask is not None: wandb.log({'best_img_mask_'+branch_type: wandb.Image(best_frame_mask.cpu(), caption="green: healthy-GT; red: tumor-GT; blue: GM;"), 'epoch': epoch})
