@@ -12,7 +12,7 @@ from utils.draw_segment_img import draw_segment_maps
 
 def infer_dataloader(cfg, case, model, mm_model):
 
-    # import lib required for dataloader appraoch
+    # import lib required for dataloader approach
     from tqdm import tqdm
     from horao_dataset import HORAO
     from torch.utils.data import DataLoader
