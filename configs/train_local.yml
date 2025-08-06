@@ -17,13 +17,13 @@ weight_decay: 1e-8
 bg_opt: False
 labeled_only: True
 group: Null
-class_num: 4
-num_workers: 0
+class_num: 6
+num_workers: 4
 patience: Null
 alpha: 0.25
 
 # dataset
-data_path: TumorMeasurementsCalib/
+data_path: NPP/
 ubx_dir: /storage/homefs/ch21z139/01_datasets/${data_path}
 usb_dir: /media/chris/EB62-383C/${data_path}
 loc_dir: /home/chris/Datasets/03_HORAO/${data_path}
@@ -31,8 +31,8 @@ map_dir: Null
 data_dir: ${loc_dir}
 data_subfolder: raw_data
 k_select: 0
-imbalance: True
-cases: ['val2_b.txt', 'k1_b.txt', 'k2_b.txt', 'k3_b.txt']
+imbalance: False
+cases: ['val2_b_npp_infiltrate.txt', 'k1_b_npp_infiltrate.txt', 'k2_b_npp_infiltrate.txt', 'k3_b_npp_infiltrate.txt']
 
 # mueller matrix parameters
 norm_opt: 1
@@ -52,8 +52,8 @@ wlens:
   - 550
 
 # augmentation settings
-flips: True
-rotation: 180
+flips: 1
+rotation: 45
 shuffle_crop: 0
 noise: 0
 gamma: 0

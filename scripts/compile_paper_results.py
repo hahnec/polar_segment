@@ -150,7 +150,7 @@ def save_texfigure(sorted_groups, labels, filename='fig_segment.tex', captions=N
             img = images[i]
             latex_content += f"\\begin{{minipage}}[b]{{{image_width}}}\n\\centering\n"
             latex_content += f"\\includegraphics[width=\\textwidth]{{{img}}}\\\\\n"
-            if i+1 == len(labels): latex_content += f"{captions[k]}\n"
+            if i+1 == len(labels): latex_content += 'healthy' if 'AUTOPSY' in captions[k] else f"{captions[k]}\n"
             latex_content += "\\end{minipage}\n"
             #latex_content += "\\vspace{-.075cm}\n"
         
@@ -197,105 +197,111 @@ def merge_kfold_score(result, models, methods):
 
 if __name__ == '__main__':
 
-    group_name = 'kfold3_9ochs_bal_aug_bs2'
-    kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
-    kfold_num = int(group_name.lower().translate(str.maketrans('', '', '-_ ')).split('kfold')[-1][0])
-    run_list = []
-    for fn in Path('./' + group_name).glob('config_*.json'):
-        with open(fn, 'r') as f:
-            cfg = json.load(f)
-            if cfg['data_subfolder'].__contains__('raw') and cfg['levels'] <= 1:
-                run_list.append([fn, cfg['model'], cfg['levels']])
-    if len(run_list) == 0:
-        raise Exception('Empty folder')
-    sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1], int(str(x[0].name).split('-')[-1].split('.')[0])))
-    models = [el[1] for el in sorted_runs if el[1]]
-    methods = ['MMFF' if el[2] == 0 else 'LC' for el in sorted_runs]
+    group_stem = 'tip_mm_bs4_b_false' #
+    kfold_opt = True #group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
+    kfold_num = 3 #int(group_name.lower().translate(str.maketrans('', '', '-_ ')).split('kfold')[-1][0])
 
-    # table per class score
-    tables = []
-    for el in sorted_runs:
-        el = str(el[0]).replace('config', 'table')
-        with open(el, 'r') as f:
-            tab = json.load(f)
-        tables.append(tab)
-        score_key = 'f1-score'
-    result = extract_scores(tables, categories=['bg', 'hwm', 'twm', 'gm'], score_key=score_key)
-    n_result, n_models, n_methods = merge_kfold_score(result, models, methods) if kfold_opt else (result, models, methods)
-    save_textable(n_result, n_models, n_methods, categories=list(n_result.keys()), filename=group_name+'/'+'tab_'+score_key+'_per_class.tex')
+    for suffix in ['flip', 'rota', 'rotaflip']: #'absence', 'noise', 
+        group_name = group_stem + '_' + suffix
+        run_list = []
+        for fn in Path('./' + group_name).glob('config_*.json'):
+            with open(fn, 'r') as f:
+                cfg = json.load(f)
+                if cfg['data_subfolder'].__contains__('raw') and cfg['levels'] <= 1:
+                    run_list.append([fn, cfg['model'], cfg['levels']])
+        if len(run_list) == 0:
+            raise Exception('Empty folder')
+        sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1], int(str(x[0].name).split('-')[-1].split('.')[0])))
+        models = [el[1] for el in sorted_runs if el[1]]
+        methods = ['MMFF' if el[2] == 0 else 'LC' for el in sorted_runs]
 
-    # table semantic segmentation score
-    metrics = []
-    for el in sorted_runs:
-        el = str(el[0]).replace('config', 'metrics')
-        with open(el, 'r') as f:
-            tab = json.load(f)
-        metrics.append(tab)
-    metrics = {key: [d[key] for d in metrics] for key in metrics[0]}
-    n_metrics, n_models, n_methods = merge_kfold_score(metrics, models, methods) if kfold_opt else (metrics, models, methods)
-    categories = ['dice', 'auc', 't_s', 't_mm'] # 'iou', 'accuracy', 'test_loss'
-    save_textable(n_metrics, n_models, n_methods, categories=categories, filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
+        # table per class score
+        if False:
+            tables = []
+            for el in sorted_runs:
+                el = str(el[0]).replace('config', 'table')
+                with open(el, 'r') as f:
+                    tab = json.load(f)
+                tables.append(tab)
+                score_key = 'f1-score'
+            result = extract_scores(tables, categories=['bg', 'hwm', 'twm', 'gm'], score_key=score_key)
+            n_result, n_models, n_methods = merge_kfold_score(result, models, methods) if kfold_opt else (result, models, methods)
+            save_textable(n_result, n_models, n_methods, categories=list(n_result.keys()), filename=group_name+'/'+'tab_'+score_key+'_per_class.tex')
 
-    # image results
-    mapping_labels = {
-        'mlp': 'MLP',
-        'resnet': 'ResNet',
-        'unet': 'U-Net',
-    }
-    img_paths, labels = [], []
-    e = 2
-    img_columns, s = (7, 1000) if cfg['imbalance'] else (6, 900)
-    img_columns = 10 if group_name.__contains__('test') else img_columns
-    ks = kfold_num if kfold_opt else 1
-    for k in range(ks): # iterate trough folds (each fold is a figure)
-        for j, el in enumerate(sorted_runs[k::ks]):
-            method = ['MMFF', 'LC'][el[2]]
-            for i in range(img_columns):
-                for img_type in ['heatmap', 'img_mask', 'img_pred']:
-                    step_num = str(s*e+5+i) if el[1] != 'resnet' else str(s*e+1+i)
-                    tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
-                    fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
-                    # automatically find filename with correct step number
-                    img_path = list((Path(group_name) / 'downloaded_images').glob('_'.join(fn.split('_')[:-1])+'_*.png'))[0]
-                    if img_path.exists():
-                        if img_type == 'img_pred':
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '.png')
-                        elif img_type == 'heatmap':
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
-                        elif img_type == 'img_mask' and j == 0:
-                            dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-gt.png')
+        # table semantic segmentation score
+        metrics = []
+        for el in sorted_runs:
+            el = str(el[0]).replace('config', 'metrics')
+            with open(el, 'r') as f:
+                tab = json.load(f)
+            metrics.append(tab)
+        metrics = {key: [d[key] for d in metrics] for key in metrics[0]}
+        n_metrics, n_models, n_methods = merge_kfold_score(metrics, models, methods) if kfold_opt else (metrics, models, methods)
+        categories = ['dice', 'iou', 't_s', 't_mm'] #'auc',  'accuracy', 'test_loss'
+        save_textable(n_metrics, n_models, n_methods, categories=categories, filename=group_name+'/'+'tab_semantic_segmentation_scores.tex', digits=3)
+
+        # image results
+        mapping_labels = {
+            'mlp': 'MLP',
+            'resnet': 'ResNet',
+            'unet': 'U-Net',
+        }
+        img_paths, labels = [], []
+        e = 2
+        img_columns, s = (7, 1000) if cfg['imbalance'] else (6, 900)
+        img_columns = 10 if group_name.__contains__('mm_bs2_b') else img_columns
+        ks = kfold_num if kfold_opt else 1
+        for k in range(ks): # iterate trough folds (each fold is a figure)
+            k = 0
+            for j, el in enumerate(sorted_runs[k::ks]):
+                method = ['MMFF', 'LC'][el[2]]
+                for i in range(img_columns):
+                    for img_type in ['heatmap', 'img_mask', 'img_pred']:
+                        step_num = str(s*e+5+i) if el[1] != 'resnet' else str(s*e+1+i)
+                        tail = '_' +  str(i) + '_' +  img_type + '_test_' + step_num + '.png'
+                        fn = str(el[0]).replace('config_', '').replace('.json', tail).split('/')[-1]
+                        # automatically find filename with correct step number
+                        img_path = list((Path(group_name) / 'downloaded_images').glob('_'.join(fn.split('_')[:-1])+'_*.png'))[0]
+                        if img_path.exists():
+                            if img_type == 'img_pred':
+                                dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '.png')
+                            elif img_type == 'heatmap':
+                                dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-' + el[1] + '-heatmap.png')
+                            elif img_type == 'img_mask' and j == 0:
+                                dst = Path(group_name) / ('fig-' + str(i) + '-' + method + '-gt.png')
+                            else:
+                                continue
+                            if img_type != 'heatmap' and dst.name not in img_paths: 
+                                img_paths.append(dst.name)
+                                if i==0 and not dst.name.__contains__('gt'): labels.append(mapping_labels[el[1]] + '\\newline ' + method)
+                            copyfile(img_path, dst)
                         else:
-                            continue
-                        if img_type != 'heatmap' and dst.name not in img_paths: 
-                            img_paths.append(dst.name)
-                            if i==0 and not dst.name.__contains__('gt'): labels.append(mapping_labels[el[1]] + '\\newline ' + method)
-                        copyfile(img_path, dst)
-                    else:
-                        raise Exception('Could not find image file')
+                            raise Exception('Could not find image file')
 
-        # load image captions/labels
-        import yaml
-        with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
-            captions = list(yaml.safe_load(f).values())
-        captions = [c.split('|')[1] if c.__contains__('|') else c for c in captions] # filter sequence number etc.
-        captions = [c.split(',')[0].replace('Astrocytoma','A').replace('Oligodendroglioma','O') + c.split('WHO')[-1].replace('grade:','') if c != 'healthy' else c for c in captions]
+            # load image captions/labels
+            import yaml
+            with open(Path(group_name) / ('captions_'+el[0].name.replace('json', 'yml').split('_')[-1]), 'r') as f:
+                captions = list(yaml.safe_load(f).values())
+            captions = [c.split('|')[1] if c.__contains__('|') else c for c in captions] # filter sequence number etc.
+            captions = ['healthy' if c.__contains__('AUTOPSY') else c for c in captions] # convert "*_AUTOPSY_*" to "healthy"
+            captions = [c.split(',')[0].replace('Astrocytoma','A').replace('Oligodendroglioma','O') + c.split('WHO')[-1].replace('grade:','') if c != 'healthy' else c for c in captions]
 
-        # Group paths by their figure number prefix
-        from collections import defaultdict
-        grouped_paths = defaultdict(list)
-        for path in img_paths:
-            prefix = '-'.join(path.split('-')[:2])  # Extract the prefix (e.g., 'fig-0', 'fig-1')
-            grouped_paths[prefix].append(path)
+            # Group paths by their figure number prefix
+            from collections import defaultdict
+            grouped_paths = defaultdict(list)
+            for path in img_paths:
+                prefix = '-'.join(path.split('-')[:2])  # Extract the prefix (e.g., 'fig-0', 'fig-1')
+                grouped_paths[prefix].append(path)
 
-        # Sort the groups and their paths for consistent order
-        sorted_groups = sorted(grouped_paths.items(), key=lambda x: x[0])
-        sorted_groups = [el[1] for el in sorted_groups] # skip prefix
-        sorted_groups = [el[1:]+[el[0]] for el in sorted_groups] # move gt to last entry
+            # Sort the groups and their paths for consistent order
+            sorted_groups = sorted(grouped_paths.items(), key=lambda x: x[0])
+            sorted_groups = [el[1] for el in sorted_groups] # skip prefix
+            sorted_groups = [el[1:]+[el[0]] for el in sorted_groups] # move gt to last entry
 
-        # save figure tex file
-        fig_texname = 'fig_segment_%s.tex' % str(k)
-        save_texfigure(sorted_groups, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
-        compile_pdf(group_name, fig_texname, latex_file='figure_env_'+str(k)+'.tex')
+            # save figure tex file
+            fig_texname = 'fig_segment_%s.tex' % str(k)
+            save_texfigure(sorted_groups, labels+['GT\\newline'], filename=group_name+'/'+fig_texname, captions=captions)
+            compile_pdf(group_name, fig_texname, latex_file='figure_env_'+str(k)+'.tex')
 
-    # save table results (k-folds accumulated)
-    compile_pdf(group_name, 'tab_semantic_segmentation_scores.tex', latex_file='/table_env.tex')
+        # save table results (k-folds accumulated)
+        compile_pdf(group_name, 'tab_semantic_segmentation_scores.tex', latex_file='/table_env.tex')

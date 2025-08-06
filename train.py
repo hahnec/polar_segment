@@ -9,21 +9,22 @@ from pathlib import Path
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 from omegaconf import OmegaConf
-from monai import transforms
+import matplotlib.pyplot as plt
 
 from horao_dataset import HORAO
 from utils.multi_focal_loss import sigmoid_focal_loss_multiclass
 from utils.transforms_segment import *
 from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
-from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
+from utils.draw_segment_img import draw_segmentation_imgs, draw_segment_maps, draw_heat_maps, draw_fiber_maps
 from polar_augment.flip_raw import RandomPolarFlip
 from polar_augment.rotation_raw import RandomPolarRotation
+from polar_augment.padding import mirror_rotate
 from polar_augment.noise import RandomGaussNoise
 from polar_augment.gamma import GammaAugmentation
 from polar_augment.batch_segment_shuffle import BatchSegmentShuffler
 from utils.transforms_segment import RandomResizedCrop
 from mm.models import init_mm_model
-from utils.draw_fiber_img import plot_fiber
+from mm.utils.draw_fiber_img import plot_fiber
 from utils.duplicate_checks import check_duplicate_rows
 from utils.reproducibility import set_seed_and_deterministic
 
@@ -41,8 +42,7 @@ def batch_preprocess(batch, cfg):
         frames, truth = BatchSegmentShuffler('crop')(frames, truth)
 
     # extract intensity images for plots
-    imgs = frames[:, :16].clone().mean(1) if cfg.data_subfolder.__contains__('raw') else frames[:, 0].clone()
-    imgs.detach()
+    imgs = frames[:, :16].clone().mean(1).detach()
 
     return frames, truth, imgs, bg, text
 
@@ -54,7 +54,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     m = m.repeat_interleave(cfg.class_num, 1)
 
     # remove the realizability mask from the features
-    if cfg.data_subfolder.__contains__('raw') and 'mask' in cfg.feature_keys:
+    if 'mask' in cfg.feature_keys:
         wnum = len(cfg.wlens)
         mask = frames[:, -wnum:]
         frames = frames[:, :-wnum]
@@ -77,8 +77,6 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     loss = None
     if criterion and preds.numel() > 0:
         loss = criterion(preds*m, truth*m)
-        #loss = loss * m.squeeze(1)
-        loss = loss.sum() #/ (m.sum() + 1e-8)
     if train_opt and loss is not None and torch.isfinite(m).all() and m.any(): 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
@@ -88,7 +86,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
     # reduce prediction to healthy/tumor white matter and gray matter classes
     if cfg.class_num > 2:
         from utils.multi_loss import reduce_htgm
-        preds, truth = reduce_htgm(preds, truth)
+        preds, truth = reduce_htgm(preds.detach(), truth, class_num=cfg.class_num)
 
     # metrics
     mask = torch.any(truth, dim=1)
@@ -105,10 +103,7 @@ def batch_iter(frames, truth, cfg, model, train_opt=0, criterion=None, optimizer
 
 def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=None, log_img=False, epoch=None, optimizer=None):
 
-    criterion = torch.nn.CrossEntropyLoss() if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma, reduction='none'))
-    if cfg.class_num > 3 and branch_type != 'test':
-        from utils.multi_loss import multi_loss_aggregation
-        criterion = torch.nn.CrossEntropyLoss(reduction='none') if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma, reduction='none'))
+    criterion = torch.nn.CrossEntropyLoss() if not cfg.imbalance or branch_type == 'test' else (lambda x, y: sigmoid_focal_loss_multiclass(x, y, alpha=cfg.alpha, gamma=cfg.gamma))
     train_opt = 0 if optimizer is None else 1
     model.train() if train_opt else model.eval()
     batch_it = lambda f, t: batch_iter(f, t, cfg=cfg, model=model, train_opt=train_opt, criterion=criterion, optimizer=optimizer)
@@ -119,19 +114,20 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
     metrics_dict = {'dice': [], 'iou': [], 'acc': [], 't_mm': [], 't_s': []}
     best_score, best_frame_pred, best_frame_mask = 0, None, None
     poor_score, poor_frame_pred, poor_frame_mask = 1, None, None
+    if branch_type == 'test': preds_list, truth_list = [], []
     with tqdm(total=len(dataloader.dataset), desc=desc+' '+branch_type, unit='img') as pbar:
         for batch in dataloader:
             frames, truth, imgs, bg, text = batch_preprocess(batch, cfg)
-            ## polarimetry
+            # polarimetry
             start = torch.cuda.Event(enable_timing=True)
             end = torch.cuda.Event(enable_timing=True)
             start.record()
-            input = mm_model(frames) if cfg.data_subfolder.__contains__('raw') else frames
+            mm_frame = mm_model(frames)
             end.record()
             torch.cuda.synchronize()
             t_mm = start.elapsed_time(end) / 1000
             # segmentation
-            loss, preds, truth, metrics = batch_it(input, truth)
+            loss, preds, truth, metrics = batch_it(mm_frame, truth)
             metrics['t_mm'] = torch.tensor([t_mm/frames.size(0)])
             step += 1
             epoch_loss += loss.item()
@@ -169,39 +165,33 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             # log all test images
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
-                    frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
-                    out_class = int(batch[2][bidx]) + int(cfg.bg_opt)
-                    hmask = (preds[bidx].argmax(0) == 0) if cfg.bg_opt else None
-                    heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
-                    if not cfg.bg_opt:
-                        alpha = (~bg[bidx]).float()*255
-                        frame_pred = torch.cat((frame_pred, alpha), dim=0)
-                        frame_mask = torch.cat((frame_mask, alpha), dim=0)
-                        heatmap = np.concatenate((heatmap, (~bg[bidx]).float().moveaxis(0, -1).cpu().numpy()), axis=-1)
+                    # draw segment images
+                    frame_pred = draw_segment_maps(imgs, preds, bg=bg, bidx=bidx)
+                    frame_mask = draw_segment_maps(imgs, truth, bg=bg, bidx=bidx)
+                    heatmap = draw_heat_maps(imgs, preds, bg=None, bidx=bidx, out_class=int(batch[2][bidx])+int(cfg.bg_opt))
                     wandb.log({
                         'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=text[bidx]),
                         'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=text[bidx]), 
                         'heatmap_'+branch_type: wandb.Image(heatmap, caption=text[bidx]), 
                         branch_type+'_step': step+bidx
                     })
-                    # fiber tracts image
-                    if cfg.data_subfolder.__contains__('raw'):
-                        from mm.models import LuChipmanModel
-                        azimuth_model = LuChipmanModel(feature_keys=['azimuth', 'linr'])
-                        lc_feats = azimuth_model(frames)
-                        masks = preds.argmax(1) == 0 # predicted healthy white matter mask
-                        vars = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
-                        mask = ~(vars[1] & ~bg[bidx, 0].numpy())
-                        # tbd: adjust fiber plot, which fails after rectification providing correct linear retardance
-                        fiber_img = plot_fiber(raw_azimuth=vars[0][0], linr=vars[0][1], mask=mask, intensity=vars[2])
-                        wandb.log({
-                            'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
-                            #branch_type+'_step': step+bidx
-                        })
+                    # draw fiber tracts images
+                    from mm.models import LuChipmanModel
+                    azimuth_model = LuChipmanModel(feature_keys=['linr', 'azimuth'], norm_opt=0)
+                    fiber_img, azi_img, cbar_img = draw_fiber_maps(frames, preds, azimuth_model, bg=bg, bidx=bidx)
+                    wandb.log({
+                        'azimuth_'+branch_type: wandb.Image(azi_img, caption=text[bidx]),
+                        'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
+                        'cbar_fiber_'+branch_type: wandb.Image(cbar_img, caption=text[bidx]),
+                    })
 
             # metrics extension
             for k in metrics_dict.keys():
                 metrics_dict[k].extend(metrics[k].detach().cpu().numpy())
+
+            if branch_type == 'test':
+                preds_list.append(preds.cpu())
+                truth_list.append(truth.cpu())
 
     if cfg.logging and log_img:
         if best_frame_pred is not None: wandb.log({'best_img_pred_'+branch_type: wandb.Image(best_frame_pred.cpu(), caption=best_frame_text), 'epoch': epoch})
@@ -211,10 +201,10 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
 
     # consolidate metrics to one scalar value per key
     for k in metrics_dict.keys():
-        metrics_dict[k] = float(np.array(metrics_dict[k]).mean())
+        metrics_dict[k] = float(np.mean(metrics_dict[k]))
 
     if branch_type == 'test':
-        return preds, truth, metrics_dict
+        return torch.cat(preds_list, dim=0), torch.cat(truth_list, dim=0), metrics_dict
     else:
         return model, mm_model, metrics_dict, step, epoch_loss
 
@@ -237,22 +227,20 @@ if __name__ == '__main__':
     logging.info(f'Using device {cfg.device}')
 
     # augmentation transforms
-    raw_opt = True if cfg.data_subfolder.__contains__('raw') else False
     transforms = [
             ToTensor(), 
-            RandomPolarRotation(degrees=cfg.rotation, p=.5, fill=[0]*int(cfg.class_num)+[1]) if cfg.rotation > 0 and raw_opt else EmptyTransform(),
-            RandomPolarFlip(orientation=0, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
-            RandomPolarFlip(orientation=1, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
-            RandomPolarFlip(orientation=2, p=.5) if cfg.flips and raw_opt else EmptyTransform(),
+            RandomPolarRotation(degrees=cfg.rotation, p=.5, pad_rotate=mirror_rotate, fill=[0]*int(cfg.class_num)+[1]) if cfg.rotation > 0 else EmptyTransform(),
+            RandomPolarFlip(orientation=0, p=.25) if cfg.flips else EmptyTransform(),
+            RandomPolarFlip(orientation=1, p=.25) if cfg.flips else EmptyTransform(),
             GammaAugmentation(gamma_range=(0.5, 2.0)) if cfg.gamma else EmptyTransform(),
             RandomGaussNoise(mean=0.0, std=0.05, p=0.5) if cfg.noise > 0 else EmptyTransform(),
         ]
 
     # mueller matrix model
-    mm_model = init_mm_model(cfg, filter_opt=False) if cfg.data_subfolder.__contains__('raw') else None
+    mm_model = init_mm_model(cfg, filter_opt=False)
 
     # model selection
-    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len(cfg.feature_keys)
+    n_channels = mm_model.ochs
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt)
@@ -289,12 +277,12 @@ if __name__ == '__main__':
 
     # create datasets
     if cfg.imbalance: cfg.cases = [fname.split('.txt')[0] + '_imbalance.txt' if not fname.startswith('val') else fname for fname in cfg.cases]
-    check_duplicate_rows(Path(cfg.data_dir) / 'cases', cfg.cases)
+    check_duplicate_rows(Path('.') / 'cases', cfg.cases)
     from utils.kfold_splits import get_nested_kfold_splits
     splits = get_nested_kfold_splits(cfg.cases)
     train_cases, test_cases, valid_cases = splits[cfg.k_select]
-    dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, use_no_border=False)
-    val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, use_no_border=False)
+    dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, wlens=cfg.wlens)
+    val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, wlens=cfg.wlens)
 
     # reproducibility when using multiple workers
     g = torch.Generator().manual_seed(cfg.seed)
@@ -322,7 +310,7 @@ if __name__ == '__main__':
 
     # instantiate logging
     if cfg.logging:
-        wb = wandb.init(project='polar_segment_opex', resume='allow', anonymous='must', config=dict(cfg), group=cfg.group, entity='hahnec')
+        wb = wandb.init(project='polar_segment_npp', resume='allow', anonymous='must', config=dict(cfg), group=cfg.group, entity='hahnec')
         wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr))
 
         logging.info(f'''Starting training:
@@ -334,8 +322,8 @@ if __name__ == '__main__':
             Device:          {cfg.device}
         ''')
 
-    # set up the optimizer, the loss, the learning rate scheduler and the loss scaling
-    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay) #, foreach=True)
+    # set up the optimizer and the learning rate scheduler
+    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg.epochs)
 
     train_step, valid_step = (0, 0)
@@ -374,7 +362,7 @@ if __name__ == '__main__':
             best_epoch_score = epoch_score
             best_model = copy.deepcopy(model).eval()
             best_epoch = epoch
-            if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
+            if cfg.kernel_size > 0:
                 best_mm_model = copy.deepcopy(mm_model).eval()
             epochs_decline = 0
         else:
@@ -388,7 +376,7 @@ if __name__ == '__main__':
         dir_checkpoint.mkdir(parents=True, exist_ok=True)
         state_dict = best_model.state_dict()
         torch.save(state_dict, str(dir_checkpoint / (wb.name+str('_ckpt_epoch{}.pt'.format(best_epoch)))))
-        if cfg.data_subfolder.__contains__('raw') and cfg.kernel_size > 0:
+        if cfg.kernel_size > 0:
             state_dict_mm = best_mm_model.state_dict()
             torch.save(state_dict_mm, str(dir_checkpoint / (wb.name+str('_mm_ckpt_epoch{}.pt'.format(best_epoch)))))
         logging.info(f'Checkpoint {best_epoch} saved!')
@@ -407,9 +395,6 @@ if __name__ == '__main__':
         transforms=[ToTensor()], 
         class_num=cfg.class_num, 
         bg_opt=cfg.bg_opt, 
-        data_subfolder=cfg.data_subfolder, 
-        keys=cfg.feature_keys, 
         wlens=cfg.wlens,
-        use_no_border=False,
         )
     test_main(cfg, test_set, best_model, best_mm_model)

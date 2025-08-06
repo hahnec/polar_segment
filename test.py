@@ -8,6 +8,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from omegaconf import OmegaConf
 from sklearn.metrics import classification_report, roc_curve, auc
+import warnings
 
 from horao_dataset import HORAO
 from utils.transforms_segment import *
@@ -18,28 +19,37 @@ from train import epoch_iter
 
 def test_main(cfg, dataset, model, mm_model):
 
-    # create data loaders
+    # create data loader
+    batch_size = max(cfg.batch_size, min(16, len(dataset)))
     num_workers = min(2, os.cpu_count()) if cfg.num_workers is None else cfg.num_workers
-    loader_args = dict(batch_size=len(dataset), num_workers=num_workers, pin_memory=True) # large batch size to include tumor and healthy for NaN-safe AUC
+    loader_args = dict(batch_size=batch_size, num_workers=num_workers, pin_memory=True)
     dataloader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
 
     with torch.no_grad():
         preds, truth, metrics = epoch_iter(cfg, dataloader, model, mm_model, branch_type='test')
 
-    # pixel-wise assessment (all classes)
+    if cfg.logging:
+        # upload metrics to wandb
+        wandb.log(metrics)
+        wandb.log({'accuracy': metrics['acc']})
+        table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
+        wandb.log({'metrics': table_metrics})
+
+    # pixel-wise multi-class assessment
     n_channels = int(preds.shape[1])
     m = torch.any(truth, dim=1).flatten().cpu().numpy() if cfg.labeled_only else np.ones(truth[:, 0].shape, dtype=bool).flatten()
     y_true = truth.argmax(1).flatten().cpu().numpy()
     y_pred = preds.argmax(1).flatten().cpu().numpy()
     target_names = ['bg', 'benign', 'malignant'] if n_channels-cfg.bg_opt < 3 else ['bg', 'hwm', 'twm', 'gm']
 
-    try:
-        report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
-    except ValueError as e:
-        print(e)
+    if len(np.unique(y_true[m])) < len(target_names[-n_channels:]):
+        warnings.warn('Fewer number of labels than target names. This can be a result of tumor-only samples. Skipping ROC analysis.')
         return False
-
-    # ROC curve (dual class: healthy vs tumor)
+    
+    # sklearn report
+    report = classification_report(y_true[m], y_pred[m], target_names=target_names[-n_channels:], digits=4, output_dict=bool(cfg.logging))
+    
+    # ROC curve (binary classification: healthy vs tumor)
     class_idcs = [int(cfg.bg_opt), 2+int(cfg.bg_opt)] # assuming GM is last
     wb_t = truth[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
     wb_p = preds[:, class_idcs[0]:class_idcs[1]].permute(0, 2, 3, 1).reshape(-1, class_idcs[1]-class_idcs[0]).cpu().numpy()
@@ -48,24 +58,15 @@ def test_main(cfg, dataset, model, mm_model):
     fpr, tpr, ths = roc_curve(wb_t[vidx].argmax(1), wb_p[vidx][:, pos_class_idx])
     roc_auc = auc(fpr, tpr)
 
-    if cfg.batch_size == 1:
-        import warnings
-        warnings.warn('ROC curve for two-class at batch size 1 gives no ROC curve.')
-
     if cfg.logging:
-        # upload metrics to wandb
-        wandb.log(metrics)
-        wandb.log({'accuracy': metrics['acc']})
-        wandb.log({'auc': roc_auc})
-        table_metrics = wandb.Table(columns=list(metrics.keys()), data=[list(metrics.values())])
-        wandb.log({'metrics': table_metrics})
         # convert report to wandb table
         flat_report = flatten_dict_to_rows(report)
         table_report = wandb.Table(columns=['category', 'precision', 'recall', 'f1-score', 'support', 'accuracy'])
         for row in flat_report:
             table_report.add_data(row['category'], row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support'), row.get('accuracy'))
         wandb.log({'report': table_report})
-        # ROC plot
+        # ROC logging
+        wandb.log({'auc': roc_auc})
         if False:
             wandb.log({'roc_wandb': wandb.plot.roc_curve(wb_t[vidx].argmax(1), wb_p[vidx], labels=target_names[-n_channels:][class_idcs[0]:class_idcs[1]])})
         else:
@@ -127,18 +128,15 @@ if __name__ == '__main__':
     logging.info(f'Using device {cfg.device}')
 
     # mueller matrix model
-    if cfg.data_subfolder.__contains__('raw'):
-        mm_model = init_mm_model(cfg, train_opt=False)
-        if cfg.kernel_size > 0:
-            ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.mm_model_file.split('_')[0])]
-            state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)['state_dict']
-            mm_model.load_state_dict(state_dict)
-            logging.info(f'MM Model loaded from {cfg.mm_model_file}')
-    else:
-        mm_model = None
+    mm_model = init_mm_model(cfg, train_opt=False)
+    if cfg.kernel_size > 0:
+        ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.mm_model_file.split('_')[0])]
+        state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)['state_dict']
+        mm_model.load_state_dict(state_dict)
+        logging.info(f'MM Model loaded from {cfg.mm_model_file}')
 
     # model selection
-    n_channels = mm_model.ochs if cfg.data_subfolder.__contains__('raw') else len(cfg.feature_keys)
+    n_channels = mm_model.ochs
     if cfg.model == 'mlp':
         from segment_models.mlp import MLP
         model = MLP(n_channels=n_channels, n_classes=cfg.class_num+cfg.bg_opt)
@@ -174,12 +172,12 @@ if __name__ == '__main__':
 
     # instantiate logging
     if cfg.logging:
-        wb = wandb.init(project='polar_segment_test', resume='allow', anonymous='must', config=dict(cfg), group='train', entity='horao_project')
+        wb = wandb.init(project='polar_segment_test', resume='allow', anonymous='must', config=dict(cfg), group='train') #, entity='horao_project'
         wb.config.update(dict(epochs=cfg.epochs, batch_size=cfg.batch_size, learning_rate=cfg.lr))
 
     for case in cfg.cases:
         # create dataset
-        dataset = HORAO(cfg.data_dir, [case], transforms=[ToTensor()], bg_opt=cfg.bg_opt, data_subfolder=cfg.data_subfolder, keys=cfg.feature_keys, wlens=cfg.wlens, class_num=cfg.class_num, use_no_border=False)
+        dataset = HORAO(cfg.data_dir, [case], transforms=[ToTensor()], bg_opt=cfg.bg_opt, wlens=cfg.wlens, class_num=cfg.class_num)
         
         # run test
         test_main(cfg, dataset, model, mm_model)

@@ -13,6 +13,6 @@ noise: 0
 gamma: 0
 
 # dataset
-cases: ['test_tumor_grade4.txt', 'test_tumor_grade3.txt', 'test_tumor_grade2.txt']
+cases: ['test_tumor_grade4_npp.txt', 'test_tumor_grade3_npp.txt', 'test_tumor_grade2_npp.txt']
 class_num: 4
 bg_opt: False

@@ -28,18 +28,17 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18, 
     plt.rcParams['text.usetex'] = True
     plt.rcParams['xtick.labelsize'] = fontsize
     plt.rcParams['ytick.labelsize'] = fontsize
-    plt.figure(figsize=(15, 15))
-    fig, axs = plt.subplots(1, 1)
+    fig, axs = plt.subplots(1, 1) #, figsize=(8, 5)
     x = np.arange(len(curve_means[0]))
-    colors = ['#d62728', '#8c564b', '#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd'][:len(curve_means)]
-    styles = ['-', '-.', (0, (3, 1, 1, 1, 1, 1)), (5, (10, 3)), '--', ':', (0, (3, 5, 1, 5, 1, 5))][:len(curve_means)]
+    colors = ['#d62728', '#8c564b', '#9467bd', '#ff7f0e', '#2ca02c', '#1f77b4', '#000'][:len(curve_means)]
+    styles = ['-.', (0, (3, 1, 1, 1, 1, 1)), (5, (10, 3)), '--', ':', (0, (3, 5, 1, 5, 1, 5)), '-'][:len(curve_means)]
     labels = [str(num) for num in range(len(curve_means))] if labels is None else labels
     for mean, std, l, c, s in zip(curve_means, curve_stds, labels, colors, styles):
         axs.semilogy(x, mean, label=l, color=c, linestyle=s) if semilog_opt else axs.plot(x, mean, label=l, color=c, linestyle=s)
         axs.fill_between(x, mean - std, mean + std, color=c, alpha=0.15)
         if filename.__contains__('loss'):
             min_ylim = round(np.min(curve_means-curve_stds), 1)*0.985
-            max_ylim = round(np.max(curve_means+0), 1)*1.015
+            max_ylim = round(np.max(curve_means+0), 1)*1.15#*1.015 #
         else:
             min_ylim = 0.5
             max_ylim = round(np.max(curve_means+0), 1)
@@ -64,10 +63,9 @@ def plot_curves(curve_means, curve_stds, labels=None, filename='', fontsize=18, 
 
             axs.set_yticklabels([f"{int(tick)}" for tick in custom_ticks])  # Format as integers
 
-
     axs.set_xlabel('Steps [\\#]', fontsize=fontsize)
     axs.set_ylabel(filename.split('_')[-1].capitalize()+' [a.u.]', fontsize=fontsize)
-    axs.legend(loc='upper left' if filename.__contains__('loss') else 'lower right', fontsize=fontsize)
+    axs.legend(loc='upper right' if filename.__contains__('train') else 'upper left', fontsize=fontsize-2, ncol=1, frameon=True)
     plt.tight_layout()
     plt.savefig(Path(__file__).parent / (filename+'_figure.svg'), format='svg')
 
@@ -84,8 +82,10 @@ def exponential_moving_average(data, alpha=0.3):
 if __name__ == "__main__":
 
     run_type = 'MMFFunet'#'LCunet' #
-    group_names = ['kfold4bdice_200_absence', 'kfold4bdice_200_false_flip', 'kfold4bdice_200_flip', 'kfold4bdice_200_false_rota', 'kfold4bdice_200_rota']
-    label_names = ['No augmentation', 'spatial-only flips', 'polar-aware flips', 'spatial-only rotations', 'polar-aware rotations']
+    #group_names = ['kfold3_200_9ochs_bal_border_absence', 'kfold3_200_9ochs_bal_border_noise', 'kfold3_200_9ochs_bal_border_false_flip', 'kfold3_200_9ochs_bal_border_false_rota', 'kfold3_200_9ochs_bal_border_flip', 'kfold3_200_9ochs_bal_border_rota']
+    #label_names = ['No augmentation', 'spatial-only flips', 'polar-aware flips', 'spatial-only rotations', 'polar-aware rotations']
+    group_names = ['tip_mm_bs2_b_absence', 'tip_mm_bs2_b_false_flip', 'tip_mm_bs2_b_false_rota', 'tip_mm_bs2_b_false_rotaflip', 'tip_mm_bs2_b_flip', 'tip_mm_bs2_b_rota', 'tip_mm_bs2_b_rotaflip']
+    label_names = ['No augmentation', 'Spatial-only Flips', 'Spatial-only Rotation', 'Spatial-only Rotation \& Flips', 'Polar-aware Flips', 'Polar-aware Rotation', 'Polar-aware Rotation \& Flips']
     curves_dict = {k: {} for k in group_names}
     for group_name in group_names:
         kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
