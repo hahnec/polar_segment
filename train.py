@@ -15,7 +15,7 @@ from horao_dataset import HORAO
 from utils.multi_focal_loss import sigmoid_focal_loss_multiclass
 from utils.transforms_segment import *
 from utils.metrics import compute_dice_score, compute_iou, compute_accuracy
-from utils.draw_segment_img import draw_segmentation_imgs, draw_heatmap
+from utils.draw_segment_img import draw_segmentation_imgs, draw_segment_maps, draw_heat_maps, draw_fiber_maps
 from polar_augment.flip_raw import RandomPolarFlip
 from polar_augment.rotation_raw import RandomPolarRotation
 from polar_augment.padding import mirror_rotate
@@ -165,40 +165,24 @@ def epoch_iter(cfg, dataloader, model, mm_model=None, branch_type='test', step=N
             # log all test images
             if cfg.logging and branch_type == 'test':
                 for bidx in range(truth.shape[0]):
-                    frame_pred, frame_mask = draw_segmentation_imgs(imgs, preds, truth, bidx=bidx, bg_opt=cfg.bg_opt)
-                    out_class = int(batch[2][bidx]) + int(cfg.bg_opt)
-                    hmask = (preds[bidx].argmax(0) == 0) if cfg.bg_opt else None
-                    heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
-                    if not cfg.bg_opt:
-                        alpha = (~bg[bidx]).float()*255
-                        frame_pred = torch.cat((frame_pred, alpha), dim=0)
-                        frame_mask = torch.cat((frame_mask, alpha), dim=0)
-                        heatmap = np.concatenate((heatmap, (~bg[bidx]).float().moveaxis(0, -1).cpu().numpy()), axis=-1)
+                    # draw segment images
+                    frame_pred = draw_segment_maps(imgs, preds, bg=bg, bidx=bidx)
+                    frame_mask = draw_segment_maps(imgs, truth, bg=bg, bidx=bidx)
+                    heatmap = draw_heat_maps(imgs, preds, bg=None, bidx=bidx, out_class=int(batch[2][bidx])+int(cfg.bg_opt))
                     wandb.log({
                         'img_pred_'+branch_type: wandb.Image(frame_pred.cpu(), caption=text[bidx]),
                         'img_mask_'+branch_type: wandb.Image(frame_mask.cpu(), caption=text[bidx]), 
                         'heatmap_'+branch_type: wandb.Image(heatmap, caption=text[bidx]), 
                         branch_type+'_step': step+bidx
                     })
-                    # fiber tracts image
+                    # draw fiber tracts images
                     from mm.models import LuChipmanModel
                     azimuth_model = LuChipmanModel(feature_keys=['linr', 'azimuth'], norm_opt=0)
-                    lc_feats = azimuth_model(frames)
-                    masks = (preds.argmax(1) == 0) | (preds.argmax(1) == 1) # predicted healthy and tumor white matter mask
-                    feats = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
-                    mask = ~(feats[1] & ~bg[bidx, 0].numpy())
-                    # fiber plot
-                    azi, linr, img = feats[0][1], feats[0][0], feats[2]
-                    fiber_img, cbar_img = plot_fiber(raw_azimuth=azi, linr=10, intensity=img, mask=mask)
-                    rgb = plt.cm.twilight_shifted(azi/180)
-                    rgb = ((rgb-rgb.min())/(rgb.max()-rgb.min()) * 255).astype(np.uint8)    # uint8 norm
-                    if not cfg.bg_opt:
-                        fiber_img = np.concatenate((fiber_img, alpha.permute(1,2,0).numpy()), axis=-1)
-                        azi_img = np.concatenate((rgb[..., :3], alpha.permute(1,2,0).numpy()), axis=-1)
+                    fiber_img, azi_img, cbar_img = draw_fiber_maps(frames, preds, azimuth_model, bg=bg, bidx=bidx)
                     wandb.log({
-                        'cbar_fiber_'+branch_type: wandb.Image(cbar_img, caption=text[bidx]),
-                        'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
                         'azimuth_'+branch_type: wandb.Image(azi_img, caption=text[bidx]),
+                        'img_fiber_'+branch_type: wandb.Image(fiber_img, caption=text[bidx]),
+                        'cbar_fiber_'+branch_type: wandb.Image(cbar_img, caption=text[bidx]),
                     })
 
             # metrics extension
