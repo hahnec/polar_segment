@@ -1,6 +1,9 @@
 # polar_segment
 
-This is a polarimetric image segmentation framework developed for brain tumor identification. This framework uses the `NPP dataset` (formerly `TumorMeasurementsCalib`; see dataloader in git history) containing per-pixel Mueller matrices of ex-vivo brain tissues. Nonetheless, swapping the dataset loading file `horao_dataset.py` with a custom dataset should be possible as long as the labels of the custom dataset are arranged accordingly.
+This is a polarimetric image segmentation framework developed for brain tumor identification. This framework uses the `NPP dataset` (formerly `TumorMeasurementsCalib`; see dataloader in git history) containing per-pixel Mueller matrices of ex-vivo brain tissues. Nonetheless, swapping the dataset loading file `horao_dataset.py` with a custom dataset should be possible as long as the labels of the custom dataset are arranged accordingly. The repo uses the following related frameworks:
+
+- [mm_torch](https://github.com/hahnec/mm_torch) for deterministic Mueller matrix processing
+- [polar_augment](https://github.com/hahnec/polar_augment) for data augmentation tailored for polarimetry
 
 ## Citation
 
@@ -15,6 +18,16 @@ This is a polarimetric image segmentation framework developed for brain tumor id
   keywords={},
   doi={}
 }</pre>
+
+<pre>@misc{hahne2024isometrictransformationsimageaugmentation,
+      title={Physically Consistent Image Augmentation for Deep Learning in Mueller Matrix Polarimetry}, 
+      author={Christopher Hahne and Omar Rodriguez-Nunez and Éléa Gros and Théotim Lucas and Ekkehard Hewer and Tatiana Novikova and Theoni Maragkou and Philippe Schucht and Richard McKinley},
+      year={2024},
+      eprint={2411.07918},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2411.07918}, 
+} </pre>
 
 ## Installation
 
