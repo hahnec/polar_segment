@@ -34,6 +34,21 @@ class MLP(torch.nn.Module):
         x = self.output_layer(x)
         return x.view(dims[0], *dims[2:], self.n_classes).permute(0, 3, 1, 2) if len(dims) == 4 else x
 
+class BatchMLP(MLP):
+    def __init__(self, args, kwargs):
+        super(MLP, self).__init__(*args, **kwargs)
+        self.batch_size = 4
+
+    def forward(self, x):
+        dims = x.shape
+        x = x.permute(0, 2, 3, 1).reshape(-1, self.n_channels) if len(dims) == 4 else x
+        for i in range(0, len(x.shape[0]), self.batch_size):
+            x = self.hidden_layer1(x)
+            x = self.hidden_layer2(x)
+            x = self.act_fun(x)
+            x = self.dropout(x)
+            x = self.output_layer(x)
+            return x.view(dims[0], *dims[2:], self.n_classes).permute(0, 3, 1, 2) if len(dims) == 4 else x
 
 class PatchMLP(nn.Module):
     def __init__(self, n_channels=1, n_classes=2, patch_size=50, testing=False):
