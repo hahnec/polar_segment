@@ -4,7 +4,7 @@ This is a polarimetric image segmentation framework developed for brain tumor id
 
 ## Citation
 
-@article{hahne:2025:polar_segment,
+<pre>@article{hahne:2025:polar_segment,
   author={},
   journal={}, 
   title={}, 
@@ -14,7 +14,7 @@ This is a polarimetric image segmentation framework developed for brain tumor id
   pages={},
   keywords={},
   doi={}
-}
+}</pre>
 
 ## Installation
 
