@@ -1,6 +1,6 @@
 # polar_segment
 
-This is a polarimetric image segmentation framework developed for brain tumor identification. This framework uses the `TumorMeasurementsCalib` and the more recent and refined `NPP dataset` containing per-pixel Mueller matrices of ex-vivo brain tissues. Nonetheless, swapping the dataset loading file `horao_dataset.py` with your custom dataset shall be possible as long as the labels of the new dataset are arranged accordingly.
+This is a polarimetric image segmentation framework developed for brain tumor identification. This framework uses the `NPP dataset` (formerly `TumorMeasurementsCalib`; see dataloader in git history) containing per-pixel Mueller matrices of ex-vivo brain tissues. Nonetheless, swapping the dataset loading file `horao_dataset.py` with a custom dataset should be possible as long as the labels of the custom dataset are arranged accordingly.
 
 ## Citation
 
@@ -28,7 +28,7 @@ $ bash install.sh
 
 ### Models
 
-1. Download a set of models, e.g. from our publication (please [cite](#citation)):
+1. Download a set of models, e.g. from our publication (please [cite our work](#citation)):
 
   - *HF link*
 
