@@ -7,6 +7,7 @@ from pathlib import Path
 from omegaconf import OmegaConf
 
 from mm.models import init_mm_model
+from utils.multi_loss import reduce_htgm_infer
 from utils.draw_segment_img import draw_segment_maps
 
 
@@ -47,6 +48,9 @@ def iter(raw_frame, model, mm_model=None, log_img=True, bg=None):
 
     # segmentation
     preds = model(frame)
+
+    # reduce prediction to healthy/tumor white matter and gray matter classes
+    preds = reduce_htgm_infer(preds, class_num=preds.shape[1])
 
     # image results
     if log_img:

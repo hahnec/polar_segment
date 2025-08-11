@@ -68,3 +68,29 @@ def reduce_htgm(x, y, class_num=4):
             if y.shape[1] == 7: true = torch.concat([y[:, 0][:, None], true], dim=1)
 
     return pred, true
+
+def reduce_htgm_infer(x, class_num=4):
+
+    # skip reduction for fewer than 2 classes
+    if class_num <= 2:
+        return x
+
+    # negative indices to account for background class at index 0
+    hwm_pred = x[:, -4]
+    twm_pred = x[:, -2]
+    gm_pred = torch.maximum(x[:, -1], x[:, -3])
+
+    pred = torch.stack([x[:, 0], hwm_pred, twm_pred, gm_pred], dim=1) if x.shape[1] == 5 else torch.stack([hwm_pred, twm_pred, gm_pred], dim=1)
+    if class_num in (6, 7):
+        if False:
+            # concatenate infiltration zone channels 
+            iwm_pred = x[:, -6]
+            gm_pred = torch.maximum(gm_pred, x[:, -5])
+            pred = torch.concat([x[:, 0][:, None], iwm_pred[:, None], pred], dim=1) if x.shape[1] == 7 else torch.concat([iwm_pred[:, None], pred], dim=1)
+        else:
+            # merge infiltration zone with tumor class
+            pred[:, -2] = torch.maximum(pred[:, -2], x[:, -6])
+            pred[:, -1] = torch.maximum(pred[:, -1], x[:, -5])
+            if x.shape[1] == 7: pred = torch.concat([x[:, 0][:, None], pred], dim=1)
+
+    return pred
