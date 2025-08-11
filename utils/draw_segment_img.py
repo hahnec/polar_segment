@@ -1,23 +1,85 @@
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
 from torchvision.utils import draw_segmentation_masks
 
+from mm.utils.draw_fiber_img import plot_fiber
+
+
+def draw_segment_maps(imgs, preds, bg=None, bidx=0):
+
+    # extract intensity images for plots
+    bg_opt = True if bg is not None and isinstance(bg, torch.Tensor) else False
+    frame_pred = draw_segmentation_img(imgs, preds, bidx=bidx, bg_opt=bg_opt)
+    out_class = -1
+    hmask = (preds[bidx].argmax(0) == 0) if bg_opt else None
+    if bg_opt:
+        alpha = (~bg[bidx]).float()*255
+        frame_pred = torch.cat((frame_pred, alpha), dim=0)
+
+    return frame_pred
+
+def draw_heat_maps(imgs, preds, bg=None, bidx=0, out_class=-1):
+
+    # extract intensity images for plots
+    bg_opt = True if bg is not None and isinstance(bg, torch.Tensor) else False
+    hmask = (preds[bidx].argmax(0) == 0) if bg_opt else None
+    heatmap = draw_heatmap(preds[bidx, out_class], img=imgs[bidx], mask=hmask)
+    if bg_opt:
+        alpha = (~bg[bidx]).float()*255
+        heatmap = np.concatenate((heatmap, (~bg[bidx]).float().moveaxis(0, -1).cpu().numpy()), axis=-1)
+
+    return heatmap
+
+def draw_fiber_maps(raw_frame, preds, azimuth_model, bg=None, bidx=0):
+
+    bg_opt = True if bg is not None and isinstance(bg, torch.Tensor) else False
+
+    # fiber tracts image
+    lc_feats = azimuth_model(raw_frame)
+    imgs = raw_frame.mean(1)
+    masks = (preds.argmax(1) == 0) | (preds.argmax(1) == 1) # predicted healthy and tumor white matter mask
+    feats = [var[bidx].cpu().numpy() for var in [lc_feats, masks, imgs]]
+    mask = ~(feats[1] & ~bg[bidx, 0].numpy()) if bg_opt else ~feats[1]
+    # fiber plot
+    azi, linr, img = feats[0][1], feats[0][0], feats[2]
+    fiber_img, cbar_img = plot_fiber(raw_azimuth=azi, linr=10, intensity=img, mask=mask)
+    azi_img = plt.cm.twilight_shifted(azi/180)
+    azi_img = ((azi_img-azi_img.min())/(azi_img.max()-azi_img.min()) * 255).astype(np.uint8)    # uint8 norm
+    if bg_opt:
+        alpha = (~bg[bidx]).float()*255
+        fiber_img = np.concatenate((fiber_img, alpha.permute(1,2,0).numpy()), axis=-1)
+        azi_img = np.concatenate((azi_img[..., :3], alpha.permute(1,2,0).numpy()), axis=-1)
+
+    return fiber_img, azi_img, cbar_img
 
 def draw_segmentation_imgs(imgs, preds, truth, bidx=0, bg_opt=False, alpha=0.3):
 
-    n_channels = truth.shape[1]
+    n_channels = preds.shape[1]
     colors = ['yellow', 'green', 'red', 'blue'] if n_channels-int(bg_opt) > 2 else ['yellow', 'green', 'red'] 
-    preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=truth.shape[1]).permute(0, 3, 1, 2).bool()
+    preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=n_channels).permute(0, 3, 1, 2).bool()
     combined_masks = torch.stack((preds_b[bidx], truth[bidx]>0)).cpu()
+    combined_masks[0][:, combined_masks[1].sum(0)==0] = 0  # remove predictions for areas where there is no GT
     img = (imgs[bidx][None].repeat(3, 1, 1)/imgs[bidx].max()*255).cpu().to(torch.uint8)
     frame_pred = draw_segmentation_masks(img, masks=combined_masks[0], alpha=alpha, colors=colors[-n_channels:])
     frame_mask = draw_segmentation_masks(img, masks=combined_masks[1], alpha=alpha, colors=colors[-n_channels:])
 
     return frame_pred, frame_mask
 
+def draw_segmentation_img(imgs, preds, bidx=0, bg_opt=False, alpha=0.3):
+
+    n_channels = preds.shape[1]
+    colors = ['yellow', 'green', 'red', 'blue'] if n_channels-int(bg_opt) > 2 else ['yellow', 'green', 'red'] 
+    preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=n_channels).permute(0, 3, 1, 2).bool()
+    combined_masks = preds_b[bidx].cpu()
+    img = (imgs[bidx][None].repeat(3, 1, 1)/imgs[bidx].max()*255).cpu().to(torch.uint8)
+    frame_pred = draw_segmentation_masks(img, masks=combined_masks, alpha=alpha, colors=colors[-n_channels:])
+
+    return frame_pred
 
 def draw_heatmap(pred, img=None, mask=None, alpha=0.3, colormap='jet'):
 
-    if isinstance(pred, torch.Tensor): pred = pred.cpu().numpy()
+    if isinstance(pred, torch.Tensor): pred = pred.detach().cpu().numpy()
     norm = (pred - pred.min()) / (pred.max() - pred.min())
 
     import matplotlib.pyplot as plt

@@ -7,7 +7,7 @@ def sigmoid_focal_loss_multiclass(
     targets: torch.Tensor,
     alpha: float = 0.25,
     gamma: float = 2,
-    reduction: str = "none",
+    reduction: str = "mean",
 ) -> torch.Tensor:
     """
     Multi-class implementation of the sigmoid focal loss using one-hot encoded targets.
@@ -41,9 +41,8 @@ def sigmoid_focal_loss_multiclass(
         )
         losses.append(loss)
 
-    # Stack the losses for each class and sum them
-    losses = torch.stack(losses, dim=1)
-    loss = losses.sum(dim=1)
+    # Stack the losses for each class
+    loss = torch.stack(losses, dim=1)
 
     # Apply the specified reduction
     if reduction == "mean":

@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 import numpy as np
 from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
+from sklearn.metrics import auc
 
 def merge_curves(curves_dict, run_type):
 
@@ -10,8 +12,7 @@ def merge_curves(curves_dict, run_type):
     x = np.linspace(0, 1, 200)
     for k in curves_dict[run_type]:
         # interpolate values for consistent arrays
-        k_x = np.linspace(0, 1, k.shape[0])
-        interpolator = interp1d(k_x, k[:, 1], kind='quadratic' if len(k_x)>2 else 'linear')
+        interpolator = interp1d(k[:, 0], k[:, 1]) #, kind='quadratic' if len(k_x)>2 else 'linear')
         new_k = interpolator(x)
         data_list.append(new_k)
     data_arr = np.array(data_list)
@@ -22,17 +23,16 @@ def merge_curves(curves_dict, run_type):
 
 def plot_curves(curve_dict, labels=None, filename='', fontsize=18):
 
-    import matplotlib.pyplot as plt
     plt.rcParams['text.usetex'] = True
     plt.rcParams['xtick.labelsize'] = fontsize
     plt.rcParams['ytick.labelsize'] = fontsize
-    plt.figure(figsize=(15, 15))
-    fig, axs = plt.subplots(1, 1)
+    fig, axs = plt.subplots(1, 1, figsize=(10, 5))
     num = len(curve_dict.keys())
     x = np.linspace(0, 1, 200)
     colors = ['#d62728', '#1f77b4', '#2ca02c', '#8c564b', '#9467bd', '#ff7f0e'][:num]
-    styles = ['-', '-.', '--', ':', (0, (5, 10)), (0, (1, 1))][:num]
+    styles = ['-', '-.', ':', (0, (5, 10)), (0, (1, 1))][:num]
     labels = curve_dict.keys() if labels is None else labels
+    axs.plot(x, x, color='#000000', linestyle='--', label=None)     # black dashed reference line
     for k, l, c, s in zip(curve_dict.keys(), labels, colors, styles):
         axs.plot(x, curve_dict[k][0], label=l, color=c, linestyle=s)
         axs.fill_between(x, curve_dict[k][0] - curve_dict[k][1], curve_dict[k][0] + curve_dict[k][1], color=c, alpha=0.15)
@@ -57,7 +57,9 @@ def exponential_moving_average(data, alpha=0.3):
 
 if __name__ == "__main__":
 
-    group_name = 'kfold_more_healthy_all_imbalance'
+    group_name = 'kfold3_10ochs_imb_aug_bs4_extnorm'
+    plt_opt = False
+    if plt_opt: plt.figure()
     curves_dict = {}
     kfold_opt = group_name.lower().translate(str.maketrans('', '', '-_ ')).__contains__('kfold')
     if not Path('./' + group_name).exists():
@@ -72,15 +74,22 @@ if __name__ == "__main__":
                 run_list.append([fn, cfg['model'], cfg['levels']])
     sorted_runs = sorted(run_list, key=lambda x: (-int(x[2]), x[1], int(str(x[0].name).split('-')[-1].split('.')[0])))
 
-    for el in sorted_runs:
+    for i, el in enumerate(sorted_runs):
         method = ['MMFF', 'LC'][el[2]]
+        if el[1] != 'unet':
+            continue
+        else:
+            el[1] = 'U-Net'
         # create curves
         with open(Path(group_name) / el[0].name.replace('config', 'roc'), 'r') as f:
             curves = json.load(f)
-        print(method+el[1])
-        if not method+el[1] in curves_dict.keys(): curves_dict[method+el[1]] = []
+        key = method+' '+el[1]
+        print(key)
+        if not key in curves_dict.keys(): curves_dict[key] = []
         roc = np.array([[el[0], el[1]] for el in curves['data']])
-        curves_dict[method+el[1]].append(roc)
+        if plt_opt: plt.plot(roc[:, 0], roc[:, 1], label=key+' '+str(i)+' auc:'+str(round(auc(roc[:, 0], roc[:, 1]), 3)))
+        curves_dict[key].append(roc)
+    if plt_opt: plt.legend()
 
     # merge curves
     for run_type in curves_dict.keys():

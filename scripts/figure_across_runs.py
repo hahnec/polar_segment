@@ -6,8 +6,8 @@ from pathlib import Path
 
 if __name__ == "__main__":
 
-    kfold_index = 0
-    group_names = ['kfold4bdice_200_varysets1_absence', 'kfold4bdice_200_varysets1_noise', 'kfold4bdice_200_false_varysets1_flip', 'kfold4bdice_200_false_varysets1_rota', 'kfold4bdice_200_varysets1_flip', 'kfold4bdice_200_varysets1_rota']
+    kfold_index = 2
+    group_names = ['tip_mm_bs2_b_absence', 'tip_mm_bs2_b_noise', 'tip_mm_bs2_b_false_flip', 'tip_mm_bs2_b_false_rota', 'tip_mm_bs2_b_false_rotaflip', 'tip_mm_bs2_b_flip', 'tip_mm_bs2_b_rota', 'tip_mm_bs2_b_rotaflip']
     input_type = 'MMFF'
     combination = input_type+'-unet'
     output_folder = Path('.') / 'scripts' / 'imgs_across_runs'
@@ -45,8 +45,8 @@ if __name__ == "__main__":
             tex_lines = f.readlines()
         
         # extract image filnames from tex files
-        fnames = re.findall(r'fig-k'+str(kfold_index)+'-\d+-'+combination+'\.png', ' '.join(tex_lines))
-        fnames_gt = re.findall(r'fig-k'+str(kfold_index)+'-\d+-'+combination.replace('LC', input_type).split('-')[0]+'-gt.png', ' '.join(tex_lines))
+        fnames = re.findall(r'fig-'+'\d+-'+combination+'\.png', ' '.join(tex_lines))
+        fnames_gt = re.findall(r'fig-'+'\d+-'+combination.replace('LC', input_type).split('-')[0]+'-gt.png', ' '.join(tex_lines))
 
         for i, fname in enumerate(fnames):
             new_fname = group_name + '_' + fname

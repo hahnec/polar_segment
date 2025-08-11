@@ -1,0 +1,35 @@
+# general
+device: cuda
+seed: 3008
+
+# model
+model: unet
+model_file: atomic-sunset-231_ckpt_epoch118.pt
+mm_model_file: Null
+shallow: 0
+class_num: 4
+bg_opt: False
+
+# dataset
+data_path: NPP/
+loc_dir: /home/chris/Datasets/03_HORAO/${data_path}
+data_dir: ${loc_dir}
+k_select: 0
+cases: ['val2_b_npp_new_ht.txt', 'k1_b_npp_new_ht.txt', 'k2_b_npp_new_ht.txt', 'k3_b_npp_new_ht.txt']
+
+# mueller matrix parameters
+norm_opt: 1
+levels: 0
+ochs: 10
+kernel_size: 0
+activation: Null
+method: pooling
+feature_keys:
+  - intensity
+  - azimuth
+  - totp
+  - linr
+  - datt
+wlens:
+  - 550
+
