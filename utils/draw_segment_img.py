@@ -11,8 +11,6 @@ def draw_segment_maps(imgs, preds, bg=None, bidx=0):
     # extract intensity images for plots
     bg_opt = True if bg is not None and isinstance(bg, torch.Tensor) else False
     frame_pred = draw_segmentation_img(imgs, preds, bidx=bidx, bg_opt=bg_opt)
-    out_class = -1
-    hmask = (preds[bidx].argmax(0) == 0) if bg_opt else None
     if bg_opt:
         alpha = (~bg[bidx]).float()*255
         frame_pred = torch.cat((frame_pred, alpha), dim=0)
