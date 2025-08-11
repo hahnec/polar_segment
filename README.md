@@ -1,11 +1,16 @@
 # polar_segment
 
-This is a polarimetric image segmentation framework developed for brain tumor identification. This framework uses the `NPP dataset` (formerly `TumorMeasurementsCalib`; see dataloader in git history) containing per-pixel Mueller matrices of ex-vivo brain tissues. Nonetheless, swapping the dataset loading file `horao_dataset.py` with a custom dataset should be possible as long as the labels of the custom dataset are arranged accordingly. The repo uses the following related frameworks:
+This is a polarimetric image segmentation framework developed for brain tumor identification. This framework uses the `HORAO NPP dataset` (formerly `TumorMeasurementsCalib`; see dataloader in git history) containing per-pixel Mueller matrices of ex-vivo brain tissues. Nonetheless, swapping the dataset loading file `horao_dataset.py` with a custom dataset should be possible as long as the labels of the custom dataset are arranged accordingly.
 
-- [mm_torch](https://github.com/hahnec/mm_torch) for deterministic Mueller matrix processing
-- [polar_augment](https://github.com/hahnec/polar_augment) for data augmentation tailored for polarimetry
+## Schematic Overview
+
+<p align="center" style="background-color: white;">
+  <img src="docs/fig-pipeline_v5.svg" alt="Schematic overview" width="33%" />
+</p>
 
 ## Citation
+
+### Optics Express
 
 <pre>@article{hahne:2025:polar_segment,
   author={},
@@ -19,7 +24,9 @@ This is a polarimetric image segmentation framework developed for brain tumor id
   doi={}
 }</pre>
 
-<pre>@misc{hahne2024isometrictransformationsimageaugmentation,
+### IEEE Trans. on Image Processing
+
+<pre>@misc{hahne:2024:polar_augment,
       title={Physically Consistent Image Augmentation for Deep Learning in Mueller Matrix Polarimetry}, 
       author={Christopher Hahne and Omar Rodriguez-Nunez and Éléa Gros and Théotim Lucas and Ekkehard Hewer and Tatiana Novikova and Theoni Maragkou and Philippe Schucht and Richard McKinley},
       year={2024},
@@ -33,17 +40,24 @@ This is a polarimetric image segmentation framework developed for brain tumor id
 
 ### Dependencies
 
+This repo uses the following related polarimetry frameworks:
+
+- [mm_torch](https://github.com/hahnec/mm_torch) for deterministic Mueller matrix processing
+- [polar_augment](https://github.com/hahnec/polar_augment) for data augmentation tailored for polarimetry
+
+They can be installed automatically by:
+
 ```bash
 $ git clone github.com/hahnec/polar_segment
 $ cd polar_segment
 $ bash install.sh
 ```
-
 ### Models
 
-1. Download a set of models, e.g. from our publication (please [cite our work](#citation)):
+1. Download a set of models from our publications:
 
-  - *HF link*
+  - *HF link 1* and [cite our work in Optics Express](#optics-express)
+  - *HF link 2* and [cite our work in IEEE Trans. on Image Proc.](#ieee-trans-on-image-processing)
 
 2. After successful download, place the models under the `polar_segment/ckpts/` directory.
 
