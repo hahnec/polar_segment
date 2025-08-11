@@ -54,7 +54,7 @@ def iter(raw_frame, model, mm_model=None, log_img=True, bg=None):
 
     # image results
     if log_img:
-        imgs = raw_frame.mean(1) # grascale image
+        imgs = raw_frame.mean(1) # grayscale image
         frame_segment = draw_segment_maps(imgs, preds, bg=bg)
 
     return preds, frame_segment
@@ -77,8 +77,7 @@ if __name__ == '__main__':
     # mueller matrix model
     mm_model = init_mm_model(cfg, train_opt=False, filter_opt=False)
     if cfg.kernel_size > 0:
-        ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.mm_model_file.split('_')[0])]
-        state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)['state_dict']
+        state_dict = torch.load((Path('.') / cfg.mm_model_file).absolute(), map_location=cfg.device, weights_only=True)
         mm_model.load_state_dict(state_dict)
         logging.info(f'MM Model loaded from {cfg.mm_model_file}')
 
@@ -93,8 +92,7 @@ if __name__ == '__main__':
     model.eval()
 
     if cfg.model_file is not None:
-        ckpt_paths = [fn for fn in Path('./ckpts').iterdir() if fn.name.startswith(cfg.model_file.split('.')[0])]
-        state_dict = torch.load(str(ckpt_paths[0]), map_location=cfg.device)
+        state_dict = torch.load((Path('.') / cfg.model_file).absolute(), map_location=cfg.device, weights_only=True)
         model.load_state_dict(state_dict) if cfg.model != 'resnet' else model.model.load_state_dict(state_dict)
         logging.info(f'Model loaded from {cfg.model_file}')
     else:

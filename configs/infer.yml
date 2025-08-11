@@ -4,7 +4,7 @@ seed: 3008
 
 # model
 model: unet
-model_file: atomic-sunset-231_ckpt_epoch118.pt
+model_file: ckpts/atomic-sunset-231_ckpt_epoch118.pt
 mm_model_file: Null
 shallow: 0
 class_num: 4
