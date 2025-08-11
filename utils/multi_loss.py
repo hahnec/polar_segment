@@ -35,7 +35,13 @@ def multi_loss_aggregation(x, y, loss_fun, w_lambda=None):
 
     return torch.stack([a_loss, t_loss, h_loss, w_loss, g_loss]) @ w_lambda
 
-def reduce_htgm(x, y, class_num=4):
+def reduce_htgm(x, y, class_num=None):
+
+    # get class number if not provided
+    if class_num is None: class_num = x.shape[1]
+
+    # skip reduction for 2 classes or less
+    if class_num <= 2: return x, y
 
     # negative indices to account for background class at index 0
     hwm_pred = x[:, -4]
@@ -69,11 +75,13 @@ def reduce_htgm(x, y, class_num=4):
 
     return pred, true
 
-def reduce_htgm_infer(x, class_num=4):
+def reduce_htgm_infer(x, class_num=None):
 
-    # skip reduction for fewer than 2 classes
-    if class_num <= 2:
-        return x
+    # get class number if not provided
+    if class_num is None: class_num = x.shape[1]
+
+    # skip reduction for 2 classes or less
+    if class_num <= 2: return x
 
     # negative indices to account for background class at index 0
     hwm_pred = x[:, -4]
