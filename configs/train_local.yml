@@ -17,7 +17,7 @@ weight_decay: 1e-8
 bg_opt: False
 labeled_only: True
 group: Null
-class_num: 6
+class_num: 4
 num_workers: 4
 patience: Null
 alpha: 0.25
