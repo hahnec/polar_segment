@@ -63,6 +63,8 @@ $ bash install.sh
 
 3. Adjust the configuration by changing the `model_file` variable in `polar_segment/configs/infer.yml` for inference or `polar_segment/configs/train_local.yml` for training.
 
+Optional: This repo provides the possibility to feed decomposed Lu-Chipman features as inputs to the segmentation network. Note that this option takes significantly more processing time (see [here](#optics-express)). To enable the Lu-Chipman decomposition, open `polar_segment/configs/infer.yml` and set the `levels` variable to 1 while adapting the `model_file` (see point 3 above).
+
 ### Data
 
 The release of the herein used dataset is yet to come. Please send a request to `elearomy.gros@unibe.ch` or `theoni.maragkou@unibe.ch` and ask for permission to download and use this dataset.
