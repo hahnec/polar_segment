@@ -6,12 +6,12 @@ from torchvision.utils import draw_segmentation_masks
 from mm.utils.draw_fiber_img import plot_fiber
 
 
-def draw_segment_maps(imgs, preds, bg=None, bidx=0):
+def draw_segment_maps(imgs, preds, bg=None, bidx=0, bg_pred=False):
 
     # extract intensity images for plots
     bg_opt = True if bg is not None and isinstance(bg, torch.Tensor) else False
-    frame_pred = draw_segmentation_img(imgs, preds, bidx=bidx, bg_opt=bg_opt)
-    if bg_opt:
+    frame_pred = draw_segmentation_img(imgs, preds, bidx=bidx, bg_pred=bg_pred)
+    if bg is not None:
         alpha = (~bg[bidx]).float()*255
         frame_pred = torch.cat((frame_pred, alpha), dim=0)
 
@@ -64,10 +64,10 @@ def draw_segmentation_imgs(imgs, preds, truth, bidx=0, bg_opt=False, alpha=0.3):
 
     return frame_pred, frame_mask
 
-def draw_segmentation_img(imgs, preds, bidx=0, bg_opt=False, alpha=0.3):
+def draw_segmentation_img(imgs, preds, bidx=0, bg_pred=False, alpha=0.3):
 
     n_channels = preds.shape[1]
-    colors = ['yellow', 'green', 'red', 'blue'] if n_channels-int(bg_opt) > 2 else ['yellow', 'green', 'red'] 
+    colors = ['yellow', 'green', 'red', 'blue'] if n_channels-int(bg_pred) > 2 else ['yellow', 'green', 'red'] 
     preds_b = torch.nn.functional.one_hot(preds.argmax(1), num_classes=n_channels).permute(0, 3, 1, 2).bool()
     combined_masks = preds_b[bidx].cpu()
     img = (imgs[bidx][None].repeat(3, 1, 1)/imgs[bidx].max()*255).cpu().to(torch.uint8)
