@@ -17,6 +17,7 @@ class HORAO(Dataset):
             wlens=[550], 
             class_num=4,
             blood_opt = False,
+            infill = 0,
         ):
 
         self.base_dir = Path(path)
@@ -39,6 +40,7 @@ class HORAO(Dataset):
 
         # read metadata
         self.df = pd.read_csv(self.base_dir / 'clinical_data.csv')
+        self.infill = infill
 
     def get_filenames(self, class_num=2):
 
@@ -153,6 +155,35 @@ class HORAO(Dataset):
                 # clipping
                 clip_detect = lambda img, th=65530: np.any(img > th, axis=-1).astype(bool)
                 clip_mask = clip_detect(frame.numpy())
+                # Remove 0.0 pixel values in 600nm images
+                if wlen == 600:
+                    empty_mask = frame[:,:,0] == 0.0
+                    if not self.infill:
+                        frame[empty_mask] = torch.eye(4, dtype=torch.float64).flatten() 
+                    else:
+                        for i in range(frame.shape[1]):
+                            n = int(388-frame[:,i,0].count_nonzero())
+                            if n != 388 and n <= 100:
+                                frame[0:n,i,:] = frame[n:2*n,i,:]
+                                empty_mask[0:n,i] = torch.ones(n)
+
+                        for i in range(frame.shape[0]):
+                            n = int(516-frame[i,:,0].count_nonzero())
+                            #Crosscheck if zeros at beginning and/or end
+                            begin_sum = n - frame[i,0:n,0].count_nonzero().sum()
+                            residual = n - begin_sum
+                            if residual == 0:
+                                frame[i,0:n,:] = frame[i,n:(2*n),:]
+                                empty_mask[i,0:n] = torch.ones(n)
+                            else:
+                                frame[i,0:begin_sum,:] = frame[i,begin_sum:(2*begin_sum),:]
+                                frame[i,-residual:,:] = frame[i,-1-(2*residual):-1-residual,:]
+
+                                empty_mask[i,0:begin_sum] = torch.ones(begin_sum)
+                                empty_mask[i,-residual:] = torch.ones(residual)
+
+                    # Merge clip mask with empty mask to add empty fields to bg and lables
+                    clip_mask = clip_mask | empty_mask.numpy()
                 bg[clip_mask, :] = True    # merge clipped areas with background
                 labels[clip_mask, :] = 0   # mask clipped areas in labels
                 # calibration data
