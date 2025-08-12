@@ -33,6 +33,7 @@ data_subfolder: raw_data
 k_select: 0
 imbalance: False
 cases: ['val2_b_npp_infiltrate.txt', 'k1_b_npp_infiltrate.txt', 'k2_b_npp_infiltrate.txt', 'k3_b_npp_infiltrate.txt']
+infill: 1
 
 # mueller matrix parameters
 norm_opt: 1

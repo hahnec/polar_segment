@@ -281,8 +281,8 @@ if __name__ == '__main__':
     from utils.kfold_splits import get_nested_kfold_splits
     splits = get_nested_kfold_splits(cfg.cases)
     train_cases, test_cases, valid_cases = splits[cfg.k_select]
-    dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, wlens=cfg.wlens)
-    val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, wlens=cfg.wlens)
+    dataset = HORAO(cfg.data_dir, train_cases, transforms=transforms, class_num=cfg.class_num, bg_opt=cfg.bg_opt, wlens=cfg.wlens, infill=cfg.infill)
+    val_set = HORAO(cfg.data_dir, valid_cases, transforms=[ToTensor()], class_num=cfg.class_num, bg_opt=cfg.bg_opt, wlens=cfg.wlens, infill=cfg.infill)
 
     # reproducibility when using multiple workers
     g = torch.Generator().manual_seed(cfg.seed)
@@ -396,5 +396,6 @@ if __name__ == '__main__':
         class_num=cfg.class_num, 
         bg_opt=cfg.bg_opt, 
         wlens=cfg.wlens,
+        infill=cfg.infill
         )
     test_main(cfg, test_set, best_model, best_mm_model)
