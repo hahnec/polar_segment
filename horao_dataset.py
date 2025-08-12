@@ -155,21 +155,22 @@ class HORAO(Dataset):
                 # clipping
                 clip_detect = lambda img, th=65530: np.any(img > th, axis=-1).astype(bool)
                 clip_mask = clip_detect(frame.numpy())
-                # Remove 0.0 pixel values in 600nm images
+                # remove zero pixel values in 600nm images
                 if wlen == 600:
+                    H, W, C = frame.shape
                     empty_mask = frame[:,:,0] == 0.0
                     if not self.infill:
                         frame[empty_mask] = torch.eye(4, dtype=torch.float64).flatten() 
                     else:
-                        for i in range(frame.shape[1]):
-                            n = int(388-frame[:,i,0].count_nonzero())
-                            if n != 388 and n <= 100:
+                        for i in range(W):
+                            n = int(H-frame[:,i,0].count_nonzero())
+                            if n != H and n <= 100:
                                 frame[0:n,i,:] = frame[n:2*n,i,:]
                                 empty_mask[0:n,i] = torch.ones(n)
 
-                        for i in range(frame.shape[0]):
-                            n = int(516-frame[i,:,0].count_nonzero())
-                            #Crosscheck if zeros at beginning and/or end
+                        for i in range(H):
+                            n = int(W-frame[i,:,0].count_nonzero())
+                            # cross-check if zeros at beginning and/or end
                             begin_sum = n - frame[i,0:n,0].count_nonzero().sum()
                             residual = n - begin_sum
                             if residual == 0:
