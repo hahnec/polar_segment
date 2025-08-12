@@ -1,1 +1,0 @@
-python train.py model=unet levels=1 kernel_size=0
