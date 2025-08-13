@@ -5,7 +5,7 @@ This is a polarimetric image segmentation framework developed for brain tumor id
 ## Schematic Overview
 
 <p align="center" style="background-color: white;">
-  <img src="docs/fig-pipeline_v5.svg" alt="Schematic overview" width="100%" />
+  <img src="docs/fig-pipeline.svg" alt="Schematic overview" width="100%" />
 </p>
 
 ## Citation
