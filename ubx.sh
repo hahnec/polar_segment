@@ -26,4 +26,4 @@ source ~/33_polar_segment/venv/bin/activate
 
 python -c "import torch; print(torch.cuda.is_available())"
 
-sh ./train_stack.sh $1
+sh ./bash_scripts/train_stack.sh $1

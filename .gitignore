@@ -187,3 +187,5 @@ wandb/
 artifacts/
 dl_wandb/
 configs/keys.yml
+.polar_segment_dist
+polar_segment_dist.tar.gz
