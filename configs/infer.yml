@@ -4,14 +4,14 @@ seed: 3008
 
 # model
 model: unet
-model_file: ckpts/600nm_11aug/600nm_mmff_model.pt
+model_file: ckpts/600nm_mmff_model.pt
 mm_model_file: Null
 shallow: 0
 class_num: 4
 bg_opt: False
 
 # dataset
-data_path: NPP/
+data_path: NPP_23.05.2025/
 loc_dir: /home/chris/Datasets/03_HORAO/${data_path}
 data_dir: ${loc_dir}
 k_select: 0
