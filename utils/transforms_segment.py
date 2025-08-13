@@ -1568,7 +1568,7 @@ class RandomElastic(object):
         if alpha is 0, output is original whatever the sigma;
         if alpha is 1, output only depends on sigma parameter;
         if alpha < 1 or > 1, it zoom in or out the sigma's Relevant dx, dy.
-        sigma (float): sigma value for Elastic transformation, should be \ in (0.05,0.1)
+        sigma (float): sigma value for Elastic transformation, should be in (0.05,0.1)
         mask (PIL Image) in __call__, if not assign, set None.
     """
     def __init__(self, alpha, sigma, p=0.5):
