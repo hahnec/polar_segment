@@ -4,7 +4,7 @@ seed: 3008
 
 # model
 model: unet
-model_file: ckpts/atomic-sunset-231_ckpt_epoch118.pt
+model_file: ckpts/600nm_11aug/600nm_mmff_model.pt
 mm_model_file: Null
 shallow: 0
 class_num: 4
@@ -15,7 +15,7 @@ data_path: NPP/
 loc_dir: /home/chris/Datasets/03_HORAO/${data_path}
 data_dir: ${loc_dir}
 k_select: 0
-cases: ['val2_b_npp_new_ht.txt', 'k1_b_npp_new_ht.txt', 'k2_b_npp_new_ht.txt', 'k3_b_npp_new_ht.txt']
+cases: ['val2_600_b_npp_ht_tumor.txt', 'k1_600_b_npp_ht_tumor_imbalance.txt', 'k2_600_b_npp_ht_tumor_imbalance.txt', 'k3_600_b_npp_ht_tumor_imbalance.txt']
 
 # mueller matrix parameters
 norm_opt: 1
@@ -31,5 +31,5 @@ feature_keys:
   - linr
   - datt
 wlens:
-  - 550
+  - 600
 
