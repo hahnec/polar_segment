@@ -33,6 +33,6 @@ cp ckpts/600nm_lc_model.pt .polar_segment_dist/ckpts/
 cp ckpts/600nm_mmff_model.pt .polar_segment_dist/ckpts/
 
 # create archive file and clean up
-tar -czf polar_segment_dist.tar.gz .polar_segment_dist/
+tar -czf polar_segment_dist.tar.gz -C . .polar_segment_dist/ --transform='s/\.polar_segment_dist/polar_segment_dist/'
 rm -rf .polar_segment_dist
 echo "Archive created successfully"
