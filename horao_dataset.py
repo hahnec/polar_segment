@@ -211,8 +211,8 @@ class HORAO(Dataset):
 
         # split background from labels considering varying dimension order due to transforms
         if isinstance(labels, np.ndarray): labels = torch.tensor(labels)
-        split_dim = [i for i, s in enumerate(labels.shape) if s == self.class_num+1][0]
-        labels, bg = torch.split(labels, [self.class_num, 1], dim=split_dim)
+        split_dim = [i for i, s in enumerate(labels.shape) if s == self.class_num+self.bg_opt+1][0]
+        labels, bg = torch.split(labels, [self.bg_opt+self.class_num, 1], dim=split_dim)
 
         return frames, labels, img_class, bg, metadata
 
@@ -258,7 +258,7 @@ if __name__ == '__main__':
     feat_keys = ['intensity', 'azimuth', 'linr', 'totp']
 
     img_list = []
-    transforms = [ToTensor(), RandomPolarRotation(180, p=0, any=False), SwapDims()]
+    transforms = [ToTensor(), RandomPolarRotation(45, p=0.5, any=False), SwapDims()]
     train_set = HORAO(base_dir, ['k1_b_npp_imbalance.txt', 'k2_b_npp_imbalance.txt'], bg_opt=bg_opt, class_num=4, wlens=[550], transforms=transforms)
     valid_set = HORAO(base_dir, ['val2_b_npp.txt'], bg_opt=bg_opt, class_num=4, wlens=[550], transforms=transforms)
     test_set = HORAO(base_dir, ['k3_b_npp_imbalance.txt'], bg_opt=bg_opt, class_num=4, wlens=[550], transforms=transforms)
@@ -279,14 +279,15 @@ if __name__ == '__main__':
         imgs, labels, img_class, bg, metadata = batch
 
         # move feature dimension for consistency
+        bg = bg.moveaxis(-1, 1)
         imgs = imgs.moveaxis(-1, 1)
         labels = labels.moveaxis(-1, 1)
 
-        bg_pixels += (labels[:, 0]>0).sum().item()
-        hwm_pixels += (labels[:, 1]>0).sum().item()
-        twm_pixels += (labels[:, 3]>0).sum().item()
-        hgm_pixels += (labels[:, 2]>0).sum().item()
-        tgm_pixels += (labels[:, 4]>0).sum().item()
+        bg_pixels += (bg[:, 0]>0).sum().item()
+        hwm_pixels += (labels[:, 0+bg_opt]>0).sum().item()
+        twm_pixels += (labels[:, 2+bg_opt]>0).sum().item()
+        hgm_pixels += (labels[:, 1+bg_opt]>0).sum().item()
+        tgm_pixels += (labels[:, 3+bg_opt]>0).sum().item()
         tumor_samples += (img_class==1).sum().item()
         healthy_samples += (img_class==0).sum().item()
 
@@ -305,10 +306,10 @@ if __name__ == '__main__':
 
         if False:
             import matplotlib.pyplot as plt
-            fig, axs = plt.subplots(1, imgs.shape[1])
+            fig, axs = plt.subplots(1, labels.shape[1]+1)
             axs[0].set_title(['healthy', 'tumor'][img_class[0]])
             axs[0].imshow(imgs[0][0], cmap='gray')
-            for i in range(1, imgs.shape[1]):
+            for i in range(1, labels.shape[1]+1):
                 axs[i].imshow(labels[0, i-1])
             plt.tight_layout()
             plt.show()
