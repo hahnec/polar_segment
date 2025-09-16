@@ -23,9 +23,7 @@ def infer_dataloader(cfg, case, model, mm_model):
     dataset = HORAO(cfg.data_dir, [case], transforms=[ToTensor()], bg_opt=cfg.bg_opt, wlens=cfg.wlens, class_num=cfg.class_num)
 
     # create data loader
-    batch_size = 1
-    num_workers = min(1, os.cpu_count())
-    loader_args = dict(batch_size=batch_size, num_workers=num_workers, pin_memory=True)
+    loader_args = dict(batch_size=1, num_workers=0, pin_memory=True)
     dataloader = DataLoader(dataset, shuffle=False, drop_last=False, **loader_args)
 
     with torch.no_grad():
@@ -39,7 +37,7 @@ def infer_dataloader(cfg, case, model, mm_model):
                 preds, frame_segment = iter(frame, model, mm_model, bg=bg)
                 pbar.update(frame.shape[0])
                 # write image
-                imageio.imsave('frame_segment_%s.png' % str(i), frame_segment.permute(1,2,0).numpy().astype('uint8'))
+                imageio.imsave('frame_segment_%s.png' % str(i), frame_segment.permute(1,2,0).cpu().numpy().astype('uint8'))
 
 def iter(raw_frame, model, mm_model=None, log_img=True, bg=None):
 

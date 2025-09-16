@@ -52,7 +52,7 @@ class HORAO(Dataset):
         filename = (str(self.wlens[0]) + '_Intensite.cod')
 
         for id in self.ids:
-            sample_dir = self.base_dir / Path(id).relative_to('/NPP')
+            sample_dir = self.base_dir / Path(id).relative_to('/'+self.base_dir.name)
             img_fname = sample_dir / 'raw_data' / filename
             assert img_fname.exists(), f'No image found for the ID {id}: {img_fname}'
             label_fname = sample_dir / 'histology' / 'TCC_full.png'
