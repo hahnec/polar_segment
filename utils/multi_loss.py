@@ -40,8 +40,9 @@ def reduce_htgm(x, y, class_num=None):
     # get class number if not provided
     if class_num is None: class_num = x.shape[1]
 
-    # skip reduction for 2 classes or less
-    if class_num <= 2: return x, y
+    # validate number of classes
+    if class_num not in (2, 3, 6, 7):
+        raise Exception('Class number %s not supported.' % str(class_num))
 
     # negative indices to account for background class at index 0
     hwm_pred = x[:, -4]
@@ -54,7 +55,13 @@ def reduce_htgm(x, y, class_num=None):
     pred = torch.stack([x[:, 0], hwm_pred, twm_pred, gm_pred], dim=1) if x.shape[1] == 5 else torch.stack([hwm_pred, twm_pred, gm_pred], dim=1)
     true = torch.stack([y[:, 0], hwm_true, twm_true, gm_true], dim=1) if y.shape[1] == 5 else torch.stack([hwm_true, twm_true, gm_true], dim=1)
 
-    if class_num in (6, 7):
+    if class_num == 2:
+        # reduce to binary classification (healthy vs tumor) ignoring gray matter prediction
+        h_pred = torch.maximum(x[:, -3], x[:, -4])
+        t_pred = torch.maximum(x[:, -1], x[:, -2])
+        pred = torch.stack([h_pred, t_pred], dim=1)
+        true = y
+    elif class_num in (6, 7):
         if False:
             # concatenate infiltration zone channels 
             iwm_pred = x[:, -6]
@@ -80,8 +87,9 @@ def reduce_htgm_infer(x, class_num=None):
     # get class number if not provided
     if class_num is None: class_num = x.shape[1]
 
-    # skip reduction for 2 classes or less
-    if class_num <= 2: return x
+    # validate number of classes
+    if class_num not in (2, 3, 6, 7):
+        raise Exception('Class number %s not supported.' % str(class_num))
 
     # negative indices to account for background class at index 0
     hwm_pred = x[:, -4]
@@ -89,7 +97,12 @@ def reduce_htgm_infer(x, class_num=None):
     gm_pred = torch.maximum(x[:, -1], x[:, -3])
 
     pred = torch.stack([x[:, 0], hwm_pred, twm_pred, gm_pred], dim=1) if x.shape[1] == 5 else torch.stack([hwm_pred, twm_pred, gm_pred], dim=1)
-    if class_num in (6, 7):
+    if class_num == 2:
+        # reduce to binary classification (healthy vs tumor) ignoring gray matter prediction
+        h_pred = torch.maximum(x[:, -3], x[:, -4])
+        t_pred = torch.maximum(x[:, -1], x[:, -2])
+        pred = torch.stack([h_pred, t_pred], dim=1)
+    elif class_num in (6, 7):
         if False:
             # concatenate infiltration zone channels 
             iwm_pred = x[:, -6]
