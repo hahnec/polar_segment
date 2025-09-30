@@ -13,15 +13,15 @@ This is a polarimetric image segmentation framework developed for brain tumor id
 ### Optics Express
 
 <pre>@article{hahne:2025:polar_segment,
-  author={},
-  journal={}, 
-  title={}, 
-  year={},
-  volume={},
-  number={},
-  pages={},
-  keywords={},
-  doi={}
+  author={Christopher Hahne and Ivan Diaz and Muriel Blatter and Omar Rodriguez-Nuñez and Éléa Gros and Théotim Lucas and David Hasler and Tatiana Novikova and Theoni Maragkou and Philippe Schucht and Richard Mckinley},
+  journal={Optics Express}, 
+  title={Polarimetric feature analysis of Mueller matrices for brain tumor image segmentation},
+  year={2025},
+  volume={33},
+  number={20},
+  pages={1-14},
+  keywords={Mueller matrix polarimetry, brain tumor segmentation, deep learning, medical diagnostics},
+  doi={https://doi.org/10.1364/OE.561518}
 }</pre>
 
 ### IEEE Trans. on Image Processing
