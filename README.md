@@ -56,9 +56,9 @@ $ bash install.sh
 
 1. Download a set of *k-fold* models and [cite our work in IEEE Trans. on Image Proc.](#ieee-trans-on-image-processing):
 
-  - [trim-wood-227_ckpt_epoch184.pt (k=1)](https://github.com/hahnec/polar_segment/raw/refs/heads/feat_600nm/ckpts/tip/trim-wood-227_ckpt_epoch184.pt)
-  - [atomic-sunset-231_ckpt_epoch118.pt (k=2)](https://github.com/hahnec/polar_segment/raw/refs/heads/feat_600nm/ckpts/tip/atomic-sunset-231_ckpt_epoch118.pt) 
-  - [vocal-frost-235_ckpt_epoch113.pt (k=3)](https://github.com/hahnec/polar_segment/raw/refs/heads/feat_600nm/ckpts/tip/vocal-frost-235_ckpt_epoch113.pt)
+  - k=1: [trim-wood-227_ckpt_epoch184.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/trim-wood-227_ckpt_epoch184.pt)
+  - k=2: [atomic-sunset-231_ckpt_epoch118.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/atomic-sunset-231_ckpt_epoch118.pt) 
+  - k=3: [vocal-frost-235_ckpt_epoch113.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/vocal-frost-235_ckpt_epoch113.pt)
   
 2. After successful download, place the models under the `polar_segment/ckpts/` directory.
 
