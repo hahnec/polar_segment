@@ -66,7 +66,7 @@ $ bash install.sh
   - k=3: [vocal-frost-235_ckpt_epoch113.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/vocal-frost-235_ckpt_epoch113.pt)
   - License: [GNU GPLv3](./LICENSE)
   
-2. After successful download, place the models under the `polar_segment/ckpts/` directory.
+2. After successful download, make sure models are located under `polar_segment/ckpts/`.
 
 3. Adjust the configuration by changing the `model_file` variable in `polar_segment/configs/infer.yml` for inference or `polar_segment/configs/train_local.yml` for training.
 
@@ -78,7 +78,7 @@ The release of the herein used dataset is yet to come. Please send a request to 
 
 ## Run
 
-Before running, make sure the previously installed environment is activated (e.g. via `$ source venv/bin/activate`).
+Before running, make sure the previously installed environment is activated (e.g., via `$ source venv/bin/activate`).
 
 ### Inference
 ```bash
