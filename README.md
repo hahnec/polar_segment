@@ -8,23 +8,11 @@ This is a polarimetric image segmentation framework developed for brain tumor id
   <img src="docs/fig-pipeline.svg" alt="Schematic overview" width="100%" />
 </p>
 
-## Citation
-
-### Optics Express
-
-<pre>@article{hahne:2025:polar_segment,
-  author={Christopher Hahne and Ivan Diaz and Muriel Blatter and Omar Rodriguez-Nuñez and Éléa Gros and Théotim Lucas and David Hasler and Tatiana Novikova and Theoni Maragkou and Philippe Schucht and Richard Mckinley},
-  journal={Optics Express}, 
-  title={Polarimetric feature analysis of Mueller matrices for brain tumor image segmentation},
-  year={2025},
-  volume={33},
-  number={20},
-  pages={1-14},
-  keywords={Mueller matrix polarimetry, brain tumor segmentation, deep learning, medical diagnostics},
-  doi={https://doi.org/10.1364/OE.561518}
-}</pre>
+## Publications
 
 ### IEEE Trans. on Image Processing
+
+[![arXiv paper link](https://img.shields.io/badge/paper-arXiv:2411.07918-red)](https://arxiv.org/pdf/2411.07918.pdf)
 
 <pre>@misc{hahne:2024:polar_augment,
       title={Physically Consistent Image Augmentation for Deep Learning in Mueller Matrix Polarimetry}, 
@@ -35,6 +23,22 @@ This is a polarimetric image segmentation framework developed for brain tumor id
       primaryClass={cs.CV},
       url={https://arxiv.org/abs/2411.07918}, 
 } </pre>
+
+### Optics Express
+
+[![opex paper link](https://img.shields.io/badge/paper-opex:OE.561518-red)](https://doi.org/10.1364/OE.561518)
+
+<pre>@article{hahne:2025:polar_segment,
+  author={Christopher Hahne and Ivan Diaz and Omar Rodriguez-Nuñez and Éléa Gros and Muriel Blatter and Théotim Lucas and David Hasler and Tatiana Novikova and Theoni Maragkou and Philippe Schucht and Richard McKinley},
+  journal={Optics Express}, 
+  title={Polarimetric feature analysis of Mueller matrices for brain tumor image segmentation},
+  year={2025},
+  volume={33},
+  number={20},
+  pages={1-14},
+  keywords={Mueller matrix polarimetry, brain tumor segmentation, deep learning, medical diagnostics},
+  doi={https://doi.org/10.1364/OE.561518}
+}</pre>
 
 ## Installation
 
@@ -52,13 +56,15 @@ $ git clone github.com/hahnec/polar_segment
 $ cd polar_segment
 $ bash install.sh
 ```
+
 ### Models
 
-1. Download a set of *k-fold* models and [cite our work in IEEE Trans. on Image Proc.](#ieee-trans-on-image-processing):
+1. Download a set of *k-fold* models and [from our work in IEEE Trans. on Image Proc.](#ieee-trans-on-image-processing):
 
   - k=1: [trim-wood-227_ckpt_epoch184.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/trim-wood-227_ckpt_epoch184.pt)
   - k=2: [atomic-sunset-231_ckpt_epoch118.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/atomic-sunset-231_ckpt_epoch118.pt) 
   - k=3: [vocal-frost-235_ckpt_epoch113.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/vocal-frost-235_ckpt_epoch113.pt)
+  - License: [GNU GPLv3](./LICENSE)
   
 2. After successful download, place the models under the `polar_segment/ckpts/` directory.
 
@@ -72,7 +78,7 @@ The release of the herein used dataset is yet to come. Please send a request to 
 
 ## Run
 
-Before running, make sure the previously installed environment is activated via `$ source venv/bin/activate`.
+Before running, make sure the previously installed environment is activated (e.g. via `$ source venv/bin/activate`).
 
 ### Inference
 ```bash
