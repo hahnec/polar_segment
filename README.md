@@ -14,15 +14,18 @@ This is a polarimetric image segmentation framework developed for brain tumor id
 
 [![arXiv paper link](https://img.shields.io/badge/paper-arXiv:2411.07918-red)](https://arxiv.org/pdf/2411.07918.pdf)
 
-<pre>@misc{hahne:2024:polar_augment,
-      title={Physically Consistent Image Augmentation for Deep Learning in Mueller Matrix Polarimetry}, 
-      author={Christopher Hahne and Omar Rodriguez-Nunez and Éléa Gros and Théotim Lucas and Ekkehard Hewer and Tatiana Novikova and Theoni Maragkou and Philippe Schucht and Richard McKinley},
-      year={2024},
-      eprint={2411.07918},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2411.07918}, 
-} </pre>
+<pre>@ARTICLE{11202388,
+
+  author={Hahne, Christopher and Rodríguez-Núñez, Omar and Gros, Éléa and Lucas, Théotim and Hewer, Ekkehard and Novikova, Tatiana and Maragkou, Theoni and Schucht, Philippe and McKinley, Richard},
+  journal={IEEE Transactions on Image Processing}, 
+  title={Physically Consistent Image Augmentation for Deep Learning in Mueller Matrix Polarimetry}, 
+  year={2025},
+  volume={34},
+  number={},
+  pages={6953-6962},
+  keywords={Imaging;Polarimetry;Deep learning;Data augmentation;Training;Optical polarization;Optical imaging;Vectors;Interpolation;Standards;Augmentation;polarimetry;Mueller matrix;tumor;classification},
+  doi={10.1109/TIP.2025.3618390}
+}</pre>
 
 ### Optics Express
 
@@ -59,7 +62,7 @@ $ bash install.sh
 
 ### Models
 
-1. Download a set of *k-fold* models and [from our work in IEEE Trans. on Image Proc.](#ieee-trans-on-image-processing):
+1. Download a set of *k-fold* models [from our work in IEEE Trans. on Image Proc.](#ieee-trans-on-image-processing):
 
   - k=1: [trim-wood-227_ckpt_epoch184.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/trim-wood-227_ckpt_epoch184.pt)
   - k=2: [atomic-sunset-231_ckpt_epoch118.pt](https://github.com/hahnec/polar_segment/raw/refs/heads/master/ckpts/tip/atomic-sunset-231_ckpt_epoch118.pt) 
